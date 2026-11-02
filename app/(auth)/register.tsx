@@ -33,21 +33,30 @@ export default function RegisterScreen() {
   const { role } = useLocalSearchParams<{ role: string }>();
   const userRole: Role = role === 'volunteer' ? 'volunteer' : 'citizen';
 
+  const defaultName = userRole === 'volunteer' ? 'Amit Kumar' : 'Rahul Sharma';
+  const defaultMobile = userRole === 'volunteer' ? '+91 91234 56789' : '+91 98765 43210';
+  const defaultEmail = userRole === 'volunteer' ? 'amit.volunteer@aanandvan.org' : 'rahul.citizen@aanandvan.org';
+  const defaultAddress = userRole === 'volunteer' ? 'Block C, Green Park, South Delhi' : 'Apartment 4B, Sector 45, Green Belt';
+
   const [form, setForm] = useState({
-    name: '',
-    mobile: '',
-    email: '',
-    address: '',
+    name: defaultName,
+    mobile: defaultMobile,
+    email: defaultEmail,
+    address: defaultAddress,
   });
 
   const update = (key: keyof typeof form) => (val: string) =>
     setForm((prev) => ({ ...prev, [key]: val }));
 
   const handleRegister = () => {
-    // Navigate to OTP with mobile number and role
+    // Navigate to OTP with mobile number, name, and role
     router.push({
       pathname: '/(auth)/otp',
-      params: { mobile: form.mobile, role: userRole },
+      params: {
+        mobile: form.mobile,
+        name: form.name,
+        role: userRole,
+      },
     });
   };
 
@@ -71,7 +80,10 @@ export default function RegisterScreen() {
         >
           {/* ─── Top Header ─── */}
           <View style={styles.topHeader}>
-            <View>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                <Text style={styles.backArrow}>←</Text>
+              </TouchableOpacity>
               <Text style={styles.namaste}>Namaste, Aanandvan</Text>
             </View>
             <View style={styles.avatarCircle}>
@@ -247,6 +259,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: Spacing[2],
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[2],
+  },
+  backBtn: {
+    padding: Spacing[1],
+  },
+  backArrow: {
+    fontSize: 22,
+    color: Colors.textPrimary,
+    fontWeight: FontWeight.bold,
   },
   namaste: {
     fontSize: FontSize.lg,

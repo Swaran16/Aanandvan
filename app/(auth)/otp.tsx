@@ -61,6 +61,10 @@ export default function OtpScreen() {
     }, 1200);
   };
 
+  const autoFillOtp = () => {
+    setOtp(['1', '2', '3', '4', '5', '6']);
+  };
+
   const isComplete = otp.every((d) => d !== '');
 
   return (
@@ -95,10 +99,20 @@ export default function OtpScreen() {
             </View>
 
             <Text style={styles.cardTitle}>Verify Mobile Number</Text>
+            <View style={styles.roleTag}>
+              <Text style={styles.roleTagText}>
+                {role === 'volunteer' ? '🌿 Volunteer Verification' : '👤 Citizen Verification'}
+              </Text>
+            </View>
             <Text style={styles.cardSub}>
               We've sent a 6-digit code to{'\n'}
-              <Text style={styles.mobileText}>{mobile || 'your phone'}</Text>.
+              <Text style={styles.mobileText}>{mobile || '+91 98765 43210'}</Text>.
             </Text>
+
+            {/* Quick Mock OTP chip */}
+            <TouchableOpacity onPress={autoFillOtp} style={styles.mockChip} activeOpacity={0.7}>
+              <Text style={styles.mockChipText}>⚡ Fill Mock OTP: 123456</Text>
+            </TouchableOpacity>
 
             {/* ─── OTP Boxes ─── */}
             <View style={styles.otpRow}>
@@ -132,14 +146,14 @@ export default function OtpScreen() {
               activeOpacity={0.85}
             >
               <Text style={styles.verifyBtnText}>
-                {loading ? 'Verifying...' : 'Verify & Proceed'}
+                {loading ? 'Verifying...' : `Verify & Open ${role === 'volunteer' ? 'Volunteer' : 'Citizen'} Dashboard →`}
               </Text>
             </TouchableOpacity>
 
             {/* Resend */}
             <View style={styles.resendRow}>
               <Text style={styles.resendHint}>Didn't receive the code?  </Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={autoFillOtp}>
                 <Text style={styles.resendLink}>Resend</Text>
               </TouchableOpacity>
             </View>
@@ -217,6 +231,31 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
     textAlign: 'center',
+  },
+  roleTag: {
+    backgroundColor: '#EBF5EE',
+    paddingHorizontal: Spacing[3],
+    paddingVertical: 5,
+    borderRadius: BorderRadius.full,
+  },
+  roleTagText: {
+    fontSize: 12,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.brandPrimary,
+  },
+  mockChip: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    paddingHorizontal: Spacing[3],
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    marginTop: -Spacing[1],
+  },
+  mockChipText: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: '#B45309',
   },
   cardSub: {
     fontSize: FontSize.base,

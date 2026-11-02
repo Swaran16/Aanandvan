@@ -28,12 +28,14 @@ import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/c
 import { Text } from '@/components/common';
 
 export default function RoleSelectScreen() {
+  const [selectedRole, setSelectedRole] = React.useState<'citizen' | 'volunteer'>('citizen');
+
   const handleSelect = (role: 'citizen' | 'volunteer') => {
-    if (role === 'citizen') {
-      router.replace('/(tabs)');
-    } else {
-      router.replace('/(volunteer)' as any);
-    }
+    setSelectedRole(role);
+    router.push({
+      pathname: '/(auth)/register',
+      params: { role },
+    });
   };
 
   return (
@@ -67,12 +69,15 @@ export default function RoleSelectScreen() {
         <View style={styles.cardsSection}>
           {/* Citizen Card */}
           <TouchableOpacity
-            style={styles.roleCard}
+            style={[
+              styles.roleCard,
+              selectedRole === 'citizen' && styles.roleCardSelected,
+            ]}
             activeOpacity={0.8}
             onPress={() => handleSelect('citizen')}
           >
             <View style={styles.roleIconCircle}>
-              <Text style={styles.roleEmoji}>🌱</Text>
+              <Text style={styles.roleEmoji}>👤</Text>
             </View>
             <View style={styles.roleTextWrap}>
               <Text style={styles.roleName}>I'm a Citizen</Text>
@@ -84,12 +89,15 @@ export default function RoleSelectScreen() {
 
           {/* Volunteer Card */}
           <TouchableOpacity
-            style={styles.roleCard}
+            style={[
+              styles.roleCard,
+              selectedRole === 'volunteer' && styles.roleCardSelected,
+            ]}
             activeOpacity={0.8}
             onPress={() => handleSelect('volunteer')}
           >
-            <View style={[styles.roleIconCircle, { backgroundColor: Colors.brandMint }]}>
-              <Text style={styles.roleEmoji}>🌿</Text>
+            <View style={[styles.roleIconCircle, { backgroundColor: '#C8E6C9' }]}>
+              <Text style={styles.roleEmoji}>🪴</Text>
             </View>
             <View style={styles.roleTextWrap}>
               <Text style={styles.roleName}>I'm a Volunteer</Text>
@@ -241,11 +249,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     borderWidth: 1.5,
-    borderColor: Colors.brandAccent,
-    borderRadius: BorderRadius.xl,
+    borderColor: '#E2E8F0',
+    borderRadius: 24,
     padding: Spacing[5],
     gap: Spacing[4],
     backgroundColor: Colors.white,
+  },
+  roleCardSelected: {
+    borderColor: '#1D3B26',
+    borderWidth: 2,
+    backgroundColor: '#FAFCFA',
   },
   roleIconCircle: {
     width: 48,

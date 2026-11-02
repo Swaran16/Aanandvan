@@ -1,9 +1,13 @@
 /**
  * Available Requests Screen — Aanandvan
- *
- * Shows a list of plantation requests available for volunteers to accept.
- * Each card shows request type, location, distance, and urgency level.
- * Volunteers can tap a request to view details and accept it.
+ * Matches Image 1:
+ *  - Header: Back arrow, "Aanandvan"
+ *  - Title: "Available Requests"
+ *  - Search bar: "Search by area or tree species..."
+ *  - Filter pills: "Nearest", "Newest", "My City", "Popular"
+ *  - Request cards with photos, distance badge, ref ID, bookmark, address, description, "Accept Request" button
+ *  - "Load More Requests ∨" button
+ *  - Floating Action Button (+)
  */
 
 import React, { useState } from 'react';
@@ -14,159 +18,129 @@ import {
   ScrollView,
   StatusBar,
   TextInput,
+  Image,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/constants';
 
-// ─── Filter Options ──────────────────────────────────────────────────────────
-
-const FILTERS = ['All', 'Planting', 'Watering', 'Maintenance'] as const;
-
-// ─── Dummy Data ──────────────────────────────────────────────────────────────
-
 interface RequestItem {
   id: string;
   refId: string;
-  title: string;
-  location: string;
   distance: string;
-  type: 'Planting' | 'Watering' | 'Maintenance';
-  urgency: 'High' | 'Medium' | 'Low';
-  saplings: number;
-  postedAgo: string;
+  title: string;
+  address: string;
+  description: string;
+  image: any;
 }
 
 const REQUESTS: RequestItem[] = [
   {
     id: '1',
-    refId: 'REQ-2024-0042',
-    title: 'Oak Valley Reforestation',
-    location: 'Greenwood North District, Area 4B',
-    distance: '2.3 km away',
-    type: 'Planting',
-    urgency: 'High',
-    saplings: 12,
-    postedAgo: '2 hours ago',
+    refId: '#REQ-2024-0042',
+    distance: '1.2 km away',
+    title: 'Sector 14, Near City Park',
+    address: '45 Green Terrace, Sector 14, Urbania',
+    description:
+      'Looking for a volunteer to help plant 3 Neem saplings in a community garden area. Basic tools provided on-site.',
+    image: require('../assets/images/onboarding1.png'),
   },
   {
     id: '2',
-    refId: 'REQ-2024-0039',
-    title: 'Riverside Willow Maintenance',
-    location: 'North Bank, Station 4',
-    distance: '1.8 km away',
-    type: 'Watering',
-    urgency: 'Medium',
-    saplings: 8,
-    postedAgo: '5 hours ago',
+    refId: '#REQ-2024-0051',
+    distance: '2.5 km away',
+    title: 'Greenwood Estates',
+    address: 'Block C, Row 12, Greenwood Estates',
+    description:
+      'Residential planting project. We need help setting up a privacy hedge using native evergreen shrubs.',
+    image: require('../assets/images/onboarding2.png'),
   },
   {
     id: '3',
-    refId: 'REQ-2024-0037',
-    title: 'Community Orchard Expansion',
-    location: 'Greenway Heights, Block C',
-    distance: '4.1 km away',
-    type: 'Planting',
-    urgency: 'Low',
-    saplings: 20,
-    postedAgo: '1 day ago',
+    refId: '#REQ-2024-0063',
+    distance: '0.8 km away',
+    title: 'Heritage Public School',
+    address: 'Main Gate, North Campus, Heritage',
+    description:
+      'School beautification drive. Planting 10 flowering cherry trees along the north walkway. Great for groups.',
+    image: require('../assets/images/onboarding3.png'),
   },
   {
     id: '4',
-    refId: 'REQ-2024-0035',
-    title: 'Central Park Sapling Care',
-    location: 'Central Park, Zone 4',
-    distance: '0.8 km away',
-    type: 'Maintenance',
-    urgency: 'High',
-    saplings: 15,
-    postedAgo: '3 hours ago',
-  },
-  {
-    id: '5',
-    refId: 'REQ-2024-0031',
-    title: 'School Garden Initiative',
-    location: 'Lincoln High School Campus',
-    distance: '3.5 km away',
-    type: 'Planting',
-    urgency: 'Medium',
-    saplings: 10,
-    postedAgo: '2 days ago',
+    refId: '#REQ-2024-0088',
+    distance: '4.1 km away',
+    title: 'Riverbank Restoration',
+    address: 'Old Ferry Wharf, East Bank',
+    description:
+      'Help prevent soil erosion by planting native riverbank vegetation. Rough terrain, please wear sturdy boots.',
+    image: require('../assets/images/req_mangrove.png'),
   },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const getUrgencyColor = (urgency: string) => {
-  switch (urgency) {
-    case 'High':
-      return { bg: Colors.errorLight, text: Colors.error };
-    case 'Medium':
-      return { bg: Colors.warningLight, text: Colors.warning };
-    default:
-      return { bg: Colors.brandMint, text: Colors.brandAccent };
-  }
-};
-
-const getTypeBadgeStyle = (type: string) => {
-  switch (type) {
-    case 'Planting':
-      return { bg: Colors.brandMint, text: Colors.brandPrimary };
-    case 'Watering':
-      return { bg: Colors.infoLight, text: Colors.info };
-    default:
-      return { bg: Colors.warningLight, text: Colors.warning };
-  }
-};
-
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case 'Planting':
-      return '🌱';
-    case 'Watering':
-      return '💧';
-    default:
-      return '🔧';
-  }
-};
-
-// ─── Component ───────────────────────────────────────────────────────────────
+const FILTERS = ['Nearest', 'Newest', 'My City', 'Popular'] as const;
 
 export default function AvailableRequestsScreen() {
-  const [activeFilter, setActiveFilter] = useState<string>('All');
+  const [activeFilter, setActiveFilter] = useState<(typeof FILTERS)[number]>('Nearest');
   const [searchQuery, setSearchQuery] = useState('');
+  const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
 
-  const filtered = REQUESTS.filter((r) => {
-    const matchesFilter = activeFilter === 'All' || r.type === activeFilter;
-    const matchesSearch =
-      searchQuery === '' ||
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const toggleBookmark = (id: string) => {
+    setBookmarked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleAccept = (item: RequestItem) => {
+    Alert.alert(
+      'Request Accepted! 🌱',
+      `You have accepted the assignment for "${item.title}". Let's view the location & assignment details!`,
+      [
+        {
+          text: 'View Assignment Details',
+          onPress: () => router.push('/assignment-details'),
+        },
+      ]
+    );
+  };
+
+  const filteredRequests = REQUESTS.filter((req) => {
+    if (!searchQuery) return true;
+    return (
+      req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      req.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      req.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   });
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
+      <SafeAreaView edges={['top']} style={styles.safeTop}>
+        {/* ─── Top Bar ─── */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerBrand}>Aanandvan</Text>
+          <View style={{ width: 36 }} />
+        </View>
+      </SafeAreaView>
 
-      {/* ─── Header ─── */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Available Requests</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ─── Title ─── */}
+        <Text style={styles.pageTitle}>Available Requests</Text>
 
-      {/* ─── Search Bar ─── */}
-      <View style={styles.searchContainer}>
+        {/* ─── Search Bar ─── */}
         <View style={styles.searchBar}>
           <Text style={styles.searchIcon}>🔍</Text>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by location or title..."
-            placeholderTextColor={Colors.textDisabled}
+            placeholder="Search by area or tree species..."
+            placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -176,120 +150,110 @@ export default function AvailableRequestsScreen() {
             </TouchableOpacity>
           )}
         </View>
-      </View>
 
-      {/* ─── Filters ─── */}
-      <View style={styles.filtersContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-          {FILTERS.map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
-              onPress={() => setActiveFilter(f)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.filterText, activeFilter === f ? styles.filterTextActive : undefined]}>
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* ─── Results Count ─── */}
-      <View style={styles.resultsRow}>
-        <Text style={styles.resultsText}>
-          {filtered.length} request{filtered.length !== 1 ? 's' : ''} available
-        </Text>
-      </View>
-
-      {/* ─── Request Cards ─── */}
-      <ScrollView
-        style={styles.listWrap}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {filtered.map((req) => {
-          const urgencyStyle = getUrgencyColor(req.urgency);
-          const typeStyle = getTypeBadgeStyle(req.type);
-
-          return (
-            <TouchableOpacity
-              key={req.id}
-              style={styles.card}
-              activeOpacity={0.8}
-              onPress={() =>
-                router.push({ pathname: '/assignment-details', params: { id: req.refId } })
-              }
-            >
-              {/* Top row: type badge + urgency */}
-              <View style={styles.cardTopRow}>
-                <View style={[styles.typeBadge, { backgroundColor: typeStyle.bg }]}>
-                  <Text style={styles.typeIcon}>{getTypeIcon(req.type)}</Text>
-                  <Text style={[styles.typeText, { color: typeStyle.text }]}>{req.type}</Text>
-                </View>
-                <View style={[styles.urgencyBadge, { backgroundColor: urgencyStyle.bg }]}>
-                  <Text style={[styles.urgencyText, { color: urgencyStyle.text }]}>
-                    {req.urgency}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Title + ref */}
-              <Text style={styles.cardTitle}>{req.title}</Text>
-              <Text style={styles.cardRef}>#{req.refId}</Text>
-
-              {/* Location */}
-              <View style={styles.cardLocationRow}>
-                <Text style={styles.locationPin}>📍</Text>
-                <Text style={styles.cardLocation} numberOfLines={1}>
-                  {req.location}
+        {/* ─── Filter Pills ─── */}
+        <View style={styles.filtersRow}>
+          {FILTERS.map((f) => {
+            const isActive = activeFilter === f;
+            return (
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterPill, isActive && styles.filterPillActive]}
+                activeOpacity={0.8}
+                onPress={() => setActiveFilter(f)}
+              >
+                <Text
+                  style={[styles.filterPillText, isActive && styles.filterPillTextActive]}
+                >
+                  {f}
                 </Text>
-              </View>
-
-              {/* Bottom info row */}
-              <View style={styles.cardBottomRow}>
-                <View style={styles.infoChip}>
-                  <Text style={styles.infoIcon}>🌳</Text>
-                  <Text style={styles.infoText}>{req.saplings} saplings</Text>
-                </View>
-                <View style={styles.infoChip}>
-                  <Text style={styles.infoIcon}>📏</Text>
-                  <Text style={styles.infoText}>{req.distance}</Text>
-                </View>
-                <Text style={styles.postedText}>{req.postedAgo}</Text>
-              </View>
-
-              {/* Accept Button */}
-              <TouchableOpacity style={styles.acceptBtn} activeOpacity={0.85}>
-                <Text style={styles.acceptBtnText}>View Details</Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          );
-        })}
+            );
+          })}
+        </View>
 
-        {filtered.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🔍</Text>
-            <Text style={styles.emptyTitle}>No requests found</Text>
-            <Text style={styles.emptyDesc}>
-              Try adjusting your filters or search query.
-            </Text>
-          </View>
-        )}
+        {/* ─── Request Cards ─── */}
+        <View style={styles.cardsList}>
+          {filteredRequests.map((item) => {
+            const isBookmarked = !!bookmarked[item.id];
+            return (
+              <View key={item.id} style={styles.card}>
+                {/* Top Image with Distance Badge */}
+                <View style={styles.imgWrap}>
+                  <Image source={item.image} style={styles.cardImg} resizeMode="cover" />
+                  <View style={styles.distanceBadge}>
+                    <Text style={styles.distanceText}>📍 {item.distance}</Text>
+                  </View>
+                </View>
 
-        <View style={{ height: Spacing[8] }} />
+                {/* Card Content */}
+                <View style={styles.cardContent}>
+                  {/* Ref ID & Bookmark */}
+                  <View style={styles.metaRow}>
+                    <Text style={styles.refId}>{item.refId}</Text>
+                    <TouchableOpacity
+                      onPress={() => toggleBookmark(item.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={[styles.bookmarkIcon, isBookmarked && styles.bookmarkIconActive]}>
+                        {isBookmarked ? '🔖' : '🏷️'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Title & Address */}
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  <Text style={styles.cardAddress}>{item.address}</Text>
+
+                  {/* Description */}
+                  <Text style={styles.cardDesc} numberOfLines={3}>
+                    {item.description}
+                  </Text>
+
+                  {/* Accept Request Button */}
+                  <TouchableOpacity
+                    style={styles.acceptBtn}
+                    activeOpacity={0.85}
+                    onPress={() => handleAccept(item)}
+                  >
+                    <Text style={styles.acceptBtnText}>Accept Request</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* ─── Load More Button ─── */}
+        <TouchableOpacity style={styles.loadMoreBtn} activeOpacity={0.75}>
+          <Text style={styles.loadMoreText}>Load More Requests ∨</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 90 }} />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ─── Floating Action Button (+) ─── */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.85}
+        onPress={() => router.push('/(volunteer)/plant')}
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-
-  // Header
+  root: {
+    flex: 1,
+    backgroundColor: '#F8FAF8',
+  },
+  safeTop: {
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -305,204 +269,214 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 22,
-    color: Colors.textPrimary,
     fontWeight: FontWeight.bold,
+    color: '#0F172A',
   },
-  headerTitle: {
-    fontSize: FontSize.xl,
+  headerBrand: {
+    fontSize: 18,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: '#0F172A',
   },
 
-  // Search
-  searchContainer: {
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing[5],
+    paddingTop: Spacing[4],
+  },
+
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: '#0F3821',
+    letterSpacing: -0.4,
     marginBottom: Spacing[3],
   },
+
+  // Search Bar
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing[4],
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: Spacing[3],
     height: 48,
-    borderWidth: 1,
-    borderColor: Colors.border,
     gap: Spacing[2],
+    marginBottom: Spacing[4],
   },
-  searchIcon: { fontSize: 16, opacity: 0.5 },
+  searchIcon: {
+    fontSize: 16,
+    opacity: 0.6,
+  },
   searchInput: {
     flex: 1,
-    fontSize: FontSize.base,
-    color: Colors.textPrimary,
+    fontSize: 14,
+    color: '#0F172A',
+    paddingVertical: 0,
   },
   clearIcon: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: '#94A3B8',
     padding: 4,
   },
 
-  // Filters
-  filtersContainer: {
-    marginBottom: Spacing[3],
-  },
-  filtersScroll: {
-    paddingHorizontal: Spacing[5],
+  // Filter Pills
+  filtersRow: {
+    flexDirection: 'row',
     gap: Spacing[2],
+    marginBottom: Spacing[5],
   },
-  filterChip: {
+  filterPill: {
     paddingHorizontal: Spacing[4],
-    paddingVertical: Spacing[2],
+    paddingVertical: 7,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#CBD5E1',
   },
-  filterChipActive: {
-    backgroundColor: Colors.brandPrimary,
-    borderColor: Colors.brandPrimary,
+  filterPillActive: {
+    backgroundColor: '#0F3821',
+    borderColor: '#0F3821',
   },
-  filterText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-    color: Colors.textSecondary,
+  filterPillText: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: '#334155',
   },
-  filterTextActive: {
+  filterPillTextActive: {
     color: Colors.white,
   },
 
-  // Results
-  resultsRow: {
-    paddingHorizontal: Spacing[5],
-    marginBottom: Spacing[3],
+  // Cards List
+  cardsList: {
+    gap: Spacing[5],
   },
-  resultsText: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-  },
-
-  // List
-  listWrap: { flex: 1 },
-  listContent: {
-    paddingHorizontal: Spacing[5],
-    gap: Spacing[4],
-  },
-
-  // Card
   card: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing[5],
-    gap: Spacing[3],
-    ...Shadow.md,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...Shadow.sm,
   },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  imgWrap: {
+    width: '100%',
+    height: 150,
+    position: 'relative',
+    backgroundColor: '#E2E8F0',
   },
-  typeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Spacing[3],
+  cardImg: {
+    width: '100%',
+    height: '100%',
+  },
+  distanceBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.full,
   },
-  typeIcon: { fontSize: 12 },
-  typeText: {
+  distanceText: {
     fontSize: 11,
     fontWeight: FontWeight.bold,
-  },
-  urgencyBadge: {
-    paddingHorizontal: Spacing[3],
-    paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
-  },
-  urgencyText: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.3,
-  },
-  cardTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  cardRef: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    marginTop: -Spacing[2],
-  },
-  cardLocationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationPin: { fontSize: 13, opacity: 0.7 },
-  cardLocation: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-  cardBottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing[3],
-  },
-  infoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.gray50,
-    paddingHorizontal: Spacing[2],
-    paddingVertical: 3,
-    borderRadius: BorderRadius.xs,
-  },
-  infoIcon: { fontSize: 11 },
-  infoText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
-  },
-  postedText: {
-    fontSize: 11,
-    color: Colors.textDisabled,
-    marginLeft: 'auto',
+    color: '#065F46',
   },
 
-  // Accept
-  acceptBtn: {
-    backgroundColor: Colors.brandPrimary,
-    borderRadius: BorderRadius['3xl'],
-    height: 44,
+  cardContent: {
+    padding: Spacing[4],
+    gap: Spacing[2],
+  },
+  metaRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  refId: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+  },
+  bookmarkIcon: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
+  bookmarkIconActive: {
+    opacity: 1,
+  },
+
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+    color: '#0F172A',
+  },
+  cardAddress: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: -2,
+  },
+  cardDesc: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 18,
     marginTop: Spacing[1],
   },
-  acceptBtnText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.white,
-  },
 
-  // Empty
-  emptyState: {
+  acceptBtn: {
+    height: 46,
+    backgroundColor: '#0F3821',
+    borderRadius: BorderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing[16],
-    gap: Spacing[3],
+    marginTop: Spacing[2],
   },
-  emptyEmoji: { fontSize: 48, opacity: 0.5 },
-  emptyTitle: {
-    fontSize: FontSize.xl,
+  acceptBtnText: {
+    fontSize: 14,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.white,
+    letterSpacing: 0.2,
   },
-  emptyDesc: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    textAlign: 'center',
+
+  // Load More
+  loadMoreBtn: {
+    marginVertical: Spacing[5],
+    height: 48,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    borderColor: '#0F3821',
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+    color: '#0F3821',
+  },
+
+  // Floating Action Button
+  fab: {
+    position: 'absolute',
+    right: Spacing[5],
+    bottom: Spacing[5],
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0F3821',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadow.lg,
+    elevation: 8,
+  },
+  fabIcon: {
+    fontSize: 32,
+    color: Colors.white,
+    fontWeight: '300',
+    marginTop: -2,
   },
 });

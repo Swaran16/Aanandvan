@@ -11,7 +11,7 @@
  */
 
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { Colors, FontSize } from '@/constants';
 
 // ─── Inline Tab Icons (replace with @expo/vector-icons once added) ─────────────
@@ -68,23 +68,35 @@ const tabIconStyles = StyleSheet.create({
 
 // ─── Tab Layout ───────────────────────────────────────────────────────────────
 
+const RequestsIcon: React.FC<{ color: string }> = ({ color }) => (
+  <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 18 }}>🪴</Text>
+  </View>
+);
+
+const NurseriesIcon: React.FC<{ color: string }> = ({ color }) => (
+  <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ fontSize: 18 }}>⛲</Text>
+  </View>
+);
+
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.brandPrimary,
-        tabBarInactiveTintColor: Colors.gray400,
+        tabBarActiveTintColor: '#0F3821',
+        tabBarInactiveTintColor: '#64748B',
         tabBarStyle: {
           backgroundColor: Colors.white,
-          borderTopColor: Colors.border,
+          borderTopColor: '#E2E8F0',
           borderTopWidth: 1,
-          height: 64,
+          height: 68,
           paddingBottom: 10,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: FontSize.xs,
+          fontSize: 11,
           fontWeight: '600',
           marginTop: 2,
         },
@@ -94,21 +106,86 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <HomeIcon color={color as string} />,
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>🏠</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="request"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <ExploreIcon color={color as string} />,
+          title: 'Requests',
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <RequestsIcon color="" />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="nursery"
+        options={{
+          title: 'Nurseries',
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <NurseriesIcon color="" />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <ProfileIcon color={color as string} />,
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>👤</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

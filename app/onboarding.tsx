@@ -110,7 +110,11 @@ export default function OnboardingScreen() {
   }, []);
 
   const handleGetStarted = useCallback(() => {
-    router.replace('/(auth)/role-select');
+    router.replace('/(auth)/welcome');
+  }, []);
+
+  const handleLogin = useCallback(() => {
+    router.replace('/(auth)/login');
   }, []);
 
   const handleScroll = useCallback(

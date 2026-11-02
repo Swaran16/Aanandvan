@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { Colors, FontSize } from '@/constants';
 
 // ─── Tab Icons (inline) ──────────────────────────────────────────────────────
@@ -68,18 +68,18 @@ export default function VolunteerTabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.brandPrimary,
-        tabBarInactiveTintColor: Colors.gray400,
+        tabBarActiveTintColor: '#0F3821',
+        tabBarInactiveTintColor: '#64748B',
         tabBarStyle: {
           backgroundColor: Colors.white,
-          borderTopColor: Colors.border,
+          borderTopColor: '#E2E8F0',
           borderTopWidth: 1,
-          height: 64,
+          height: 68,
           paddingBottom: 10,
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: FontSize.xs,
+          fontSize: 11,
           fontWeight: '600',
           marginTop: 2,
         },
@@ -89,28 +89,80 @@ export default function VolunteerTabLayout() {
         name="index"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }) => <ExploreIcon color={color as string} />,
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>🌲</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="plant"
         options={{
           title: 'Plant',
-          tabBarIcon: ({ color }) => <PlantIcon color={color as string} />,
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>➕</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="events"
         options={{
-          title: 'Events',
-          tabBarIcon: ({ color }) => <EventsIcon color={color as string} />,
+          title: 'Work',
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>📅</Text>
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <ProfileIcon color={color as string} />,
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 48,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: focused ? '#A7F3D0' : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>👤</Text>
+            </View>
+          ),
         }}
       />
     </Tabs>
