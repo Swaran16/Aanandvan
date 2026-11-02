@@ -16,6 +16,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/constants';
 
@@ -29,10 +30,10 @@ const stats = [
 ];
 
 const quickActions = [
-  { icon: '🔍', label: 'Available Requests' },
-  { icon: '✅', label: 'My Assigned Work' },
-  { icon: '🌿', label: 'Partnered Nurseries' },
-  { icon: '📤', label: 'Upload Update' },
+  { icon: '🔍', label: 'Available Requests', route: '/available-requests' as const },
+  { icon: '✅', label: 'My Assigned Work', route: '/assignment-details' as const },
+  { icon: '🌿', label: 'Partnered Nurseries', route: null },
+  { icon: '📤', label: 'Upload Update', route: '/upload-update' as const },
 ];
 
 const priorityAlert = {
@@ -119,7 +120,12 @@ export default function VolunteerHomeScreen() {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionsGrid}>
           {quickActions.map((a) => (
-            <TouchableOpacity key={a.label} style={styles.actionCard} activeOpacity={0.8}>
+            <TouchableOpacity
+              key={a.label}
+              style={styles.actionCard}
+              activeOpacity={0.8}
+              onPress={() => a.route && router.push(a.route)}
+            >
               <View style={styles.actionIconCircle}>
                 <Text style={styles.actionEmoji}>{a.icon}</Text>
               </View>

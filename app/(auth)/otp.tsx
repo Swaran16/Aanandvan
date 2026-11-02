@@ -54,7 +54,7 @@ export default function OtpScreen() {
     setTimeout(() => {
       setLoading(false);
       if (role === 'volunteer') {
-        router.replace('/(volunteer)');
+        router.replace('/(volunteer)' as any);
       } else {
         router.replace('/(tabs)');
       }

@@ -2,9 +2,13 @@
  * Root Layout — Expo Router Entry Point
  *
  * Wraps all screens. Defines the Stack navigator with:
- *  - splash     → first screen (auto-navigates to onboarding)
- *  - onboarding → 4-slide onboarding flow
- *  - (tabs)     → main app tab navigator
+ *  - splash      → first screen (auto-navigates to onboarding)
+ *  - onboarding  → 4-slide onboarding flow
+ *  - (auth)      → role selection, register, login, OTP
+ *  - (tabs)      → citizen tab navigator (home)
+ *  - (volunteer) → volunteer tab navigator (dashboard)
+ *
+ * Flow: splash → onboarding → role-select → (tabs) or (volunteer)
  *
  * Providers (SafeAreaProvider) are set up here so every
  * child screen has access to safe area insets.
@@ -36,10 +40,36 @@ export default function RootLayout() {
           options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
         />
 
-        {/* Main app — tab navigator */}
+        {/* Auth flow — role selection, register, login, OTP */}
+        <Stack.Screen
+          name="(auth)"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
+
+        {/* Main app — citizen tab navigator */}
         <Stack.Screen
           name="(tabs)"
           options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
+        />
+
+        {/* Volunteer app — volunteer tab navigator */}
+        <Stack.Screen
+          name="(volunteer)"
+          options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
+        />
+
+        {/* Volunteer detail screens — standalone stack screens */}
+        <Stack.Screen
+          name="available-requests"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="assignment-details"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="upload-update"
+          options={{ headerShown: false, animation: 'slide_from_right' }}
         />
 
         {/* 404 fallback */}

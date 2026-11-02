@@ -29,7 +29,11 @@ import { Text } from '@/components/common';
 
 export default function RoleSelectScreen() {
   const handleSelect = (role: 'citizen' | 'volunteer') => {
-    router.push({ pathname: '/(auth)/register', params: { role } });
+    if (role === 'citizen') {
+      router.replace('/(tabs)');
+    } else {
+      router.replace('/(volunteer)' as any);
+    }
   };
 
   return (
