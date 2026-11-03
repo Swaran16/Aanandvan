@@ -1,162 +1,166 @@
 /**
- * Volunteer Dashboard (Home) — Aanandvan
- * Matches Image 5:
- *  - Dark green header with brand, notifications bell, avatar
- *  - "Welcome back, Amit Kumar" with "✔ Verified Volunteer" badge
- *  - 4 Stat cards (3 Assigned, 7 Available, 23 Completed, 2 Maintenance Due)
- *  - Quick Actions (Available Requests, My Assigned Work, Partnered Nurseries, Upload Update)
- *  - Priority Alerts with "Take Action" CTA
- *  - Assigned Requests carousel with photos & status pills
+ * Volunteer Dashboard / Home Screen (Tab 1)
+ * Matches Batch 2 — Image 1:
+ * - Aanandvan logo + notification bell + Amit Kumar avatar
+ * - Greeting: "Welcome back, Amit Kumar", "Verified Volunteer" badge
+ * - 4 Status cards (2x2 grid): 3 Assigned, 7 Available, 23 Completed, 2 Maintenance Due
+ * - Quick Actions: Available Requests, My Assigned Work, Upload Update (Nurseries removed)
+ * - Maintenance Notification banner (replacing priority alerts)
+ * - Assigned Requests carousel with "View All"
  */
 
 import React from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  StatusBar,
+  TouchableOpacity,
   Image,
-  Dimensions,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/common';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/constants';
-
-const { width } = Dimensions.get('window');
-
-const statsData = [
-  { value: '3', label: 'Assigned', isAlert: false },
-  { value: '7', label: 'Available', isAlert: false },
-  { value: '23', label: 'Completed', isAlert: false },
-  { value: '2', label: 'Maintenance Due', isAlert: true },
-];
-
-const quickActions = [
-  {
-    icon: '🔍',
-    label: 'Available Requests',
-    desc: 'Browse & accept',
-    route: '/available-requests' as const,
-  },
-  {
-    icon: '✔',
-    label: 'My Assigned Work',
-    desc: 'Location & guide',
-    route: '/assignment-details' as const,
-  },
-  {
-    icon: '📤',
-    label: 'Upload Update',
-    desc: 'Photos & saplings',
-    route: '/upload-update' as const,
-  },
-];
-
-const assignedRequests = [
-  {
-    id: 'TR-992',
-    type: 'Watering',
-    location: 'Riverside Willow Maintenance',
-    area: 'North Bank, Station 4',
-    image: require('../../assets/images/req_mangrove.png'),
-  },
-  {
-    id: 'TR-104',
-    type: 'Planting',
-    location: 'Community Orchard Expansion',
-    area: 'Greenway Heights',
-    image: require('../../assets/images/req_neem.png'),
-  },
-];
+import { Icon } from '@/components/common/Icon';
+import { useApp } from '@/context/AppContext';
 
 export default function VolunteerHomeScreen() {
+  const { currentUser, requests, maintenanceItems } = useApp();
+
+  const assignedRequests = requests.filter(
+    r => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+  );
+  const availableCount = requests.filter(r => r.status === 'verified').length;
+  const completedCount = 23;
+  const maintenanceDueCount = maintenanceItems.filter(m => m.status === 'needs_water').length;
+
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B3B24" />
 
-      {/* ─── Dark Green Header ─── */}
-      <View style={styles.headerBg}>
-        <SafeAreaView edges={['top']} style={styles.headerSafe}>
-          {/* Top row: Brand + Icons */}
-          <View style={styles.topRow}>
-            <View style={styles.brandRow}>
-              <View style={styles.treeIconWrap}>
-                <Text style={styles.treeIcon}>🌲</Text>
+      {/* ─── Hero Header ─── */}
+      <View style={styles.header}>
+        <SafeAreaView edges={['top']} style={styles.safeHeader}>
+          {/* Top Brand & Actions Bar */}
+          <View style={styles.topBrandRow}>
+            <View style={styles.brandTitleRow}>
+              <View style={styles.miniTreeBadge}>
+                <Icon name="tree" size={16} color="#FFFFFF" />
               </View>
-              <Text style={styles.brandName}>Aanandvan</Text>
+              <Text style={styles.brandTitle}>Aanandvan</Text>
             </View>
 
-            <View style={styles.headerIcons}>
-              <TouchableOpacity style={styles.bellBtn} activeOpacity={0.75}>
-                <Text style={styles.bellIcon}>🔔</Text>
+            <View style={styles.headerRightActions}>
+              <TouchableOpacity
+                style={styles.bellBtn}
+                onPress={() => alert('1 Maintenance Due')}
+              >
+                <Icon name="bell" size={18} color="#FFFFFF" />
               </TouchableOpacity>
-              <View style={styles.headerAvatarWrap}>
-                <Image
-                  source={require('../../assets/images/onboarding1.png')}
-                  style={styles.headerAvatarImg}
-                />
-              </View>
+              <Image
+                source={{
+                  uri:
+                    currentUser.avatar ||
+                    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+                }}
+                style={styles.userAvatar}
+              />
             </View>
           </View>
 
-          {/* Welcome row */}
-          <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeText}>Welcome back, Amit Kumar</Text>
-            <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedIcon}>✓</Text>
-              <Text style={styles.verifiedText}>Verified Volunteer</Text>
+          {/* Welcome Greeting */}
+          <View style={styles.greetingBlock}>
+            <Text style={styles.welcomeTitle}>
+              Welcome back, {currentUser.name || 'Amit Kumar'}
+            </Text>
+            <View style={styles.verifiedVolunteerBadge}>
+              <Icon name="check" size={12} color="#0B3B24" />
+              <Text style={styles.verifiedVolunteerText}>Verified Volunteer</Text>
             </View>
           </View>
 
-          {/* 4 Stat Cards Grid */}
+          {/* 4 Status Cards (2x2 Grid) */}
           <View style={styles.statsGrid}>
-            {statsData.map((s) => (
-              <View key={s.label} style={styles.statCard}>
-                <Text style={[styles.statValue, s.isAlert && styles.statValueAlert]}>
-                  {s.value}
-                </Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-              </View>
-            ))}
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>
+                {String(assignedRequests.length || 3)}
+              </Text>
+              <Text style={styles.statLabel}>Assigned</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>
+                {String(availableCount || 7)}
+              </Text>
+              <Text style={styles.statLabel}>Available</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{String(completedCount)}</Text>
+              <Text style={styles.statLabel}>Completed</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={[styles.statNumber, { color: '#DC2626' }]}>
+                {String(maintenanceDueCount || 2)}
+              </Text>
+              <Text style={styles.statLabel}>Maintenance Due</Text>
+            </View>
           </View>
         </SafeAreaView>
       </View>
 
-      {/* ─── Scrollable Content ─── */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsGrid}>
-          {quickActions.map((action) => (
-            <TouchableOpacity
-              key={action.label}
-              style={styles.actionCard}
-              activeOpacity={0.8}
-              onPress={() => action.route && router.push(action.route)}
-            >
-              <View style={styles.actionIconCircle}>
-                <Text style={styles.actionEmoji}>{action.icon}</Text>
-              </View>
-              <View style={styles.actionTextWrap}>
-                <Text style={styles.actionLabel}>{action.label}</Text>
-                <Text style={styles.actionSubLabel}>{action.desc}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+        {/* ─── Quick Actions ─── */}
+        <Text style={styles.sectionHeading}>Quick Actions</Text>
+        <View style={styles.quickActionsGrid}>
+          {/* Action 1: Available Requests */}
+          <TouchableOpacity
+            style={styles.actionCard}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(volunteer)/available' as any)}
+          >
+            <View style={styles.actionIconBox}>
+              <Icon name="search" size={20} color="#0B3B24" />
+            </View>
+            <Text style={styles.actionCardTitle}>Available Requests</Text>
+          </TouchableOpacity>
+
+          {/* Action 2: My Assigned Work */}
+          <TouchableOpacity
+            style={styles.actionCard}
+            activeOpacity={0.8}
+            onPress={() => router.push('/pages/my-assigned-work' as any)}
+          >
+            <View style={styles.actionIconBox}>
+              <Icon name="check" size={20} color="#0B3B24" />
+            </View>
+            <Text style={styles.actionCardTitle}>My Assigned Work</Text>
+          </TouchableOpacity>
+
+          {/* Action 3: Upload Update */}
+          <TouchableOpacity
+            style={[styles.actionCard, styles.actionCardFull]}
+            activeOpacity={0.8}
+            onPress={() => router.push('/pages/upload-activity' as any)}
+          >
+            <View style={styles.actionIconBox}>
+              <Icon name="upload" size={20} color="#0B3B24" />
+            </View>
+            <Text style={styles.actionCardTitle}>Upload Plantation Activity</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Priority Alerts */}
-        <Text style={styles.sectionTitle}>Priority Alerts</Text>
+        {/* ─── Maintenance Notification ─── */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeading}>Maintenance Notification</Text>
+        </View>
+
         <View style={styles.alertCard}>
-          <View style={styles.alertHeader}>
+          <View style={styles.alertTopRow}>
             <View style={styles.alertBadge}>
-              <Text style={styles.alertBadgeIcon}>⚠️</Text>
+              <Icon name="alert" size={13} color="#D97706" />
               <Text style={styles.alertBadgeText}>Maintenance Due</Text>
             </View>
             <Text style={styles.alertTime}>In 2 days</Text>
@@ -164,22 +168,22 @@ export default function VolunteerHomeScreen() {
 
           <Text style={styles.alertTitle}>Central Park Saplings (Zone 4)</Text>
           <Text style={styles.alertDesc}>
-            Watering and mulching required for 12 oak saplings after the recent dry spell.
+            Watering and mulching required for 12 oak saplings after the recent dry
+            spell.
           </Text>
 
           <TouchableOpacity
-            style={styles.alertBtn}
-            activeOpacity={0.85}
-            onPress={() => router.push('/assignment-details')}
+            style={styles.alertActionBtn}
+            onPress={() => router.push('/(volunteer)/work' as any)}
           >
-            <Text style={styles.alertBtnText}>Take Action</Text>
+            <Text style={styles.alertActionBtnText}>Take Action</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Assigned Requests */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Assigned Requests</Text>
-          <TouchableOpacity onPress={() => router.push('/available-requests')}>
+        {/* ─── Assigned Requests Carousel ─── */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeading}>Assigned Requests</Text>
+          <TouchableOpacity onPress={() => router.push('/pages/my-assigned-work' as any)}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -187,391 +191,342 @@ export default function VolunteerHomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.requestsScroll}
+          contentContainerStyle={styles.horizontalScroll}
         >
-          {assignedRequests.map((req) => (
+          {assignedRequests.map(item => (
             <TouchableOpacity
-              key={req.id}
-              style={styles.requestCard}
-              activeOpacity={0.85}
-              onPress={() => router.push('/assignment-details')}
+              key={item.id}
+              style={styles.assignedCard}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: '/pages/request-details',
+                  params: { id: item.id },
+                } as any)
+              }
             >
-              <Image source={req.image} style={styles.requestImg} resizeMode="cover" />
-              <View style={styles.requestInfo}>
-                <View style={styles.requestBadgeRow}>
-                  <View
-                    style={[
-                      styles.typeBadge,
-                      req.type === 'Watering' ? styles.wateringBadge : styles.plantingBadge,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.typeBadgeText,
-                        req.type === 'Watering'
-                          ? styles.wateringBadgeText
-                          : styles.plantingBadgeText,
-                      ]}
-                    >
-                      {req.type}
-                    </Text>
+              <Image
+                source={{
+                  uri:
+                    item.areaPhotos[0] ||
+                    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
+                }}
+                style={styles.assignedImage}
+              />
+              <View style={styles.assignedBody}>
+                <View style={styles.assignedMetaRow}>
+                  <View style={styles.miniTagPill}>
+                    <Text style={styles.miniTagText}>Planting</Text>
                   </View>
-                  <Text style={styles.requestId}>ID: #{req.id}</Text>
+                  <Text style={styles.assignedId}>{item.id}</Text>
                 </View>
 
-                <Text style={styles.requestLocation} numberOfLines={1}>
-                  {req.location}
+                <Text style={styles.assignedTitle} numberOfLines={1}>
+                  {item.title}
                 </Text>
-
-                <View style={styles.areaRow}>
-                  <Text style={styles.areaIcon}>📍</Text>
-                  <Text style={styles.areaText} numberOfLines={1}>
-                    {req.area}
+                <View style={styles.assignedLocRow}>
+                  <Icon name="map-pin" size={12} color="#6B7280" />
+                  <Text style={styles.assignedLocText} numberOfLines={1}>
+                    {item.location}
                   </Text>
                 </View>
               </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
-
-        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
-    backgroundColor: '#F8FAF8',
+    backgroundColor: '#F8FAF9',
   },
-
-  // Dark Green Header
-  headerBg: {
-    backgroundColor: '#0F3821',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    paddingBottom: Spacing[5],
+  header: {
+    backgroundColor: '#0B3B24',
+    paddingBottom: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
-  headerSafe: {
-    paddingHorizontal: Spacing[5],
+  safeHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
-  topRow: {
+  topBrandRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Spacing[2],
-    marginBottom: Spacing[4],
+    alignItems: 'center',
+    paddingVertical: 8,
   },
-  brandRow: {
+  brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing[2],
+    gap: 8,
   },
-  treeIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  miniTreeBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  treeIcon: {
-    fontSize: 16,
-  },
-  brandName: {
+  brandTitle: {
     fontSize: 20,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+    fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
-  headerIcons: {
+  headerRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing[3],
+    gap: 12,
   },
   bellBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bellIcon: {
-    fontSize: 18,
-  },
-  headerAvatarWrap: {
+  userAvatar: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    borderWidth: 2,
-    borderColor: '#34D399',
-    overflow: 'hidden',
-    backgroundColor: '#1E3A2B',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
-  headerAvatarImg: {
-    width: '100%',
-    height: '100%',
+  greetingBlock: {
+    marginTop: 16,
+    marginBottom: 20,
   },
-
-  // Welcome section
-  welcomeSection: {
-    gap: Spacing[2],
-    marginBottom: Spacing[4],
-  },
-  welcomeText: {
+  welcomeTitle: {
     fontSize: 22,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
-    letterSpacing: -0.3,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.4,
   },
-  verifiedBadge: {
+  verifiedVolunteerBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     backgroundColor: '#D1FAE5',
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing[3],
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: BorderRadius.full,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    gap: 5,
   },
-  verifiedIcon: {
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: '#065F46',
-  },
-  verifiedText: {
+  verifiedVolunteerText: {
     fontSize: 11,
-    fontWeight: FontWeight.bold,
-    color: '#065F46',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
-
-  // Stats Grid
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: Spacing[3],
+    gap: 10,
+    marginTop: 4,
   },
-  statCard: {
-    width: (width - Spacing[5] * 2 - Spacing[3]) / 2,
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    paddingVertical: Spacing[4],
+  statBox: {
+    width: '48.5%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing[1],
-    ...Shadow.sm,
   },
-  statValue: {
-    fontSize: 32,
-    fontWeight: FontWeight.bold,
-    color: '#0F172A',
-  },
-  statValueAlert: {
-    color: '#EF4444',
+  statNumber: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0B3B24',
   },
   statLabel: {
     fontSize: 12,
-    fontWeight: FontWeight.medium,
-    color: '#64748B',
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 2,
   },
-
-  // Scroll
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing[5],
-    paddingTop: Spacing[6],
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
-  sectionTitle: {
+  sectionHeading: {
     fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: '#0F172A',
-    marginBottom: Spacing[4],
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 12,
   },
-  sectionRow: {
+  sectionHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing[4],
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 12,
   },
   viewAllText: {
     fontSize: 13,
-    fontWeight: FontWeight.semiBold,
-    color: '#059669',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
-
-  // Quick Actions 2x2
-  actionsGrid: {
-    gap: Spacing[3],
-    marginBottom: Spacing[6],
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   actionCard: {
+    width: '48%',
+    backgroundColor: '#E8F5EE',
+    borderRadius: 18,
+    padding: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#D4EFE1',
+  },
+  actionCardFull: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    borderRadius: 18,
-    padding: Spacing[4],
-    gap: Spacing[3],
-    ...Shadow.sm,
   },
-  actionIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.white,
+  actionIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionEmoji: {
-    fontSize: 20,
-  },
-  actionTextWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  actionLabel: {
+  actionCardTitle: {
     fontSize: 14,
-    fontWeight: FontWeight.bold,
-    color: '#0F172A',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
-  actionSubLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: FontWeight.medium,
-  },
-
-  // Priority Alert
   alertCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderLeftWidth: 4,
+    padding: 18,
+    borderLeftWidth: 5,
     borderLeftColor: '#F59E0B',
-    padding: Spacing[5],
-    gap: Spacing[3],
-    marginBottom: Spacing[6],
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  alertHeader: {
+  alertTopRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   alertBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: BorderRadius.sm,
-  },
-  alertBadgeIcon: {
-    fontSize: 12,
+    borderRadius: 8,
   },
   alertBadgeText: {
     fontSize: 11,
-    fontWeight: FontWeight.bold,
+    fontWeight: '700',
     color: '#B45309',
   },
   alertTime: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#6B7280',
+    fontWeight: '500',
   },
   alertTitle: {
     fontSize: 15,
-    fontWeight: FontWeight.bold,
-    color: '#0F172A',
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
   },
   alertDesc: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: 12,
+    color: '#6B7280',
     lineHeight: 18,
+    marginBottom: 14,
   },
-  alertBtn: {
-    height: 44,
-    borderRadius: BorderRadius.full,
-    backgroundColor: '#0F3821',
+  alertActionBtn: {
+    backgroundColor: '#0B3B24',
+    borderRadius: 12,
+    paddingVertical: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing[1],
   },
-  alertBtnText: {
-    fontSize: 14,
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+  alertActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
-
-  // Assigned Requests
-  requestsScroll: {
-    gap: Spacing[4],
-    paddingBottom: Spacing[2],
+  horizontalScroll: {
+    gap: 14,
+    paddingRight: 10,
   },
-  requestCard: {
-    width: 220,
-    backgroundColor: Colors.white,
-    borderRadius: 20,
+  assignedCard: {
+    width: 240,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     overflow: 'hidden',
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: '#EEF2F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  requestImg: {
+  assignedImage: {
     width: '100%',
-    height: 120,
-    backgroundColor: '#E2E8F0',
+    height: 110,
   },
-  requestInfo: {
-    padding: Spacing[3],
-    gap: 6,
+  assignedBody: {
+    padding: 12,
   },
-  requestBadgeRow: {
+  assignedMetaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: BorderRadius.sm,
-  },
-  wateringBadge: {
-    backgroundColor: '#DBEAFE',
-  },
-  plantingBadge: {
+  miniTagPill: {
     backgroundColor: '#D1FAE5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
-  typeBadgeText: {
+  miniTagText: {
     fontSize: 10,
-    fontWeight: FontWeight.bold,
-  },
-  wateringBadgeText: {
-    color: '#1E40AF',
-  },
-  plantingBadgeText: {
+    fontWeight: '700',
     color: '#065F46',
   },
-  requestId: {
-    fontSize: 10,
-    color: '#94A3B8',
-    fontWeight: FontWeight.medium,
+  assignedId: {
+    fontSize: 11,
+    color: '#6B7280',
   },
-  requestLocation: {
+  assignedTitle: {
     fontSize: 14,
-    fontWeight: FontWeight.bold,
-    color: '#0F172A',
+    fontWeight: '700',
+    color: '#111827',
   },
-  areaRow: {
+  assignedLocRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginTop: 4,
   },
-  areaIcon: {
+  assignedLocText: {
     fontSize: 12,
-  },
-  areaText: {
-    fontSize: 11,
-    color: '#64748B',
+    color: '#6B7280',
   },
 });

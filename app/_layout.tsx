@@ -1,84 +1,89 @@
 /**
- * Root Layout — Expo Router Entry Point
- *
- * Wraps all screens. Defines the Stack navigator with:
- *  - splash      → first screen (auto-navigates to onboarding)
- *  - onboarding  → 4-slide onboarding flow
- *  - (auth)      → role selection, register, login, OTP
- *  - (tabs)      → citizen tab navigator (home)
- *  - (volunteer) → volunteer tab navigator (dashboard)
- *
- * Flow: splash → onboarding → role-select → (tabs) or (volunteer)
- *
- * Providers (SafeAreaProvider) are set up here so every
- * child screen has access to safe area insets.
+ * Root Layout — Aanandvan Platform
+ * Sets up SafeAreaProvider, AppProvider, and navigation Stack
  */
 
+import React from 'react';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Colors } from '@/constants';
+import { AppProvider } from '@/context/AppContext';
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'fade',
-          contentStyle: { backgroundColor: Colors.background },
-        }}
-      >
-        {/* Splash — shown on cold launch */}
-        <Stack.Screen
-          name="splash"
-          options={{ headerShown: false, animation: 'none' }}
-        />
+      <AppProvider>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade',
+            contentStyle: { backgroundColor: '#F5FAF6' },
+          }}
+        >
+          {/* Splash */}
+          <Stack.Screen name="splash" options={{ headerShown: false }} />
 
-        {/* Onboarding — 4-slide introduction */}
-        <Stack.Screen
-          name="onboarding"
-          options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
-        />
+          {/* Onboarding */}
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
 
-        {/* Auth flow — role selection, register, login, OTP */}
-        <Stack.Screen
-          name="(auth)"
-          options={{ headerShown: false, animation: 'slide_from_right' }}
-        />
+          {/* Auth */}
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
 
-        {/* Main app — citizen tab navigator */}
-        <Stack.Screen
-          name="(tabs)"
-          options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
-        />
+          {/* Role Bottom Tabs Groups */}
+          <Stack.Screen name="(citizen)" options={{ headerShown: false }} />
+          <Stack.Screen name="(volunteer)" options={{ headerShown: false }} />
+          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-        {/* Volunteer app — volunteer tab navigator */}
-        <Stack.Screen
-          name="(volunteer)"
-          options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
-        />
+          {/* Standalone Sub-Pages & Modal Screens */}
+          <Stack.Screen
+            name="pages/request-details"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/create-request"
+            options={{ headerShown: false, animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="pages/schedule-plantation"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/upload-activity"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/volunteer-details"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/admin-review-request"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/maintenance-thread"
+            options={{ headerShown: false, animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="pages/my-assigned-work"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/admin-reports"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/admin-events"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/admin-settings"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
 
-        {/* Volunteer detail screens — standalone stack screens */}
-        <Stack.Screen
-          name="available-requests"
-          options={{ headerShown: false, animation: 'slide_from_right' }}
-        />
-        <Stack.Screen
-          name="assignment-details"
-          options={{ headerShown: false, animation: 'slide_from_right' }}
-        />
-        <Stack.Screen
-          name="upload-update"
-          options={{ headerShown: false, animation: 'slide_from_right' }}
-        />
-
-        {/* 404 fallback */}
-        <Stack.Screen
-          name="+not-found"
-          options={{ title: 'Not Found', headerShown: true }}
-        />
-
-      </Stack>
+          {/* 404 */}
+          <Stack.Screen name="+not-found" options={{ title: 'Not Found', headerShown: true }} />
+        </Stack>
+      </AppProvider>
     </SafeAreaProvider>
   );
 }
