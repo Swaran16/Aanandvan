@@ -34,7 +34,7 @@ export default function AdminOverviewScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content"  />
 
       {/* ─── Top Bar ─── */}
       <View style={styles.topBar}>
@@ -111,46 +111,50 @@ export default function AdminOverviewScreen() {
         <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
           QUICK NAVIGATION
         </Text>
-        <View style={styles.navGrid}>
-          {/* Volunteers */}
-          <TouchableOpacity
-            style={styles.navPillBtn}
-            onPress={() => router.push('/(admin)/volunteers' as any)}
-          >
-            <Icon name="volunteers" size={16} color="#0B3B24" />
-            <Text style={styles.navPillText}>VOLUNTEERS</Text>
-          </TouchableOpacity>
+        <View style={styles.navContainer}>
+          <View style={styles.navRow}>
+            {/* Volunteers */}
+            <TouchableOpacity
+              style={styles.navPillBtn}
+              onPress={() => router.push('/(admin)/volunteers' as any)}
+            >
+              <Icon name="volunteers" size={16} color="#0B3B24" />
+              <Text style={styles.navPillText}>VOLUNTEERS</Text>
+            </TouchableOpacity>
 
-          {/* Requests */}
-          <TouchableOpacity
-            style={styles.navPillBtn}
-            onPress={() => router.push('/(admin)/requests' as any)}
-          >
-            <Icon name="requests" size={16} color="#0B3B24" />
-            <Text style={styles.navPillText}>REQUESTS</Text>
-          </TouchableOpacity>
+            {/* Requests */}
+            <TouchableOpacity
+              style={styles.navPillBtn}
+              onPress={() => router.push('/(admin)/requests' as any)}
+            >
+              <Icon name="requests" size={16} color="#0B3B24" />
+              <Text style={styles.navPillText}>REQUESTS</Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Reports */}
-          <TouchableOpacity
-            style={styles.navPillBtn}
-            onPress={() => router.push('/pages/admin-reports' as any)}
-          >
-            <Icon name="overview" size={16} color="#0B3B24" />
-            <Text style={styles.navPillText}>REPORTS</Text>
-          </TouchableOpacity>
+          <View style={styles.navRow}>
+            {/* Reports */}
+            <TouchableOpacity
+              style={styles.navPillBtn}
+              onPress={() => router.push('/pages/admin-reports' as any)}
+            >
+              <Icon name="overview" size={16} color="#0B3B24" />
+              <Text style={styles.navPillText}>REPORTS</Text>
+            </TouchableOpacity>
 
-          {/* Events */}
-          <TouchableOpacity
-            style={styles.navPillBtn}
-            onPress={() => router.push('/pages/admin-events' as any)}
-          >
-            <Icon name="calendar" size={16} color="#0B3B24" />
-            <Text style={styles.navPillText}>EVENTS</Text>
-          </TouchableOpacity>
+            {/* Events */}
+            <TouchableOpacity
+              style={styles.navPillBtn}
+              onPress={() => router.push('/pages/admin-events' as any)}
+            >
+              <Icon name="calendar" size={16} color="#0B3B24" />
+              <Text style={styles.navPillText}>EVENTS</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Settings */}
           <TouchableOpacity
-            style={[styles.navPillBtn, { width: '100%' }]}
+            style={[styles.navPillBtn, { width: '100%', justifyContent: 'center' }]}
             onPress={() => router.push('/pages/admin-settings' as any)}
           >
             <Icon name="settings" size={16} color="#0B3B24" />
@@ -162,47 +166,51 @@ export default function AdminOverviewScreen() {
         <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
           PLATFORM OVERVIEW
         </Text>
-        <View style={styles.overviewGrid}>
-          {/* Volunteers */}
-          <View style={styles.overviewBox}>
-            <View style={styles.overviewTop}>
-              <Icon name="users" size={18} color="#0B3B24" />
-              <Text style={styles.growthBadgeGreen}>+12%</Text>
+        <View style={styles.overviewContainer}>
+          <View style={styles.overviewRow}>
+            {/* Volunteers */}
+            <View style={styles.overviewBox}>
+              <View style={styles.overviewTop}>
+                <Icon name="users" size={18} color="#0B3B24" />
+                <Text style={styles.growthBadgeGreen}>+12%</Text>
+              </View>
+              <Text style={styles.overviewNumber}>{totalVolunteers}</Text>
+              <Text style={styles.overviewLabel}>Volunteers</Text>
             </View>
-            <Text style={styles.overviewNumber}>{totalVolunteers}</Text>
-            <Text style={styles.overviewLabel}>Volunteers</Text>
+
+            {/* Total Requests */}
+            <View style={styles.overviewBox}>
+              <View style={styles.overviewTop}>
+                <Icon name="document" size={18} color="#0B3B24" />
+                <Text style={styles.growthBadgeGreen}>+18</Text>
+              </View>
+              <Text style={styles.overviewNumber}>{totalRequests}</Text>
+              <Text style={styles.overviewLabel}>Total Requests</Text>
+            </View>
           </View>
 
-          {/* Total Requests */}
-          <View style={styles.overviewBox}>
-            <View style={styles.overviewTop}>
-              <Icon name="document" size={18} color="#0B3B24" />
-              <Text style={styles.growthBadgeGreen}>+18</Text>
+          <View style={styles.overviewRow}>
+            {/* Trees Planted */}
+            <View style={styles.overviewBox}>
+              <View style={styles.overviewTop}>
+                <Icon name="tree" size={18} color="#0B3B24" />
+                <Text style={styles.growthBadgeGreen}>+34</Text>
+              </View>
+              <Text style={styles.overviewNumber}>{treesPlanted}</Text>
+              <Text style={styles.overviewLabel}>Trees Planted</Text>
             </View>
-            <Text style={styles.overviewNumber}>{totalRequests}</Text>
-            <Text style={styles.overviewLabel}>Total Requests</Text>
-          </View>
 
-          {/* Trees Planted */}
-          <View style={styles.overviewBox}>
-            <View style={styles.overviewTop}>
-              <Icon name="tree" size={18} color="#0B3B24" />
-              <Text style={styles.growthBadgeGreen}>+34</Text>
+            {/* Pending Verify */}
+            <View style={[styles.overviewBox, { borderColor: '#FECACA' }]}>
+              <View style={styles.overviewTop}>
+                <Icon name="alert" size={18} color="#DC2626" />
+                <Text style={styles.alertBadgeRed}>Alert</Text>
+              </View>
+              <Text style={[styles.overviewNumber, { color: '#DC2626' }]}>
+                {String(pendingRequests).padStart(2, '0')}
+              </Text>
+              <Text style={styles.overviewLabel}>Pending Verify</Text>
             </View>
-            <Text style={styles.overviewNumber}>{treesPlanted}</Text>
-            <Text style={styles.overviewLabel}>Trees Planted</Text>
-          </View>
-
-          {/* Pending Verify */}
-          <View style={[styles.overviewBox, { borderColor: '#FECACA' }]}>
-            <View style={styles.overviewTop}>
-              <Icon name="alert" size={18} color="#DC2626" />
-              <Text style={styles.alertBadgeRed}>Alert</Text>
-            </View>
-            <Text style={[styles.overviewNumber, { color: '#DC2626' }]}>
-              {String(pendingRequests).padStart(2, '0')}
-            </Text>
-            <Text style={styles.overviewLabel}>Pending Verify</Text>
           </View>
         </View>
 
@@ -462,13 +470,15 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 1.5,
   },
-  navGrid: {
+  navContainer: {
+    gap: 10,
+  },
+  navRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
   },
   navPillBtn: {
-    width: '48.5%',
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -485,13 +495,15 @@ const styles = StyleSheet.create({
     color: '#0B3B24',
     letterSpacing: 0.5,
   },
-  overviewGrid: {
+  overviewContainer: {
+    gap: 10,
+  },
+  overviewRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
   },
   overviewBox: {
-    width: '48.5%',
+    flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     padding: 16,

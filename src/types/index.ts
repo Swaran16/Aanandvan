@@ -2,6 +2,46 @@
  * Global TypeScript Types & Interfaces — Aanandvan Platform
  */
 
+// ─── Common UI ───────────────────────────────────────────────────────────────
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+export type InputVariant = 'default' | 'filled' | 'underline';
+export type InputSize = 'sm' | 'md' | 'lg';
+export type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+export type TextVariant =
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'body1'
+  | 'body2'
+  | 'caption'
+  | 'label'
+  | 'overline';
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  success: boolean;
+  statusCode: number;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+}
+
+export interface ApiError {
+  message: string;
+  statusCode: number;
+  errors?: Record<string, string[]>;
+}
+
+// ─── App Role & User ──────────────────────────────────────────────────────────
 export type UserRole = 'citizen' | 'volunteer' | 'admin';
 
 export interface AppUser {

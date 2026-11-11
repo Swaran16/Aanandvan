@@ -36,7 +36,7 @@ export default function AdminProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B3B24" />
+      <StatusBar barStyle="light-content"  />
 
       {/* ─── Hero Header ─── */}
       <View style={styles.heroHeader}>

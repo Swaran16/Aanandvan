@@ -82,7 +82,7 @@ export default function SchedulePlantationScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content"  />
 
       {/* ─── Top Bar ─── */}
       <View style={styles.topBar}>
@@ -107,21 +107,21 @@ export default function SchedulePlantationScreen() {
             return (
               <TouchableOpacity
                 key={idx}
-                style={[styles.dateCard, isSelected && styles.dateCardActive]}
+                style={[styles.dateCard, isSelected ? styles.dateCardActive : undefined]}
                 onPress={() => setSelectedDate(item.full)}
               >
                 <Text
-                  style={[styles.dateDayText, isSelected && styles.dateTextActive]}
+                  style={[styles.dateDayText, isSelected ? styles.dateTextActive : undefined]}
                 >
                   {item.day}
                 </Text>
                 <Text
-                  style={[styles.dateNumText, isSelected && styles.dateTextActive]}
+                  style={[styles.dateNumText, isSelected ? styles.dateTextActive : undefined]}
                 >
                   {item.num}
                 </Text>
                 <Text
-                  style={[styles.dateMonthText, isSelected && styles.dateTextActive]}
+                  style={[styles.dateMonthText, isSelected ? styles.dateTextActive : undefined]}
                 >
                   {item.month}
                 </Text>
@@ -137,7 +137,7 @@ export default function SchedulePlantationScreen() {
           <TouchableOpacity
             style={[
               styles.timeSlotCard,
-              selectedSlot.startsWith('Morning') && styles.timeSlotCardActive,
+              selectedSlot.startsWith('Morning') ? styles.timeSlotCardActive : undefined,
             ]}
             onPress={() => setSelectedSlot('Morning (8:00 AM - 11:00 AM)')}
           >
@@ -149,7 +149,7 @@ export default function SchedulePlantationScreen() {
             <Text
               style={[
                 styles.slotTitle,
-                selectedSlot.startsWith('Morning') && styles.slotTextActive,
+                selectedSlot.startsWith('Morning') ? styles.slotTextActive : undefined,
               ]}
             >
               Morning
@@ -157,7 +157,7 @@ export default function SchedulePlantationScreen() {
             <Text
               style={[
                 styles.slotTime,
-                selectedSlot.startsWith('Morning') && styles.slotSubActive,
+                selectedSlot.startsWith('Morning') ? styles.slotSubActive : undefined,
               ]}
             >
               8:00 AM - 11:00 AM
@@ -168,7 +168,7 @@ export default function SchedulePlantationScreen() {
           <TouchableOpacity
             style={[
               styles.timeSlotCard,
-              selectedSlot.startsWith('Afternoon') && styles.timeSlotCardActive,
+              selectedSlot.startsWith('Afternoon') ? styles.timeSlotCardActive : undefined,
             ]}
             onPress={() => setSelectedSlot('Afternoon (3:00 PM - 6:00 PM)')}
           >
@@ -180,7 +180,7 @@ export default function SchedulePlantationScreen() {
             <Text
               style={[
                 styles.slotTitle,
-                selectedSlot.startsWith('Afternoon') && styles.slotTextActive,
+                selectedSlot.startsWith('Afternoon') ? styles.slotTextActive : undefined,
               ]}
             >
               Afternoon
@@ -188,7 +188,7 @@ export default function SchedulePlantationScreen() {
             <Text
               style={[
                 styles.slotTime,
-                selectedSlot.startsWith('Afternoon') && styles.slotSubActive,
+                selectedSlot.startsWith('Afternoon') ? styles.slotSubActive : undefined,
               ]}
             >
               3:00 PM - 6:00 PM
@@ -218,7 +218,7 @@ export default function SchedulePlantationScreen() {
                   <View
                     style={[
                       styles.circleCheckbox,
-                      isChecked && styles.circleCheckboxChecked,
+                      isChecked ? styles.circleCheckboxChecked : undefined,
                     ]}
                   >
                     {isChecked && <Icon name="check" size={12} color="#FFFFFF" />}
@@ -226,7 +226,7 @@ export default function SchedulePlantationScreen() {
                   <Text
                     style={[
                       styles.checkItemText,
-                      isChecked && styles.checkItemTextChecked,
+                      isChecked ? styles.checkItemTextChecked : undefined,
                     ]}
                   >
                     {item}

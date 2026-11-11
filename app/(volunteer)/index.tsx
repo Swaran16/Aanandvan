@@ -36,7 +36,7 @@ export default function VolunteerHomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B3B24" />
+      <StatusBar barStyle="light-content"  />
 
       {/* ─── Hero Header ─── */}
       <View style={styles.header}>
@@ -80,28 +80,33 @@ export default function VolunteerHomeScreen() {
           </View>
 
           {/* 4 Status Cards (2x2 Grid) */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>
-                {String(assignedRequests.length || 3)}
-              </Text>
-              <Text style={styles.statLabel}>Assigned</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>
+                  {String(assignedRequests.length || 3)}
+                </Text>
+                <Text style={styles.statLabel}>Assigned</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>
+                  {String(availableCount || 7)}
+                </Text>
+                <Text style={styles.statLabel}>Available</Text>
+              </View>
             </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>
-                {String(availableCount || 7)}
-              </Text>
-              <Text style={styles.statLabel}>Available</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNumber}>{String(completedCount)}</Text>
-              <Text style={styles.statLabel}>Completed</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statNumber, { color: '#DC2626' }]}>
-                {String(maintenanceDueCount || 2)}
-              </Text>
-              <Text style={styles.statLabel}>Maintenance Due</Text>
+
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{String(completedCount)}</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statNumber, { color: '#DC2626' }]}>
+                  {String(maintenanceDueCount || 2)}
+                </Text>
+                <Text style={styles.statLabel}>Maintenance Due</Text>
+              </View>
             </View>
           </View>
         </SafeAreaView>
@@ -114,30 +119,32 @@ export default function VolunteerHomeScreen() {
       >
         {/* ─── Quick Actions ─── */}
         <Text style={styles.sectionHeading}>Quick Actions</Text>
-        <View style={styles.quickActionsGrid}>
-          {/* Action 1: Available Requests */}
-          <TouchableOpacity
-            style={styles.actionCard}
-            activeOpacity={0.8}
-            onPress={() => router.push('/(volunteer)/available' as any)}
-          >
-            <View style={styles.actionIconBox}>
-              <Icon name="search" size={20} color="#0B3B24" />
-            </View>
-            <Text style={styles.actionCardTitle}>Available Requests</Text>
-          </TouchableOpacity>
+        <View style={styles.quickActionsContainer}>
+          <View style={styles.quickActionsRow}>
+            {/* Action 1: Available Requests */}
+            <TouchableOpacity
+              style={styles.actionCard}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(volunteer)/available' as any)}
+            >
+              <View style={styles.actionIconBox}>
+                <Icon name="search" size={20} color="#0B3B24" />
+              </View>
+              <Text style={styles.actionCardTitle}>Available Requests</Text>
+            </TouchableOpacity>
 
-          {/* Action 2: My Assigned Work */}
-          <TouchableOpacity
-            style={styles.actionCard}
-            activeOpacity={0.8}
-            onPress={() => router.push('/pages/my-assigned-work' as any)}
-          >
-            <View style={styles.actionIconBox}>
-              <Icon name="check" size={20} color="#0B3B24" />
-            </View>
-            <Text style={styles.actionCardTitle}>My Assigned Work</Text>
-          </TouchableOpacity>
+            {/* Action 2: My Assigned Work */}
+            <TouchableOpacity
+              style={styles.actionCard}
+              activeOpacity={0.8}
+              onPress={() => router.push('/pages/my-assigned-work' as any)}
+            >
+              <View style={styles.actionIconBox}>
+                <Icon name="check" size={20} color="#0B3B24" />
+              </View>
+              <Text style={styles.actionCardTitle}>My Assigned Work</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Action 3: Upload Update */}
           <TouchableOpacity
@@ -325,18 +332,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0B3B24',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  statsContainer: {
+    marginTop: 14,
     gap: 10,
-    marginTop: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   statBox: {
-    width: '48.5%',
+    flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   statNumber: {
     fontSize: 26,
@@ -375,13 +390,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0B3B24',
   },
-  quickActionsGrid: {
+  quickActionsContainer: {
+    gap: 12,
+  },
+  quickActionsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
   },
   actionCard: {
-    width: '48%',
+    flex: 1,
     backgroundColor: '#E8F5EE',
     borderRadius: 18,
     padding: 16,

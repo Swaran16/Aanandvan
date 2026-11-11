@@ -6,7 +6,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Platform } from 'react-native';
-import { Colors } from '@/constants';
 import { Icon } from '@/components/common/Icon';
 
 export default function CitizenLayout() {
@@ -41,33 +40,42 @@ export default function CitizenLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="home" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="home" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
       <Tabs.Screen
         name="requests"
         options={{
           title: 'Requests',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="requests" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="requests" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="profile" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="profile" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
     </Tabs>
@@ -86,4 +94,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#C7EED8',
   },
 });
-

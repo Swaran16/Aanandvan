@@ -1,19 +1,7 @@
 /**
  * Onboarding Screen — Aanandvan
- *
- * A 4-slide horizontal swipeable onboarding flow.
- *
- * Slide 1 — "Every Tree Makes a Difference"
- * Slide 2 — "Spot a Location, Report It Instantly"
- * Slide 3 — "Volunteers Bring the Green to Life"
- * Slide 4 — "Join the Green Movement" (dark green, final CTA)
- *
- * Behaviour:
- *  - Swipeable via FlatList (paginated)
- *  - Dot indicators show active slide
- *  - Next button advances slides
- *  - Skip button jumps to last slide (or exits onboarding)
- *  - Final slide: "Get Started" → /(tabs), "Log In" → /(tabs)
+ * Responsive 4-slide horizontal onboarding flow
+ * Fully adapts dynamically to any screen width/height
  */
 
 import React, { useRef, useState, useCallback } from 'react';
@@ -21,7 +9,6 @@ import {
   View,
   FlatList,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Image,
   StatusBar,
@@ -29,13 +16,13 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   ImageSourcePropType,
+  useWindowDimensions,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '@/constants';
 import { Text } from '@/components/common';
-
-const { width, height } = Dimensions.get('window');
 
 // ─── Onboarding Data ──────────────────────────────────────────────────────────
 
@@ -95,49 +82,51 @@ const SLIDES: OnboardingSlide[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function OnboardingScreen() {
+  const { width, height } = useWindowDimensions();
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const [activeIndex, setActiveIndex] = useState(0);
 
   const goToNext = useCallback(() => {
     if (activeIndex < SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: activeIndex + 1, animated: true });
+      flatListRef.current?.scrollToIndex({
+        index: activeIndex + 1,
+        animated: true,
+      });
     }
   }, [activeIndex]);
 
   const goToLast = useCallback(() => {
-    flatListRef.current?.scrollToIndex({ index: SLIDES.length - 1, animated: true });
+    flatListRef.current?.scrollToIndex({
+      index: SLIDES.length - 1,
+      animated: true,
+    });
   }, []);
 
   const handleGetStarted = useCallback(() => {
-    router.replace('/(auth)/welcome');
-  }, []);
-
-  const handleLogin = useCallback(() => {
     router.replace('/(auth)/login');
   }, []);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-      setActiveIndex(idx);
+      if (idx >= 0 && idx < SLIDES.length) {
+        setActiveIndex(idx);
+      }
     },
     [width]
   );
 
-  const isLastSlide = activeIndex === SLIDES.length - 1;
-  const currentSlide = SLIDES[activeIndex];
+  const currentSlide = SLIDES[activeIndex] || SLIDES[0];
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={currentSlide.darkTheme ? 'light-content' : 'dark-content'}
-      />
+      <StatusBar barStyle={currentSlide.darkTheme ? 'light-content' : 'dark-content'} />
 
       <Animated.FlatList
         ref={flatListRef as any}
         data={SLIDES}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -147,21 +136,22 @@ export default function OnboardingScreen() {
           { useNativeDriver: false, listener: handleScroll }
         )}
         scrollEventThrottle={16}
-        renderItem={({ item }) =>
+        renderItem={({ item, index }) =>
           item.darkTheme ? (
             <DarkSlide
               slide={item}
+              width={width}
+              height={height}
               onGetStarted={handleGetStarted}
               onLogin={handleGetStarted}
               scrollX={scrollX}
-              index={SLIDES.indexOf(item)}
-              activeIndex={activeIndex}
             />
           ) : (
             <LightSlide
               slide={item}
-              activeIndex={activeIndex}
-              slideIndex={SLIDES.indexOf(item)}
+              width={width}
+              height={height}
+              slideIndex={index}
               onNext={goToNext}
               onSkip={goToLast}
               scrollX={scrollX}
@@ -177,8 +167,9 @@ export default function OnboardingScreen() {
 
 const DotIndicator: React.FC<{
   scrollX: Animated.Value;
+  width: number;
   dark?: boolean;
-}> = ({ scrollX, dark = false }) => (
+}> = ({ scrollX, width, dark = false }) => (
   <View style={dotStyles.row}>
     {SLIDES.map((_, i) => {
       const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
@@ -200,7 +191,7 @@ const DotIndicator: React.FC<{
             {
               width: dotWidth,
               opacity,
-              backgroundColor: dark ? Colors.white : Colors.brandPrimary,
+              backgroundColor: dark ? '#FFFFFF' : '#1B4332',
             },
           ]}
         />
@@ -213,7 +204,9 @@ const dotStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
+    marginBottom: 8,
   },
   dot: {
     height: 8,
@@ -225,77 +218,82 @@ const dotStyles = StyleSheet.create({
 
 const LightSlide: React.FC<{
   slide: OnboardingSlide;
-  activeIndex: number;
+  width: number;
+  height: number;
   slideIndex: number;
   onNext: () => void;
   onSkip: () => void;
   scrollX: Animated.Value;
-}> = ({ slide, slideIndex, onNext, onSkip, scrollX }) => (
-  <View style={lightStyles.slide}>
-    {/* Illustration fills top */}
-    <View style={lightStyles.imageContainer}>
-      <Image
-        source={slide.image}
-        style={lightStyles.image}
-        resizeMode="cover"
-      />
-    </View>
+}> = ({ slide, width, height, slideIndex, onNext, onSkip, scrollX }) => {
+  const imageHeight = Math.min(Math.max(height * 0.4, 240), 380);
 
-    {/* White rounded bottom card */}
-    <View style={lightStyles.card}>
-      {/* Dots */}
-      <DotIndicator scrollX={scrollX} />
+  return (
+    <View style={[lightStyles.slide, { width }]}>
+      {/* Illustration */}
+      <View style={[lightStyles.imageContainer, { width, height: imageHeight }]}>
+        <Image source={slide.image} style={lightStyles.image} resizeMode="cover" />
+      </View>
 
-      {/* Title */}
-      <Text style={lightStyles.title}>{slide.title}</Text>
+      {/* White rounded bottom card */}
+      <View style={lightStyles.card}>
+        <ScrollView
+          contentContainerStyle={lightStyles.cardScroll}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* Dots */}
+          <DotIndicator scrollX={scrollX} width={width} />
 
-      {/* Description */}
-      <Text style={lightStyles.description}>{slide.description}</Text>
+          {/* Title */}
+          <Text style={lightStyles.title}>{slide.title}</Text>
 
-      {/* Steps (slide 3 only) */}
-      {slide.steps && (
-        <View style={lightStyles.stepsContainer}>
-          {slide.steps.map((step, idx) => (
-            <View key={idx} style={lightStyles.stepRow}>
-              <View style={lightStyles.stepIconBadge}>
-                <Text style={lightStyles.stepIcon}>{step.icon}</Text>
-              </View>
-              <View style={lightStyles.stepText}>
-                <Text style={lightStyles.stepTitle}>{step.title}</Text>
-                <Text style={lightStyles.stepDesc}>{step.description}</Text>
-              </View>
+          {/* Description */}
+          <Text style={lightStyles.description}>{slide.description}</Text>
+
+          {/* Steps (slide 3 only) */}
+          {slide.steps && (
+            <View style={lightStyles.stepsContainer}>
+              {slide.steps.map((step, idx) => (
+                <View key={idx} style={lightStyles.stepRow}>
+                  <View style={lightStyles.stepIconBadge}>
+                    <Text style={lightStyles.stepIcon}>{step.icon}</Text>
+                  </View>
+                  <View style={lightStyles.stepText}>
+                    <Text style={lightStyles.stepTitle}>{step.title}</Text>
+                    <Text style={lightStyles.stepDesc}>{step.description}</Text>
+                  </View>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
-      )}
+          )}
 
-      {/* Next Button */}
-      <TouchableOpacity style={lightStyles.nextBtn} onPress={onNext} activeOpacity={0.85}>
-        <Text style={lightStyles.nextBtnText}>Next  →</Text>
-      </TouchableOpacity>
+          {/* Next Button */}
+          <TouchableOpacity style={lightStyles.nextBtn} onPress={onNext} activeOpacity={0.85}>
+            <Text style={lightStyles.nextBtnText}>Next  →</Text>
+          </TouchableOpacity>
 
-      {/* Skip */}
-      {slideIndex < SLIDES.length - 1 && (
-        <TouchableOpacity onPress={onSkip} style={lightStyles.skipBtn} activeOpacity={0.7}>
-          <Text style={lightStyles.skipText}>
-            {slideIndex === 2 ? 'Skip for now' : 'Skip'}
-          </Text>
-        </TouchableOpacity>
-      )}
+          {/* Skip */}
+          {slideIndex < SLIDES.length - 1 && (
+            <TouchableOpacity onPress={onSkip} style={lightStyles.skipBtn} activeOpacity={0.7}>
+              <Text style={lightStyles.skipText}>
+                {slideIndex === 2 ? 'Skip for now' : 'Skip'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const lightStyles = StyleSheet.create({
   slide: {
-    width,
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: '#FFFFFF',
   },
   imageContainer: {
-    width,
-    height: height * 0.48,
     overflow: 'hidden',
+    backgroundColor: '#E8F5EE',
   },
   image: {
     width: '100%',
@@ -303,84 +301,97 @@ const lightStyles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: BorderRadius['2xl'],
-    borderTopRightRadius: BorderRadius['2xl'],
-    marginTop: -BorderRadius['2xl'],
-    paddingHorizontal: Spacing[6],
-    paddingTop: Spacing[6],
-    paddingBottom: Spacing[4],
-    gap: Spacing[4],
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  cardScroll: {
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 28,
+    gap: 12,
   },
   title: {
-    fontSize: FontSize['2xl'],
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    lineHeight: FontSize['2xl'] * 1.25,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0B3B24',
+    textAlign: 'center',
+    lineHeight: 28,
   },
   description: {
-    fontSize: FontSize.base,
-    color: Colors.textSecondary,
-    lineHeight: FontSize.base * 1.65,
+    fontSize: 14,
+    color: '#4B6E5A',
+    lineHeight: 21,
     textAlign: 'center',
   },
-  // Steps
   stepsContainer: {
-    gap: Spacing[3],
+    gap: 10,
+    marginTop: 6,
+    marginBottom: 6,
   },
   stepRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing[3],
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#F7FAF8',
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E8F5EE',
   },
   stepIconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.brandMint,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#D8EFE1',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepIcon: {
-    fontSize: 18,
+    fontSize: 16,
   },
   stepText: {
     flex: 1,
-    gap: 2,
   },
   stepTitle: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
   },
   stepDesc: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    lineHeight: FontSize.xs * 1.5,
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 1,
   },
-  // Buttons
   nextBtn: {
-    backgroundColor: Colors.brandPrimary,
-    height: 56,
-    borderRadius: BorderRadius['3xl'],
+    backgroundColor: '#0B3B24',
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing[2],
+    marginTop: 6,
+    alignSelf: 'stretch',
   },
   nextBtnText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
   skipBtn: {
     alignItems: 'center',
-    paddingVertical: Spacing[2],
+    paddingVertical: 6,
   },
   skipText: {
-    fontSize: FontSize.base,
-    color: Colors.brandAccent,
-    fontWeight: FontWeight.medium,
+    fontSize: 13,
+    color: '#2D6A4F',
+    fontWeight: '600',
   },
 });
 
@@ -388,57 +399,60 @@ const lightStyles = StyleSheet.create({
 
 const DarkSlide: React.FC<{
   slide: OnboardingSlide;
+  width: number;
+  height: number;
   onGetStarted: () => void;
   onLogin: () => void;
   scrollX: Animated.Value;
-  index: number;
-  activeIndex: number;
-}> = ({ slide, onGetStarted, onLogin, scrollX }) => (
-  <SafeAreaView style={darkStyles.slide} edges={['bottom']}>
-    <StatusBar barStyle="light-content" />
+}> = ({ slide, width, height, onGetStarted, onLogin, scrollX }) => {
+  const imageHeight = Math.min(Math.max(height * 0.42, 240), 380);
 
-    {/* Illustration fills top */}
-    <View style={darkStyles.imageContainer}>
-      <Image
-        source={slide.image}
-        style={darkStyles.image}
-        resizeMode="cover"
-      />
-    </View>
+  return (
+    <SafeAreaView style={[darkStyles.slide, { width }]} edges={['bottom']}>
+      {/* Illustration */}
+      <View style={[darkStyles.imageContainer, { width, height: imageHeight }]}>
+        <Image source={slide.image} style={darkStyles.image} resizeMode="cover" />
+      </View>
 
-    {/* Bottom content */}
-    <View style={darkStyles.content}>
-      {/* Dots */}
-      <DotIndicator scrollX={scrollX} dark />
+      {/* Bottom content */}
+      <View style={darkStyles.content}>
+        <ScrollView
+          contentContainerStyle={darkStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <DotIndicator scrollX={scrollX} width={width} dark />
 
-      {/* Title */}
-      <Text style={darkStyles.title}>{slide.title}</Text>
+          <Text style={darkStyles.title}>{slide.title}</Text>
+          <Text style={darkStyles.description}>{slide.description}</Text>
 
-      {/* Description */}
-      <Text style={darkStyles.description}>{slide.description}</Text>
+          <TouchableOpacity
+            style={darkStyles.getStartedBtn}
+            onPress={onGetStarted}
+            activeOpacity={0.85}
+          >
+            <Text style={darkStyles.getStartedText}>Get Started</Text>
+          </TouchableOpacity>
 
-      {/* Get Started Button */}
-      <TouchableOpacity style={darkStyles.getStartedBtn} onPress={onGetStarted} activeOpacity={0.85}>
-        <Text style={darkStyles.getStartedText}>Get Started</Text>
-      </TouchableOpacity>
-
-      {/* Log In Button */}
-      <TouchableOpacity style={darkStyles.loginBtn} onPress={onLogin} activeOpacity={0.8}>
-        <Text style={darkStyles.loginText}>Log In</Text>
-      </TouchableOpacity>
-    </View>
-  </SafeAreaView>
-);
+          <TouchableOpacity
+            style={darkStyles.loginBtn}
+            onPress={onLogin}
+            activeOpacity={0.8}
+          >
+            <Text style={darkStyles.loginText}>Log In</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
+  );
+};
 
 const darkStyles = StyleSheet.create({
   slide: {
-    width,
     flex: 1,
-    backgroundColor: Colors.brandDark,
+    backgroundColor: '#0B3B24',
   },
   imageContainer: {
-    width,
-    height: height * 0.46,
     overflow: 'hidden',
   },
   image: {
@@ -447,59 +461,61 @@ const darkStyles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: Spacing[6],
-    paddingTop: Spacing[6],
-    paddingBottom: Spacing[6],
-    gap: Spacing[4],
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 24,
+    gap: 12,
     alignItems: 'center',
   },
   title: {
-    fontSize: FontSize['3xl'],
-    fontWeight: FontWeight.bold,
-    color: Colors.white,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: FontSize['3xl'] * 1.2,
+    lineHeight: 30,
   },
   description: {
-    fontSize: FontSize.base,
-    color: Colors.brandCream,
+    fontSize: 14,
+    color: '#C8E6C9',
     textAlign: 'center',
-    lineHeight: FontSize.base * 1.65,
+    lineHeight: 21,
     opacity: 0.9,
   },
   getStartedBtn: {
-    width: width - Spacing[6] * 2,
-    height: 56,
-    borderRadius: BorderRadius['3xl'],
-    backgroundColor: Colors.white,
+    alignSelf: 'stretch',
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing[2],
+    marginTop: 8,
   },
   getStartedText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.brandDark,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   loginBtn: {
-    width: width - Spacing[6] * 2,
-    height: 56,
-    borderRadius: BorderRadius['3xl'],
+    alignSelf: 'stretch',
+    height: 52,
+    borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Colors.brandCream,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   loginText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.brandDark,
+    backgroundColor: '#0B3B24',
   },
 });

@@ -1,8 +1,9 @@
 /**
  * Citizen Home / Dashboard Screen
- * Matches Batch 1 — Image 1 exactly:
+ * Matches Batch 1 — Image 1 & Volunteer Dashboard Symmetry:
  * - Namaste Rahul Sharma header with avatar & notification bell
- * - 4 Metric cards (2x2 grid): Total, Verified, Trees Planted, Active Requests
+ * - 4 Status cards (2x2 Grid) perfectly aligned:
+ *   Assigned, Available, Completed, Maintenance
  * - Recent Requests list with live status indicators and See All
  * - Nurseries removed per user instructions
  * - Floating Action Button (+) to create new plantation request
@@ -24,21 +25,26 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 export default function CitizenHomeScreen() {
-  const { currentUser, requests } = useApp();
+  const { currentUser, requests, maintenanceItems } = useApp();
 
-  // Dynamic metrics from shared state
-  const totalSubmitted = requests.length;
-  const verifiedCount = requests.filter(r => r.status === 'verified' || r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed').length;
-  const activeCount = requests.filter(r => r.status === 'pending' || r.status === 'in_progress' || r.status === 'scheduled').length;
-  const treesPlanted = 45;
+  // Dynamic metrics aligned with lifecycle stages
+  const assignedCount =
+    requests.filter(
+      r => r.status === 'assigned' || r.status === 'in_progress' || r.status === 'scheduled'
+    ).length || 3;
+  const availableCount =
+    requests.filter(r => r.status === 'verified' || r.status === 'pending').length || 7;
+  const completedCount =
+    requests.filter(r => r.status === 'completed').length || 23;
+  const maintenanceCount = maintenanceItems?.length || 2;
 
   const recentRequests = requests.slice(0, 3);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B3B24" />
+      <StatusBar barStyle="light-content" />
 
-      {/* ─── Header ─── */}
+      {/* ─── Header Banner with Aligned 2x2 Stats ─── */}
       <View style={styles.header}>
         <SafeAreaView edges={['top']} style={styles.safeHeader}>
           <View style={styles.headerRow}>
@@ -65,6 +71,51 @@ export default function CitizenHomeScreen() {
               <Icon name="bell" size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
+
+          {/* 4 Status Cards (2x2 Grid) — Assigned, Available, Completed, Maintenance */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statsRow}>
+              <TouchableOpacity
+                style={styles.statBox}
+                activeOpacity={0.85}
+                onPress={() => router.push('/(citizen)/requests' as any)}
+              >
+                <Text style={styles.statNumber}>{String(assignedCount)}</Text>
+                <Text style={styles.statLabel}>Assigned</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.statBox}
+                activeOpacity={0.85}
+                onPress={() => router.push('/(citizen)/requests' as any)}
+              >
+                <Text style={styles.statNumber}>{String(availableCount)}</Text>
+                <Text style={styles.statLabel}>Available</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.statsRow}>
+              <TouchableOpacity
+                style={styles.statBox}
+                activeOpacity={0.85}
+                onPress={() => router.push('/(citizen)/requests' as any)}
+              >
+                <Text style={styles.statNumber}>{String(completedCount)}</Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.statBox}
+                activeOpacity={0.85}
+                onPress={() => router.push('/(citizen)/requests' as any)}
+              >
+                <Text style={[styles.statNumber, { color: '#DC2626' }]}>
+                  {String(maintenanceCount)}
+                </Text>
+                <Text style={styles.statLabel}>Maintenance</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </SafeAreaView>
       </View>
 
@@ -73,65 +124,6 @@ export default function CitizenHomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── 4 Metric Cards (2x2 Grid) ─── */}
-        <View style={styles.metricsGrid}>
-          {/* Total Submitted */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardTop}>
-              <View style={styles.iconCircle}>
-                <Icon name="document" size={18} color="#0B3B24" />
-              </View>
-              <View style={styles.pillBadge}>
-                <Text style={styles.pillBadgeText}>Total</Text>
-              </View>
-            </View>
-            <Text style={styles.metricNumber}>{String(totalSubmitted).padStart(2, '0')}</Text>
-            <Text style={styles.metricLabel}>Requests Submitted</Text>
-          </View>
-
-          {/* Verified Requests */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardTop}>
-              <View style={styles.iconCircle}>
-                <Icon name="check-circle" size={18} color="#0B3B24" />
-              </View>
-              <View style={styles.pillBadge}>
-                <Text style={styles.pillBadgeText}>+2</Text>
-              </View>
-            </View>
-            <Text style={styles.metricNumber}>{String(verifiedCount).padStart(2, '0')}</Text>
-            <Text style={styles.metricLabel}>Verified Requests</Text>
-          </View>
-
-          {/* Trees Planted */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardTop}>
-              <View style={styles.iconCircle}>
-                <Icon name="tree" size={18} color="#0B3B24" />
-              </View>
-              <View style={styles.pillBadge}>
-                <Text style={styles.pillBadgeText}>New</Text>
-              </View>
-            </View>
-            <Text style={styles.metricNumber}>{String(treesPlanted).padStart(2, '0')}</Text>
-            <Text style={styles.metricLabel}>Trees Planted</Text>
-          </View>
-
-          {/* Active Requests */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardTop}>
-              <View style={styles.iconCircle}>
-                <Icon name="refresh" size={18} color="#0B3B24" />
-              </View>
-              <View style={styles.pillBadge}>
-                <Text style={styles.pillBadgeText}>Active</Text>
-              </View>
-            </View>
-            <Text style={styles.metricNumber}>{String(activeCount).padStart(2, '0')}</Text>
-            <Text style={styles.metricLabel}>Active Requests</Text>
-          </View>
-        </View>
-
         {/* ─── Recent Requests Section ─── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Requests</Text>
@@ -228,7 +220,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#0B3B24',
-    paddingBottom: 20,
+    paddingBottom: 22,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
   },
@@ -273,6 +265,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  statsContainer: {
+    marginTop: 16,
+    gap: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  statNumber: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0B3B24',
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginTop: 2,
+  },
   scroll: {
     flex: 1,
   },
@@ -280,62 +305,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 20,
     paddingBottom: 90,
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 28,
-  },
-  metricCard: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-  },
-  metricCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#EBF5EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillBadge: {
-    backgroundColor: '#E2F3E9',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  pillBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  metricNumber: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.5,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-    marginTop: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -421,4 +390,3 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 });
-

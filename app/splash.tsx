@@ -18,16 +18,16 @@ import {
   View,
   StyleSheet,
   Animated,
-  Dimensions,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, FontSize, FontWeight, Spacing } from '@/constants';
 import { Text } from '@/components/common';
 
-const { width, height } = Dimensions.get('window');
-
 export default function SplashScreen() {
+  const { height } = useWindowDimensions();
+
   // ─── Animations ────────────────────────────────────────────────────────────
   const logoScale   = useRef(new Animated.Value(0.6)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -226,11 +226,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   leafTopLeft: {
-    top: height * 0.1,
+    top: '10%',
     left: Spacing[5],
   },
   leafBottomRight: {
-    bottom: height * 0.22,
+    bottom: '22%',
     right: Spacing[5],
   },
 
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   // Tagline
   taglineArea: {
     position: 'absolute',
-    bottom: height * 0.1,
+    bottom: '10%',
     alignItems: 'center',
     paddingHorizontal: Spacing[10],
     gap: Spacing[4],

@@ -19,16 +19,17 @@ import {
   ImageBackground,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/constants';
 import { Text } from '@/components/common';
 
-const { height } = Dimensions.get('window');
-
 export default function WelcomeScreen() {
+  const { height } = useWindowDimensions();
+  const heroHeight = Math.min(Math.max(height * 0.42, 220), 380);
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" />
@@ -36,7 +37,7 @@ export default function WelcomeScreen() {
       {/* ─── Forest Background Hero ─── */}
       <ImageBackground
         source={require('../../assets/images/welcome_bg.png')}
-        style={styles.hero}
+        style={[styles.hero, { height: heroHeight }]}
         resizeMode="cover"
       >
         {/* Dark overlay for legibility */}
@@ -164,7 +165,6 @@ const styles = StyleSheet.create({
 
   // Hero / forest bg
   hero: {
-    height: height * 0.42,
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: Spacing[6],

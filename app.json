@@ -1,27 +1,26 @@
 {
   "expo": {
-    "name": "App",
-    "slug": "App",
+    "name": "Aanandvan",
+    "slug": "aanandvan",
     "version": "1.0.0",
-    "scheme": "app",
+    "scheme": "aanandvan",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.app"
+      "bundleIdentifier": "in.aanandvan.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#6C63FF",
+        "backgroundColor": "#0B3B24",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
-      "package": "com.yourcompany.app",
+      "package": "in.aanandvan.app",
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [

@@ -40,44 +40,56 @@ export default function VolunteerLayout() {
         name="index"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="explore" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="explore" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
       <Tabs.Screen
         name="available"
         options={{
           title: 'Plant',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="plant" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="plant" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
       <Tabs.Screen
         name="work"
         options={{
           title: 'Work',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="work" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="work" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconWrapper, focused && styles.activePill]}>
-              <Icon name="profile" size={20} color={focused ? '#0B3B24' : color} />
-            </View>
-          ),
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="profile" size={20} color={iconColor} />
+              </View>
+            );
+          },
         }}
       />
     </Tabs>

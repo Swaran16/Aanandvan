@@ -57,7 +57,7 @@ export default function CitizenRequestsScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content"  />
 
       {/* ─── Top Bar ─── */}
       <View style={styles.topBar}>

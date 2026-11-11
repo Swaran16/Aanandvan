@@ -56,7 +56,7 @@ export default function VolunteerAvailableScreen() {
   const handleAccept = (id: string, title: string) => {
     volunteerAcceptRequest(id);
     Alert.alert(
-      'Request Accepted! 🎉',
+      'Request Accepted!',
       `You have successfully accepted "${title}". It is now added to "My Assigned Work". Would you like to schedule the plantation drive now?`,
       [
         { text: 'Later', style: 'cancel' },
@@ -74,7 +74,7 @@ export default function VolunteerAvailableScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="dark-content" />
 
       {/* ─── Top Bar ─── */}
       <View style={styles.topBar}>
@@ -261,14 +261,7 @@ export default function VolunteerAvailableScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.85}
-        onPress={() => router.push('/pages/create-request' as any)}
-      >
-        <Icon name="plus" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
+      
     </SafeAreaView>
   );
 }

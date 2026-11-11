@@ -1,14 +1,10 @@
 /**
  * Text Component
  * A typed wrapper around React Native's Text with design system variants.
- *
- * Usage:
- *   <Text variant="h1">Hello</Text>
- *   <Text variant="body1" color={Colors.textSecondary}>Description</Text>
  */
 
 import React from 'react';
-import { Text as RNText, TextStyle, StyleSheet, TextProps as RNTextProps } from 'react-native';
+import { Text as RNText, TextStyle, StyleSheet, TextProps as RNTextProps, StyleProp } from 'react-native';
 import { Colors, FontSize, FontWeight } from '@/constants';
 import { TextVariant } from '@/types';
 
@@ -18,8 +14,8 @@ interface TextProps extends RNTextProps {
   variant?: TextVariant;
   color?: string;
   align?: TextStyle['textAlign'];
-  style?: TextStyle | TextStyle[];
-  children: React.ReactNode;
+  style?: StyleProp<TextStyle>;
+  children?: React.ReactNode;
 }
 
 // ─── Variant Styles ───────────────────────────────────────────────────────────
@@ -55,9 +51,8 @@ export const Text: React.FC<TextProps> = ({
   return (
     <RNText
       style={[
-        styles.base,
         variantStyles[variant],
-        color ? { color } : undefined,
+        color ? { color } : { color: Colors.textPrimary },
         align ? { textAlign: align } : undefined,
         style,
       ]}
@@ -67,11 +62,3 @@ export const Text: React.FC<TextProps> = ({
     </RNText>
   );
 };
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  base: {
-    color: Colors.textPrimary,
-  },
-});
