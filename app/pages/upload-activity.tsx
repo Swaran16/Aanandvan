@@ -53,16 +53,10 @@ export default function UploadActivityScreen() {
       notes,
     });
 
-    Alert.alert(
-      'Plantation Activity Posted! 🌿',
-      `Awesome job! ${saplingsCount} saplings have been recorded for "${req.title}". This activity has been marked Completed and published to the community feed.`,
-      [
-        {
-          text: 'View Completed',
-          onPress: () => router.replace('/(volunteer)' as any),
-        },
-      ]
-    );
+    router.replace({
+      pathname: '/pages/update-submitted',
+      params: { id: req.id },
+    } as any);
   };
 
   return (

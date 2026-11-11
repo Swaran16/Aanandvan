@@ -1,14 +1,11 @@
 /**
- * Registration Screen — Aanandvan
+ * Registration Screen — Aanandvan (Designs 2 & 4)
  *
- * Accepts a `role` query param ("citizen" | "volunteer").
- * Shows "Citizen Registration" or "Volunteer Registration" accordingly.
+ * Accepts `role` param ('citizen' | 'volunteer'):
+ * - Design 2 (`citizen`): Citizen registration with Address, Use Current Location, City, Pin Code
+ * - Design 4 (`volunteer`): Volunteer registration with Pin Code, Current Address, Motivation & ID Proof Upload
  *
- * Form fields: Full Name, Mobile Number, Email, Address.
- * "Register →" button navigates to OTP verification (passing role + mobile).
- *
- * Matches Figma: light sage background, "Namaste, Aanandvan" top header,
- * white rounded card, icon-prefix inputs, bold labels, dark green CTA.
+ * Both flows submit to OTP Verification (`/(auth)/otp`) with `source: 'register'`.
  */
 
 import React, { useState } from 'react';
@@ -24,317 +21,588 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/constants';
 import { Text } from '@/components/common';
+import { Icon } from '@/components/common/Icon';
 
 type Role = 'citizen' | 'volunteer';
 
 export default function RegisterScreen() {
-  const { role } = useLocalSearchParams<{ role: string }>();
+  const { role } = useLocalSearchParams<{ role?: string }>();
   const userRole: Role = role === 'volunteer' ? 'volunteer' : 'citizen';
+  const isVolunteer = userRole === 'volunteer';
 
-  const defaultName = userRole === 'volunteer' ? 'Amit Kumar' : 'Rahul Sharma';
-  const defaultMobile = userRole === 'volunteer' ? '+91 91234 56789' : '+91 98765 43210';
-  const defaultEmail = userRole === 'volunteer' ? 'amit.volunteer@aanandvan.org' : 'rahul.citizen@aanandvan.org';
-  const defaultAddress = userRole === 'volunteer' ? 'Block C, Green Park, South Delhi' : 'Apartment 4B, Sector 45, Green Belt';
+  const [fullName, setFullName] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [pinCode, setPinCode] = useState('');
+  const [motivation, setMotivation] = useState('');
+  const [idProofFile, setIdProofFile] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const [form, setForm] = useState({
-    name: defaultName,
-    mobile: defaultMobile,
-    email: defaultEmail,
-    address: defaultAddress,
-  });
+  const handleUseCurrentLocation = () => {
+    setAddress('Flat 402, Green Meadows, Powai, Mumbai, Maharashtra');
+    if (!isVolunteer) {
+      setCity('Mumbai');
+    }
+    setPinCode('400076');
+    if (errorMsg) setErrorMsg('');
+  };
 
-  const update = (key: keyof typeof form) => (val: string) =>
-    setForm((prev) => ({ ...prev, [key]: val }));
+  const handleUploadIdProof = () => {
+    setIdProofFile(
+      idProofFile ? null : 'Govt_ID_Proof_Aadhaar.pdf'
+    );
+  };
 
-  const handleRegister = () => {
-    // Navigate to OTP with mobile number, name, and role
+  const handleSendOtp = () => {
+    const digitsOnly = mobile.replace(/\s+/g, '');
+    if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!agreed) {
+      setErrorMsg("Please agree to Aanandvan's Terms of Service and Privacy Policy.");
+      return;
+    }
+
+    const finalDigits = digitsOnly.length === 10 ? digitsOnly : '9876542536';
+
     router.push({
       pathname: '/(auth)/otp',
       params: {
-        mobile: form.mobile,
-        name: form.name,
+        mobile: `+91 ${finalDigits.slice(0, 5)} ${finalDigits.slice(5)}`,
+        name: fullName.trim() || (isVolunteer ? 'Amit Kumar' : 'Rahul Sharma'),
         role: userRole,
+        source: 'register',
       },
-    });
+    } as any);
   };
 
-  const titleText = userRole === 'volunteer' ? 'Volunteer Registration' : 'Citizen Registration';
-  const subText =
-    userRole === 'volunteer'
-      ? 'Fill in your details to apply as a volunteer.'
-      : 'Fill in your details to start your journey with us.';
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(auth)/role-select' as any);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
+
+      {/* ─── Header ─── */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={26} color="#0B3B24" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Welcome to Aanandvan</Text>
+      </View>
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ─── Top Header ─── */}
-          <View style={styles.topHeader}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                <Text style={styles.backArrow}>←</Text>
-              </TouchableOpacity>
-              <Text style={styles.namaste}>Namaste, Aanandvan</Text>
-            </View>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarIcon}>👤</Text>
-            </View>
-          </View>
+          {/* ─── Heading ─── */}
+          <Text style={styles.title}>
+            {isVolunteer ? 'Volunteer registration' : 'Citizen registration'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isVolunteer
+              ? 'Tell us about yourself. Our team reviews every application before you start accepting requests.'
+              : 'Fill in your details to start your journey with us.'}
+          </Text>
 
-          {/* ─── Registration Card ─── */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>{titleText}</Text>
-              <Text style={styles.cardSub}>{subText}</Text>
-            </View>
-
-            {/* Full Name */}
-            <FieldInput
-              label="Full Name"
-              icon="👤"
-              placeholder="Aanand Kumar"
-              value={form.name}
-              onChangeText={update('name')}
+          {/* ─── Full Name ─── */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Full name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your full name"
+              placeholderTextColor="#9CA3AF"
+              value={fullName}
+              onChangeText={setFullName}
               autoCapitalize="words"
             />
+          </View>
 
-            {/* Mobile Number */}
-            <FieldInput
-              label="Mobile Number"
-              icon="📱"
-              placeholder="+91 98765 43210"
-              value={form.mobile}
-              onChangeText={update('mobile')}
-              keyboardType="phone-pad"
-            />
-
-            {/* Email */}
-            <FieldInput
-              label="Email Address"
-              icon="✉️"
-              placeholder="aanand@example.com"
-              value={form.email}
-              onChangeText={update('email')}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            {/* Address */}
-            <FieldInput
-              label="Address"
-              icon="📍"
-              placeholder="Apartment, Street, Area, City"
-              value={form.address}
-              onChangeText={update('address')}
-              multiline
-              inputHeight={80}
-            />
-
-            {/* Register Button */}
-            <TouchableOpacity
-              style={styles.registerBtn}
-              onPress={handleRegister}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.registerBtnText}>Register  →</Text>
-            </TouchableOpacity>
-
-            {/* Login link */}
-            <View style={styles.loginRow}>
-              <Text style={styles.loginHint}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-                <Text style={styles.loginLink}>Login</Text>
-              </TouchableOpacity>
+          {/* ─── Mobile Number ─── */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Mobile number</Text>
+            <View style={styles.phoneInputWrap}>
+              <View style={styles.countryCodeBox}>
+                <Text style={styles.countryCodeText}>+91</Text>
+              </View>
+              <TextInput
+                style={styles.phoneInput}
+                placeholder="00000 00000"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="phone-pad"
+                maxLength={11}
+                value={mobile}
+                onChangeText={(text) => {
+                  setMobile(text.replace(/[^0-9\s]/g, ''));
+                  if (errorMsg) setErrorMsg('');
+                }}
+              />
             </View>
           </View>
+
+          {/* ─── Email Address (Optional) ─── */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Email address (Optional)</Text>
+            <View style={styles.iconInputWrap}>
+              <View style={styles.leftIcon}>
+                <Icon name="mail" size={16} color="#9CA3AF" />
+              </View>
+              <TextInput
+                style={styles.iconTextInput}
+                placeholder="Enter email address"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+          </View>
+
+          {/* ─── Role-Specific Address / Pin Code Order ─── */}
+          {isVolunteer ? (
+            <>
+              {/* Pin code first on Volunteer registration */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Pin code</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="400076"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={pinCode}
+                  onChangeText={setPinCode}
+                />
+              </View>
+
+              {/* Current Address */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Current Address</Text>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Enter your current address"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  value={address}
+                  onChangeText={setAddress}
+                />
+              </View>
+
+              {/* Use my current location */}
+              <TouchableOpacity
+                style={styles.locationBtn}
+                activeOpacity={0.75}
+                onPress={handleUseCurrentLocation}
+              >
+                <CrosshairIcon size={18} color="#0B3B24" />
+                <Text style={styles.locationBtnText}>Use my current location</Text>
+              </TouchableOpacity>
+
+              {/* Why do you want to volunteer? */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Why do you want to volunteer?</Text>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Share your experience or inspiration..."
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  value={motivation}
+                  onChangeText={setMotivation}
+                />
+              </View>
+
+              {/* ID Proof Upload */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>ID Proof</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.uploadBox,
+                    idProofFile ? styles.uploadBoxFilled : undefined,
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={handleUploadIdProof}
+                >
+                  <Icon
+                    name={idProofFile ? 'check-circle' : 'upload'}
+                    size={18}
+                    color={idProofFile ? '#0B3B24' : '#374151'}
+                  />
+                  <Text
+                    style={[
+                      styles.uploadText,
+                      idProofFile ? styles.uploadTextSelected : undefined,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {idProofFile || 'Upload a PNG or PDF of any government ID'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <>
+              {/* Address on Citizen registration */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Address</Text>
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Enter your current address"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  value={address}
+                  onChangeText={setAddress}
+                />
+              </View>
+
+              {/* Use my current location */}
+              <TouchableOpacity
+                style={styles.locationBtn}
+                activeOpacity={0.75}
+                onPress={handleUseCurrentLocation}
+              >
+                <CrosshairIcon size={18} color="#0B3B24" />
+                <Text style={styles.locationBtnText}>Use my current location</Text>
+              </TouchableOpacity>
+
+              {/* City */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>City</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mumbai"
+                  placeholderTextColor="#9CA3AF"
+                  value={city}
+                  onChangeText={setCity}
+                />
+              </View>
+
+              {/* Pin code */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Pin code</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="400076"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={pinCode}
+                  onChangeText={setPinCode}
+                />
+              </View>
+            </>
+          )}
+
+          {/* ─── Terms Checkbox ─── */}
+          <TouchableOpacity
+            style={styles.checkboxRow}
+            activeOpacity={0.8}
+            onPress={() => {
+              setAgreed((prev) => !prev);
+              if (errorMsg) setErrorMsg('');
+            }}
+          >
+            <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+              {agreed && <Icon name="check" size={12} color="#FFFFFF" />}
+            </View>
+            <Text style={styles.checkboxText}>
+              I agree to Aanandvan's{' '}
+              <Text style={styles.checkboxBold}>Terms of Service</Text> and{' '}
+              <Text style={styles.checkboxBold}>Privacy Policy.</Text>
+            </Text>
+          </TouchableOpacity>
+
+          {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
+
+          {/* ─── Submit Button ─── */}
+          <TouchableOpacity
+            style={styles.sendOtpBtn}
+            activeOpacity={0.88}
+            onPress={handleSendOtp}
+          >
+            <Text style={styles.sendOtpText}>Send OTP</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-// ─── Reusable Field Input ─────────────────────────────────────────────────────
+// ─── Crosshair GPS Icon ───────────────────────────────────────────────────────
 
-interface FieldInputProps {
-  label: string;
-  icon: string;
-  placeholder: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  keyboardType?: 'default' | 'phone-pad' | 'email-address';
-  autoCapitalize?: 'none' | 'words' | 'sentences';
-  multiline?: boolean;
-  inputHeight?: number;
-  secureTextEntry?: boolean;
-}
-
-const FieldInput: React.FC<FieldInputProps> = ({
-  label,
-  icon,
-  placeholder,
-  value,
-  onChangeText,
-  keyboardType = 'default',
-  autoCapitalize = 'sentences',
-  multiline = false,
-  inputHeight = 52,
-  secureTextEntry = false,
-}) => (
-  <View style={fieldStyles.group}>
-    <Text style={fieldStyles.label}>{label}</Text>
-    <View
-      style={[
-        fieldStyles.wrap,
-        multiline ? { height: inputHeight, alignItems: 'flex-start' as const, paddingTop: 14 } : {},
-      ]}
-    >
-      <Text style={fieldStyles.icon}>{icon}</Text>
-      <TextInput
-        style={[fieldStyles.input, multiline ? { textAlignVertical: 'top' as const } : {}]}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.gray400}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        multiline={multiline}
-        secureTextEntry={secureTextEntry}
-      />
+const CrosshairIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => {
+  const ring = size * 0.62;
+  const dot = size * 0.18;
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: ring,
+          height: ring,
+          borderRadius: ring / 2,
+          borderWidth: 1.5,
+          borderColor: color,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: dot,
+            height: dot,
+            borderRadius: dot / 2,
+            backgroundColor: color,
+          }}
+        />
+      </View>
+      {/* Top/Bottom/Left/Right ticks */}
+      <View style={{ position: 'absolute', top: 0, width: 1.5, height: 4, backgroundColor: color }} />
+      <View style={{ position: 'absolute', bottom: 0, width: 1.5, height: 4, backgroundColor: color }} />
+      <View style={{ position: 'absolute', left: 0, height: 1.5, width: 4, backgroundColor: color }} />
+      <View style={{ position: 'absolute', right: 0, height: 1.5, width: 4, backgroundColor: color }} />
     </View>
-  </View>
-);
-
-const fieldStyles = StyleSheet.create({
-  group: { gap: Spacing[2] },
-  label: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-  },
-  wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing[4],
-    gap: Spacing[3],
-    backgroundColor: Colors.white,
-  },
-  icon: { fontSize: 16, opacity: 0.55 },
-  input: {
-    flex: 1,
-    fontSize: FontSize.base,
-    color: Colors.textPrimary,
-    paddingVertical: 0,
-  },
-});
+  );
+};
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing[5],
-    paddingTop: Spacing[5],
-    paddingBottom: Spacing[10],
-    gap: Spacing[5],
+  safe: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-
-  // Top header
-  topHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing[2],
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing[2],
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
   },
   backBtn: {
-    padding: Spacing[1],
-  },
-  backArrow: {
-    fontSize: 22,
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
-  },
-  namaste: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
-  },
-  avatarCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.brandMint,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 6,
   },
-  avatarIcon: { fontSize: 20 },
-
-  // Card
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing[6],
-    gap: Spacing[5],
-    ...Shadow.md,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0B3B24',
+    letterSpacing: -0.2,
   },
-  cardHeader: { gap: Spacing[1] },
-  cardTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+  keyboardView: {
+    flex: 1,
   },
-  cardSub: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    lineHeight: FontSize.sm * 1.55,
+  scrollContent: {
+    paddingHorizontal: 22,
+    paddingTop: 6,
+    paddingBottom: 32,
   },
-
-  // Register button
-  registerBtn: {
-    height: 54,
-    borderRadius: BorderRadius['3xl'],
-    backgroundColor: Colors.brandPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing[2],
-    ...Shadow.sm,
+  title: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#0B3B24',
+    marginBottom: 4,
   },
-  registerBtnText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.white,
-    letterSpacing: 0.3,
+  subtitle: {
+    fontSize: 13.5,
+    color: '#6B7280',
+    lineHeight: 19,
+    marginBottom: 18,
   },
-
-  // Login link
-  loginRow: {
+  fieldGroup: {
+    marginBottom: 14,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0B3B24',
+    marginBottom: 6,
+  },
+  input: {
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    fontSize: 14.5,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
+  },
+  phoneInputWrap: {
     flexDirection: 'row',
+    alignItems: 'center',
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  countryCodeBox: {
+    paddingHorizontal: 14,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#E5E7EB',
   },
-  loginHint: { fontSize: FontSize.sm, color: Colors.textSecondary },
-  loginLink: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.brandPrimary,
+  countryCodeText: {
+    fontSize: 14.5,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  phoneInput: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: 14,
+    fontSize: 14.5,
+    color: '#111827',
+  },
+  iconInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 46,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  leftIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconTextInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 14.5,
+    color: '#111827',
+  },
+  textArea: {
+    minHeight: 88,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14.5,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
+  },
+  locationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+    marginBottom: 14,
+    alignSelf: 'flex-start',
+  },
+  locationBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
+  uploadBox: {
+    minHeight: 74,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  uploadBoxFilled: {
+    borderColor: '#0A4D2E',
+    backgroundColor: '#F4F9F6',
+  },
+  uploadText: {
+    flex: 1,
+    fontSize: 13.5,
+    color: '#6B7280',
+  },
+  uploadTextSelected: {
+    color: '#0B3B24',
+    fontWeight: '600',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#4B5563',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  checkboxChecked: {
+    backgroundColor: '#0A4D2E',
+    borderColor: '#0A4D2E',
+  },
+  checkboxText: {
+    flex: 1,
+    fontSize: 12.5,
+    color: '#6B7280',
+    lineHeight: 18,
+  },
+  checkboxBold: {
+    fontWeight: '700',
+    color: '#4B5563',
+  },
+  errorText: {
+    fontSize: 12.5,
+    color: '#DC2626',
+    marginBottom: 12,
+  },
+  sendOtpBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#0A4D2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendOtpText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

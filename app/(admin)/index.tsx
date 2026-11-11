@@ -1,326 +1,331 @@
-/**
- * Admin Panel Overview / Dashboard (Tab 1)
- * Matches Batch 4 — Image 1:
- * - Admin Panel header + notification bell + AD initials
- * - Pending Actions: Volunteers (5 Pending) & Requests (8 Pending)
- * - Quick Navigation: Volunteers, Requests, Reports, Events, Settings (Nurseries removed)
- * - Platform Overview: 47 Volunteers (+12%), 124 Requests (+18), 312 Trees (+34), 08 Pending Verify (Alert)
- * - Plantation Activity growth chart & monthly telemetry
- * - Recent Activity list (Sector 14 completed, Verified REQ-0042, New Applicant Priya)
- */
-
 import React from 'react';
 import {
-  View,
-  StyleSheet,
+  Alert,
+  Image,
+  Platform,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
-  StatusBar,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
-import { Icon } from '@/components/common/Icon';
+import { Icon, IconName } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
-export default function AdminOverviewScreen() {
-  const { requests, volunteers } = useApp();
+const CHART_BARS = [
+  { month: 'OCT', completed: 48, inProgress: 26 },
+  { month: 'NOV', completed: 62, inProgress: 34 },
+  { month: 'DEC', completed: 74, inProgress: 28 },
+  { month: 'JAN', completed: 88, inProgress: 36 },
+];
 
-  const pendingVolunteers = volunteers.filter(v => v.status === 'pending').length;
-  const pendingRequests = requests.filter(r => r.status === 'pending').length;
-  const totalRequests = requests.length + 116; // demo platform count
+export default function AdminDashboardScreen() {
+  const { currentUser, requests, volunteers } = useApp();
+
+  const pendingVolunteers = volunteers.filter((v) => v.status === 'pending').length || 5;
+  const pendingRequests = requests.filter((r) => r.status === 'pending').length + 41;
+  const updatingCount =
+    requests.filter((r) => r.status === 'assigned' || r.status === 'in_progress').length +
+    13;
+
   const totalVolunteers = volunteers.length + 44;
+  const totalRequests = requests.length + 118;
   const treesPlanted = 312;
 
+  const quickActions: Array<{
+    id: string;
+    label: string;
+    icon: IconName;
+    onPress: () => void;
+  }> = [
+    {
+      id: 'nurseries',
+      label: 'Nurseries',
+      icon: 'plant',
+      onPress: () => {
+        if (Platform.OS !== 'web') {
+          Alert.alert('Partner Nurseries', '12 verified nurseries active across zones.');
+        }
+      },
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      icon: 'document',
+      onPress: () => router.push('/pages/admin-reports' as any),
+    },
+    {
+      id: 'events',
+      label: 'Events',
+      icon: 'calendar',
+      onPress: () => router.push('/pages/admin-events' as any),
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: 'settings',
+      onPress: () => router.push('/pages/admin-settings' as any),
+    },
+  ];
+
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <View style={styles.brandGroup}>
-          <View style={styles.treeCircle}>
-            <Icon name="tree" size={18} color="#FFFFFF" />
-          </View>
-          <View>
-            <Text style={styles.panelTitle}>Admin Panel</Text>
-            <Text style={styles.panelSub}>AANANDVAN</Text>
-          </View>
-        </View>
-
-        <View style={styles.topRightActions}>
-          <TouchableOpacity
-            style={styles.bellBtn}
-            onPress={() => alert('All admin actions up to date')}
-          >
-            <Icon name="bell" size={18} color="#111827" />
-            <View style={styles.redDot} />
-          </TouchableOpacity>
-          <View style={styles.adminAvatar}>
-            <Text style={styles.adminAvatarText}>AD</Text>
-          </View>
-        </View>
-      </View>
-
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Pending Actions ─── */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>PENDING ACTIONS</Text>
-          <View style={styles.totalBadge}>
-            <Text style={styles.totalBadgeText}>
-              {pendingVolunteers + pendingRequests} TOTAL
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.pendingGrid}>
-          {/* Volunteers Pending */}
-          <TouchableOpacity
-            style={styles.pendingCard}
-            activeOpacity={0.8}
-            onPress={() => router.push('/(admin)/volunteers' as any)}
-          >
-            <View style={[styles.pendingIconBox, { backgroundColor: '#FEF3C7' }]}>
-              <Icon name="users" size={18} color="#D97706" />
-            </View>
-            <Text style={styles.pendingCategory}>VOLUNTEERS</Text>
-            <Text style={styles.pendingCount}>{pendingVolunteers} Pending</Text>
-            <View style={[styles.underlineBar, { backgroundColor: '#F59E0B' }]} />
-          </TouchableOpacity>
-
-          {/* Requests Pending */}
-          <TouchableOpacity
-            style={styles.pendingCard}
-            activeOpacity={0.8}
-            onPress={() => router.push('/(admin)/requests' as any)}
-          >
-            <View style={[styles.pendingIconBox, { backgroundColor: '#DBEAFE' }]}>
-              <Icon name="document" size={18} color="#2563EB" />
-            </View>
-            <Text style={styles.pendingCategory}>REQUESTS</Text>
-            <Text style={styles.pendingCount}>{pendingRequests} Pending</Text>
-            <View style={[styles.underlineBar, { backgroundColor: '#2563EB' }]} />
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Quick Navigation ─── */}
-        <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
-          QUICK NAVIGATION
-        </Text>
-        <View style={styles.navContainer}>
-          <View style={styles.navRow}>
-            {/* Volunteers */}
-            <TouchableOpacity
-              style={styles.navPillBtn}
-              onPress={() => router.push('/(admin)/volunteers' as any)}
-            >
-              <Icon name="volunteers" size={16} color="#0B3B24" />
-              <Text style={styles.navPillText}>VOLUNTEERS</Text>
-            </TouchableOpacity>
-
-            {/* Requests */}
-            <TouchableOpacity
-              style={styles.navPillBtn}
-              onPress={() => router.push('/(admin)/requests' as any)}
-            >
-              <Icon name="requests" size={16} color="#0B3B24" />
-              <Text style={styles.navPillText}>REQUESTS</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.navRow}>
-            {/* Reports */}
-            <TouchableOpacity
-              style={styles.navPillBtn}
-              onPress={() => router.push('/pages/admin-reports' as any)}
-            >
-              <Icon name="overview" size={16} color="#0B3B24" />
-              <Text style={styles.navPillText}>REPORTS</Text>
-            </TouchableOpacity>
-
-            {/* Events */}
-            <TouchableOpacity
-              style={styles.navPillBtn}
-              onPress={() => router.push('/pages/admin-events' as any)}
-            >
-              <Icon name="calendar" size={16} color="#0B3B24" />
-              <Text style={styles.navPillText}>EVENTS</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Settings */}
-          <TouchableOpacity
-            style={[styles.navPillBtn, { width: '100%', justifyContent: 'center' }]}
-            onPress={() => router.push('/pages/admin-settings' as any)}
-          >
-            <Icon name="settings" size={16} color="#0B3B24" />
-            <Text style={styles.navPillText}>PLATFORM SETTINGS</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Platform Overview ─── */}
-        <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
-          PLATFORM OVERVIEW
-        </Text>
-        <View style={styles.overviewContainer}>
-          <View style={styles.overviewRow}>
-            {/* Volunteers */}
-            <View style={styles.overviewBox}>
-              <View style={styles.overviewTop}>
-                <Icon name="users" size={18} color="#0B3B24" />
-                <Text style={styles.growthBadgeGreen}>+12%</Text>
-              </View>
-              <Text style={styles.overviewNumber}>{totalVolunteers}</Text>
-              <Text style={styles.overviewLabel}>Volunteers</Text>
-            </View>
-
-            {/* Total Requests */}
-            <View style={styles.overviewBox}>
-              <View style={styles.overviewTop}>
-                <Icon name="document" size={18} color="#0B3B24" />
-                <Text style={styles.growthBadgeGreen}>+18</Text>
-              </View>
-              <Text style={styles.overviewNumber}>{totalRequests}</Text>
-              <Text style={styles.overviewLabel}>Total Requests</Text>
-            </View>
-          </View>
-
-          <View style={styles.overviewRow}>
-            {/* Trees Planted */}
-            <View style={styles.overviewBox}>
-              <View style={styles.overviewTop}>
-                <Icon name="tree" size={18} color="#0B3B24" />
-                <Text style={styles.growthBadgeGreen}>+34</Text>
-              </View>
-              <Text style={styles.overviewNumber}>{treesPlanted}</Text>
-              <Text style={styles.overviewLabel}>Trees Planted</Text>
-            </View>
-
-            {/* Pending Verify */}
-            <View style={[styles.overviewBox, { borderColor: '#FECACA' }]}>
-              <View style={styles.overviewTop}>
-                <Icon name="alert" size={18} color="#DC2626" />
-                <Text style={styles.alertBadgeRed}>Alert</Text>
-              </View>
-              <Text style={[styles.overviewNumber, { color: '#DC2626' }]}>
-                {String(pendingRequests).padStart(2, '0')}
-              </Text>
-              <Text style={styles.overviewLabel}>Pending Verify</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ─── Plantation Activity Chart ─── */}
-        <View style={styles.chartCard}>
-          <View style={styles.chartTop}>
+        {/* Top Greeting Header */}
+        <View style={styles.headerRow}>
+          <View style={styles.userGroup}>
+            <Image
+              source={{
+                uri:
+                  currentUser.avatar ||
+                  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80',
+              }}
+              style={styles.avatar}
+            />
             <View>
-              <Text style={styles.chartTitle}>Plantation Activity</Text>
-              <Text style={styles.chartSub}>Last 5 months growth</Text>
-            </View>
-            <View style={styles.yearPill}>
-              <View style={styles.yearDot} />
-              <Text style={styles.yearText}>2024</Text>
+              <Text style={styles.greetingText}>Namaste,</Text>
+              <Text style={styles.userName}>{currentUser.name || 'Aanandvan Admin'}</Text>
             </View>
           </View>
 
-          {/* Simulated Bar Chart */}
-          <View style={styles.barsContainer}>
-            <View style={styles.barColumn}>
-              <View style={styles.barStack}>
-                <View style={[styles.barPart, { height: 60, backgroundColor: '#0B3B24' }]} />
-                <View style={[styles.barPart, { height: 30, backgroundColor: '#A7F3D0' }]} />
-              </View>
-              <Text style={styles.monthLabel}>OCT</Text>
-            </View>
-
-            <View style={styles.barColumn}>
-              <View style={styles.barStack}>
-                <View style={[styles.barPart, { height: 75, backgroundColor: '#0B3B24' }]} />
-                <View style={[styles.barPart, { height: 40, backgroundColor: '#A7F3D0' }]} />
-              </View>
-              <Text style={styles.monthLabel}>NOV</Text>
-            </View>
-
-            <View style={styles.barColumn}>
-              <View style={styles.barStack}>
-                <View style={[styles.barPart, { height: 90, backgroundColor: '#0B3B24' }]} />
-                <View style={[styles.barPart, { height: 35, backgroundColor: '#A7F3D0' }]} />
-              </View>
-              <Text style={styles.monthLabel}>DEC</Text>
-            </View>
-
-            <View style={styles.barColumn}>
-              <View style={styles.barStack}>
-                <View style={[styles.barPart, { height: 110, backgroundColor: '#0B3B24' }]} />
-                <View style={[styles.barPart, { height: 50, backgroundColor: '#A7F3D0' }]} />
-              </View>
-              <Text style={[styles.monthLabel, { fontWeight: '800', color: '#0B3B24' }]}>
-                JAN
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#0B3B24' }]} />
-              <Text style={styles.legendText}>COMPLETED</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#A7F3D0' }]} />
-              <Text style={styles.legendText}>IN PROGRESS</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ─── Recent Activity ─── */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
-          <TouchableOpacity onPress={() => router.push('/(admin)/requests' as any)}>
-            <Text style={styles.viewAllText}>VIEW ALL</Text>
+          <TouchableOpacity
+            style={styles.bellBtn}
+            onPress={() => router.push('/pages/notifications' as any)}
+            activeOpacity={0.75}
+          >
+            <Icon name="bell" size={20} color="#163020" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.activityList}>
-          {/* Item 1 */}
-          <View style={[styles.activityCard, { borderLeftColor: '#10B981' }]}>
-            <View style={[styles.activityIconBox, { backgroundColor: '#DCFCE7' }]}>
-              <Icon name="check" size={16} color="#059669" />
+        {/* Pending Actions */}
+        <Text style={styles.sectionTitle}>Pending actions</Text>
+        <View style={styles.pendingRow}>
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: '#DFE7EE' }]}
+            onPress={() => router.push('/(admin)/volunteers' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.pendingNumber}>{pendingVolunteers}</Text>
+            <Text style={styles.pendingLabel}>Volunteers requests</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: '#D6E4D8' }]}
+            onPress={() => router.push('/(admin)/requests' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.pendingNumber}>{pendingRequests}</Text>
+            <Text style={styles.pendingLabel}>Plantation requests</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: '#EFF4A8' }]}
+            onPress={() => router.push('/(admin)/requests' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.pendingNumber}>{updatingCount}</Text>
+            <Text style={styles.pendingLabel}>Planting updates</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Actions */}
+        <Text style={styles.sectionTitle}>Quick actions</Text>
+        <View style={styles.quickRow}>
+          {quickActions.map((act) => (
+            <TouchableOpacity
+              key={act.id}
+              style={styles.quickItem}
+              onPress={act.onPress}
+              activeOpacity={0.8}
+            >
+              <View style={styles.quickCircle}>
+                <Icon name={act.icon} size={20} color="#0D4E2B" />
+              </View>
+              <Text style={styles.quickLabel}>{act.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Platform Overview */}
+        <Text style={styles.sectionTitle}>Platform overview</Text>
+        <View style={styles.overviewGrid}>
+          <View style={styles.overviewRow}>
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#DFE7EE' }]}
+              onPress={() => router.push('/(admin)/volunteers' as any)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNum}>{totalVolunteers}</Text>
+                <Icon name="share" size={16} color="#163020" />
+              </View>
+              <Text style={styles.overviewName}>Volunteers</Text>
+              <Text style={styles.overviewSub}>+12% in a month</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#D6E4D8' }]}
+              onPress={() => router.push('/(admin)/requests' as any)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNum}>{totalRequests}</Text>
+                <Icon name="share" size={16} color="#163020" />
+              </View>
+              <Text style={styles.overviewName}>Requests</Text>
+              <Text style={styles.overviewSub}>+18% in a month</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.overviewRow}>
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#DCE7DE' }]}
+              onPress={() => router.push('/pages/admin-reports' as any)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNum}>{treesPlanted}</Text>
+                <Icon name="share" size={16} color="#163020" />
+              </View>
+              <Text style={styles.overviewName}>Trees planted</Text>
+              <Text style={styles.overviewSub}>+12% in a month</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#EFF4A8' }]}
+              onPress={() => router.push('/(admin)/requests' as any)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNum}>47</Text>
+                <Icon name="share" size={16} color="#163020" />
+              </View>
+              <Text style={styles.overviewName}>Pending verifications</Text>
+              <Text style={styles.overviewSub}>Alert</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Plantation Stats */}
+        <Text style={styles.sectionTitle}>Plantation stats</Text>
+        <View style={styles.chartCard}>
+          <View style={styles.chartHeader}>
+            <Text style={styles.chartTitle}>Last 6 months growth</Text>
+            <View style={styles.yearBadge}>
+              <Text style={styles.yearBadgeText}>• 2024</Text>
             </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>Sector 14, Gurugram</Text>
-              <Text style={styles.activitySubtitle}>Plantation completed • 2h ago</Text>
-              <View style={styles.actorRow}>
-                <Icon name="profile" size={12} color="#6B7280" />
-                <Text style={styles.actorName}>AMIT KUMAR</Text>
+          </View>
+
+          <View style={styles.legendWrap}>
+            <View style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: '#0D4E2B' }]} />
+              <Text style={styles.legendText}>Completed</Text>
+            </View>
+            <View style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: '#EAB308' }]} />
+              <Text style={styles.legendText}>In progress</Text>
+            </View>
+          </View>
+
+          <View style={styles.chartBody}>
+            <View style={styles.yAxis}>
+              <Text style={styles.axisLabel}>100</Text>
+              <Text style={styles.axisLabel}>75</Text>
+              <Text style={styles.axisLabel}>50</Text>
+              <Text style={styles.axisLabel}>25</Text>
+              <Text style={styles.axisLabel}>0</Text>
+            </View>
+
+            <View style={styles.barsArea}>
+              <View style={styles.barsRow}>
+                {CHART_BARS.map((bar) => (
+                  <View key={bar.month} style={styles.barGroup}>
+                    <View style={styles.barPair}>
+                      <View
+                        style={[
+                          styles.barCompleted,
+                          { height: Math.round((bar.completed / 100) * 110) },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.barInProgress,
+                          { height: Math.round((bar.inProgress / 100) * 110) },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.xAxisLabel}>{bar.month}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
+        </View>
 
-          {/* Item 2 */}
-          <View style={[styles.activityCard, { borderLeftColor: '#2563EB' }]}>
-            <View style={[styles.activityIconBox, { backgroundColor: '#DBEAFE' }]}>
-              <Icon name="check-circle" size={16} color="#2563EB" />
+        {/* Recent Activities */}
+        <Text style={styles.sectionTitle}>Recent activities</Text>
+        <View style={styles.activityList}>
+          <TouchableOpacity
+            style={styles.activityRow}
+            onPress={() => router.push('/(admin)/requests' as any)}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.activityIcon, { backgroundColor: '#CCF2DB' }]}>
+              <Icon name="check-circle" size={16} color="#0D4E2B" />
             </View>
-            <View style={styles.activityContent}>
+            <View style={styles.activityBody}>
+              <Text style={styles.activityTitle}>Sector 14, Gurugram</Text>
+              <Text style={styles.activityMeta}>Plantation completed • 2h ago</Text>
+              <Text style={styles.activityMeta}>
+                Volunteer <Text style={styles.activityStrong}>Amit Kumar</Text>
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.activityRow}
+            onPress={() =>
+              router.push({
+                pathname: '/pages/request-details',
+                params: { id: 'REQ-2024-0042' },
+              } as any)
+            }
+            activeOpacity={0.75}
+          >
+            <View style={[styles.activityIcon, { backgroundColor: '#DBEAFE' }]}>
+              <Icon name="check" size={16} color="#1D4ED8" />
+            </View>
+            <View style={styles.activityBody}>
               <Text style={styles.activityTitle}>Verified REQ-0042</Text>
-              <Text style={styles.activitySubtitle}>Plantation request approved • 5h ago</Text>
+              <Text style={styles.activityMeta}>Plantation request approved • 2h ago</Text>
+              <Text style={styles.activityMeta}>
+                Assigned to <Text style={styles.activityStrong}>Amit Kumar</Text>
+              </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
-          {/* Item 3 */}
-          <View style={[styles.activityCard, { borderLeftColor: '#F59E0B' }]}>
-            <View style={[styles.activityIconBox, { backgroundColor: '#FEF3C7' }]}>
-              <Icon name="users" size={16} color="#D97706" />
+          <TouchableOpacity
+            style={styles.activityRow}
+            onPress={() => router.push('/(admin)/volunteers' as any)}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.activityIcon, { backgroundColor: '#FEF3C7' }]}>
+              <Icon name="users" size={16} color="#B45309" />
             </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>New Applicant: Priya</Text>
-              <Text style={styles.activitySubtitle}>Review required • 12h ago</Text>
+            <View style={styles.activityBody}>
+              <Text style={styles.activityTitle}>New volunteer applicant</Text>
+              <Text style={styles.activityMeta}>Review pending • 12h ago</Text>
+              <Text style={styles.activityMeta}>
+                Applicant name <Text style={styles.activityStrong}>Priya M</Text>
+              </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -328,359 +333,269 @@ export default function AdminOverviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  brandGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  treeCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#0B3B24',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  panelTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  panelSub: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#0B3B24',
-    letterSpacing: 1,
-  },
-  topRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  bellBtn: {
-    position: 'relative',
-    padding: 6,
-  },
-  redDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#DC2626',
-  },
-  adminAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#0B3B24',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adminAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+    backgroundColor: '#FAFBF9',
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 28,
   },
-  sectionHeaderRow: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  userGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#E5EAE3',
+  },
+  greetingText: {
+    fontSize: 12,
+    color: '#5F6C64',
+  },
+  userName: {
+    fontSize: 16.5,
+    fontWeight: '700',
+    color: '#0B3E22',
+  },
+  bellBtn: {
+    padding: 8,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: 0.8,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0B3E22',
+    marginBottom: 12,
   },
-  totalBadge: {
-    backgroundColor: '#E5E7EB',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  totalBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#4B5563',
-  },
-  pendingGrid: {
+  pendingRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    marginBottom: 22,
   },
   pendingCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  pendingIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
+    borderRadius: 12,
+    padding: 12,
     justifyContent: 'center',
-    marginBottom: 10,
   },
-  pendingCategory: {
-    fontSize: 10,
+  pendingNumber: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 0.5,
+    color: '#0B3E22',
+    marginBottom: 4,
   },
-  pendingCount: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
-    marginTop: 2,
-    marginBottom: 10,
+  pendingLabel: {
+    fontSize: 11.5,
+    lineHeight: 15,
+    color: '#37473D',
   },
-  underlineBar: {
-    height: 3,
-    borderRadius: 1.5,
-  },
-  navContainer: {
-    gap: 10,
-  },
-  navRow: {
+  quickRow: {
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'space-between',
+    marginBottom: 22,
   },
-  navPillBtn: {
+  quickItem: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1E8DA',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
     gap: 8,
   },
-  navPillText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0B3B24',
-    letterSpacing: 0.5,
+  quickCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EFF4A8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  overviewContainer: {
+  quickLabel: {
+    fontSize: 12,
+    color: '#37473D',
+    fontWeight: '500',
+  },
+  overviewGrid: {
     gap: 10,
+    marginBottom: 22,
   },
   overviewRow: {
     flexDirection: 'row',
     gap: 10,
   },
-  overviewBox: {
+  overviewCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderRadius: 12,
+    padding: 14,
   },
-  overviewTop: {
+  overviewTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  growthBadgeGreen: {
+  overviewNum: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#0B3E22',
+  },
+  overviewName: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#163020',
+    marginBottom: 2,
+  },
+  overviewSub: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#059669',
-  },
-  alertBadgeRed: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#DC2626',
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  overviewNumber: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  overviewLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+    color: '#5F6C64',
   },
   chartCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    marginTop: 24,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#EAEEE7',
+    padding: 16,
+    marginBottom: 22,
   },
-  chartTop: {
+  chartHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  chartSub: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  yearPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    gap: 4,
-  },
-  yearDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#0B3B24',
-  },
-  yearText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#374151',
-  },
-  barsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 140,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  barColumn: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  barStack: {
-    width: 22,
-    borderRadius: 11,
-    overflow: 'hidden',
-  },
-  barPart: {
-    width: '100%',
-  },
-  monthLabel: {
-    fontSize: 11,
-    color: '#6B7280',
+    fontSize: 14,
     fontWeight: '600',
+    color: '#37473D',
+  },
+  yearBadge: {
+    backgroundColor: '#0D4E2B',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  yearBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  legendWrap: {
+    alignItems: 'flex-end',
+    gap: 4,
+    marginBottom: 8,
   },
   legendRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-    marginTop: 14,
-  },
-  legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
   legendText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#4B5563',
+    fontSize: 11.5,
+    color: '#37473D',
   },
-  viewAllText: {
+  chartBody: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  yAxis: {
+    height: 132,
+    justifyContent: 'space-between',
+    paddingBottom: 20,
+  },
+  axisLabel: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#0B3B24',
+    color: '#4F5C54',
+  },
+  barsArea: {
+    flex: 1,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E5EAE2',
+    paddingTop: 6,
+  },
+  barsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    height: 124,
+  },
+  barGroup: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  barPair: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  barCompleted: {
+    width: 10,
+    backgroundColor: '#0D4E2B',
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  barInProgress: {
+    width: 10,
+    backgroundColor: '#EAB308',
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  xAxisLabel: {
+    fontSize: 11,
+    color: '#4F5C54',
+    fontWeight: '500',
   },
   activityList: {
-    gap: 10,
-    marginTop: 4,
+    gap: 14,
   },
-  activityCard: {
+  activityRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    borderLeftWidth: 4,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
+    alignItems: 'flex-start',
     gap: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF1EC',
   },
-  activityIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
-  activityContent: {
+  activityBody: {
     flex: 1,
   },
   activityTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#111827',
+    color: '#0B3E22',
+    marginBottom: 2,
   },
-  activitySubtitle: {
+  activityMeta: {
     fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+    color: '#5F6C64',
+    lineHeight: 17,
   },
-  actorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  actorName: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#0B3B24',
+  activityStrong: {
+    fontWeight: '700',
+    color: '#163020',
   },
 });
-

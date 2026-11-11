@@ -1,96 +1,112 @@
-/**
- * Volunteer Schedule Plantation Screen
- * Matches Batch 3 — Image 2:
- * - Back button + "Schedule Plantation"
- * - Select Date: Horizontal date selector (THU 12, FRI 13, SAT 14, SUN 15 Oct)
- * - Select Time Slot: Morning (8-11 AM), Afternoon (3-6 PM)
- * - Materials Checklist: 6 checkable preparation items
- * - Notes for Admin (Optional)
- * - "Confirm Schedule" primary CTA
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  StyleSheet,
   TextInput,
-  StatusBar,
-  Alert,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 const DATES = [
-  { day: 'THU', num: '12', month: 'Oct', full: 'Oct 12, 2026' },
-  { day: 'FRI', num: '13', month: 'Oct', full: 'Oct 13, 2026' },
-  { day: 'SAT', num: '14', month: 'Oct', full: 'Oct 14, 2026' },
-  { day: 'SUN', num: '15', month: 'Oct', full: 'Oct 15, 2026' },
+  { id: 'thu-12', day: 'Thu', date: '12', month: 'Oct', full: 'Thu, 12 Oct' },
+  { id: 'fri-13', day: 'Fri', date: '13', month: 'Oct', full: 'Fri, 13 Oct' },
+  { id: 'sat-14', day: 'Sat', date: '14', month: 'Oct', full: 'Sat, 14 Oct' },
+  { id: 'sun-15', day: 'Sun', date: '15', month: 'Oct', full: 'Sun, 15 Oct' },
+  { id: 'mon-16', day: 'Mon', date: '16', month: 'Oct', full: 'Mon, 16 Oct' },
+];
+
+const TIME_SLOTS = [
+  { id: 'morning', label: 'Morning', time: '8:00 AM - 11:00 AM', value: 'Morning (8:00 AM - 11:00 AM)' },
+  { id: 'afternoon', label: 'Afternoon', time: '3:00 PM - 6:00 PM', value: 'Afternoon (3:00 PM - 6:00 PM)' },
 ];
 
 const CHECKLIST_ITEMS = [
-  'Saplings (as per request)',
-  'Shovel / Digging tool',
-  'Watering can / Hose',
-  'Organic fertilizer / Compost',
-  'Mulch',
-  'Gloves',
+  'Native saplings (arranged or pickup confirmed)',
+  'Organic compost / Vermicompost (2-3 kg per sapling)',
+  'Bamboo tree guard / Tree protection cage',
+  'Gardening spade / Trowel & digging tools',
+  'Watering can / Water supply arrangement',
+  'Gardening gloves & safety gear',
 ];
 
 export default function SchedulePlantationScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { requests, volunteerScheduleRequest } = useApp();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { requests, volunteerAcceptRequest, volunteerScheduleRequest } = useApp();
 
-  const req = requests.find(r => r.id === id) || requests[0];
+  const req = useMemo(() => {
+    if (!id) return requests[0];
+    return requests.find((r) => r.id === id) ?? requests[0];
+  }, [id, requests]);
 
-  const [selectedDate, setSelectedDate] = useState('Oct 12, 2026');
-  const [selectedSlot, setSelectedSlot] = useState('Morning (8:00 AM - 11:00 AM)');
+  const [selectedDateId, setSelectedDateId] = useState<string>('thu-12');
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('morning');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({
-    'Saplings (as per request)': true,
-    'Shovel / Digging tool': true,
+    [CHECKLIST_ITEMS[0]]: true,
+    [CHECKLIST_ITEMS[1]]: true,
+    [CHECKLIST_ITEMS[3]]: true,
   });
   const [notes, setNotes] = useState('');
 
+  if (!req) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Icon name="chevron-left" size={22} color="#163020" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Schedule plantation</Text>
+        </View>
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyText}>Request not found.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const formattedId = `#${req.id.toUpperCase()}`;
+
   const toggleCheck = (item: string) => {
-    setCheckedItems(prev => ({ ...prev, [item]: !prev[item] }));
+    setCheckedItems((prev) => ({ ...prev, [item]: !prev[item] }));
   };
 
   const handleConfirm = () => {
+    const pickedDate = DATES.find((d) => d.id === selectedDateId)?.full ?? 'Thu, 12 Oct';
+    const pickedSlot =
+      TIME_SLOTS.find((s) => s.id === selectedSlotId)?.value ??
+      'Morning (8:00 AM - 11:00 AM)';
+
+    if (req.status === 'verified') {
+      volunteerAcceptRequest(req.id);
+    }
+
     volunteerScheduleRequest(req.id, {
-      date: selectedDate,
-      timeSlot: selectedSlot,
-      checklist: Object.keys(checkedItems).filter(k => checkedItems[k]),
-      notes,
-      isApprovedByAdmin: false,
+      date: pickedDate,
+      timeSlot: pickedSlot,
+      checklist: CHECKLIST_ITEMS.filter((item) => checkedItems[item]),
+      notes: notes.trim() || undefined,
+      confirmedAt: new Date().toISOString(),
+      isApprovedByAdmin: true,
     });
 
-    Alert.alert(
-      'Schedule Submitted 📅',
-      `Your plantation drive for "${req.title}" has been scheduled on ${selectedDate} (${selectedSlot}) and sent to Admin for review. Once confirmed, you can proceed to execute and post before/after updates!`,
-      [
-        {
-          text: 'Go to Work',
-          onPress: () => router.replace('/(volunteer)/work' as any),
-        },
-      ]
-    );
+    router.push({ pathname: '/pages/collect-saplings', params: { id: req.id } } as any);
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Icon name="chevron-left" size={24} color="#111827" />
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Schedule Plantation</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Schedule plantation</Text>
       </View>
 
       <ScrollView
@@ -98,364 +114,315 @@ export default function SchedulePlantationScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Select Date ─── */}
-        <Text style={styles.sectionHeading}>Select Date</Text>
-        <View style={styles.datesRow}>
-          {DATES.map((item, idx) => {
-            const isSelected = selectedDate === item.full;
+        <View style={styles.reqHeaderBlock}>
+          <Text style={styles.reqTitle}>{req.title}</Text>
+          <View style={styles.reqMetaRow}>
+            <View style={styles.locationRow}>
+              <Icon name="map-pin" size={14} color="#5F6C64" />
+              <Text style={styles.locationText}>{req.location}</Text>
+            </View>
+            <Text style={styles.reqIdText}>{formattedId}</Text>
+          </View>
+        </View>
 
+        <Text style={styles.sectionLabel}>Select date</Text>
+        <View style={styles.datesRow}>
+          {DATES.map((d) => {
+            const active = selectedDateId === d.id;
             return (
               <TouchableOpacity
-                key={idx}
-                style={[styles.dateCard, isSelected ? styles.dateCardActive : undefined]}
-                onPress={() => setSelectedDate(item.full)}
+                key={d.id}
+                style={[styles.dateCard, active && styles.dateCardActive]}
+                onPress={() => setSelectedDateId(d.id)}
+                activeOpacity={0.8}
               >
-                <Text
-                  style={[styles.dateDayText, isSelected ? styles.dateTextActive : undefined]}
-                >
-                  {item.day}
+                <Text style={[styles.dateDay, active && styles.dateTextActive]}>
+                  {d.day}
                 </Text>
-                <Text
-                  style={[styles.dateNumText, isSelected ? styles.dateTextActive : undefined]}
-                >
-                  {item.num}
+                <Text style={[styles.dateNum, active && styles.dateTextActive]}>
+                  {d.date}
                 </Text>
-                <Text
-                  style={[styles.dateMonthText, isSelected ? styles.dateTextActive : undefined]}
-                >
-                  {item.month}
+                <Text style={[styles.dateMonth, active && styles.dateTextActive]}>
+                  {d.month}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* ─── Select Time Slot ─── */}
-        <Text style={styles.sectionHeading}>Select Time Slot</Text>
-        <View style={styles.timeSlotsRow}>
-          {/* Morning */}
-          <TouchableOpacity
-            style={[
-              styles.timeSlotCard,
-              selectedSlot.startsWith('Morning') ? styles.timeSlotCardActive : undefined,
-            ]}
-            onPress={() => setSelectedSlot('Morning (8:00 AM - 11:00 AM)')}
-          >
-            <Icon
-              name="sun"
-              size={22}
-              color={selectedSlot.startsWith('Morning') ? '#FFFFFF' : '#0B3B24'}
-            />
-            <Text
-              style={[
-                styles.slotTitle,
-                selectedSlot.startsWith('Morning') ? styles.slotTextActive : undefined,
-              ]}
-            >
-              Morning
-            </Text>
-            <Text
-              style={[
-                styles.slotTime,
-                selectedSlot.startsWith('Morning') ? styles.slotSubActive : undefined,
-              ]}
-            >
-              8:00 AM - 11:00 AM
-            </Text>
-          </TouchableOpacity>
-
-          {/* Afternoon */}
-          <TouchableOpacity
-            style={[
-              styles.timeSlotCard,
-              selectedSlot.startsWith('Afternoon') ? styles.timeSlotCardActive : undefined,
-            ]}
-            onPress={() => setSelectedSlot('Afternoon (3:00 PM - 6:00 PM)')}
-          >
-            <Icon
-              name="sun"
-              size={22}
-              color={selectedSlot.startsWith('Afternoon') ? '#FFFFFF' : '#0B3B24'}
-            />
-            <Text
-              style={[
-                styles.slotTitle,
-                selectedSlot.startsWith('Afternoon') ? styles.slotTextActive : undefined,
-              ]}
-            >
-              Afternoon
-            </Text>
-            <Text
-              style={[
-                styles.slotTime,
-                selectedSlot.startsWith('Afternoon') ? styles.slotSubActive : undefined,
-              ]}
-            >
-              3:00 PM - 6:00 PM
-            </Text>
-          </TouchableOpacity>
+        <Text style={styles.sectionLabel}>Select time slot</Text>
+        <View style={styles.slotsRow}>
+          {TIME_SLOTS.map((slot) => {
+            const active = selectedSlotId === slot.id;
+            return (
+              <TouchableOpacity
+                key={slot.id}
+                style={[styles.slotCard, active && styles.slotCardActive]}
+                onPress={() => setSelectedSlotId(slot.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.slotTitle, active && styles.slotTextActive]}>
+                  {slot.label}
+                </Text>
+                <Text style={[styles.slotTime, active && styles.slotSubActive]}>
+                  {slot.time}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* ─── Materials Checklist ─── */}
-        <View style={styles.checklistSection}>
-          <Text style={styles.sectionHeading}>Materials Checklist</Text>
-          <Text style={styles.checklistSubtitle}>
-            Please confirm you have the following items ready for the plantation
-            drive.
-          </Text>
-
-          <View style={styles.checklistCard}>
-            {CHECKLIST_ITEMS.map((item, idx) => {
-              const isChecked = !!checkedItems[item];
-
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  style={styles.checkItemRow}
-                  activeOpacity={0.8}
-                  onPress={() => toggleCheck(item)}
-                >
-                  <View
-                    style={[
-                      styles.circleCheckbox,
-                      isChecked ? styles.circleCheckboxChecked : undefined,
-                    ]}
-                  >
-                    {isChecked && <Icon name="check" size={12} color="#FFFFFF" />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.checkItemText,
-                      isChecked ? styles.checkItemTextChecked : undefined,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+        <Text style={styles.sectionLabel}>Checklist of materials</Text>
+        <View style={styles.checklistList}>
+          {CHECKLIST_ITEMS.map((item) => {
+            const isChecked = !!checkedItems[item];
+            return (
+              <TouchableOpacity
+                key={item}
+                style={styles.checkRow}
+                onPress={() => toggleCheck(item)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
+                  {isChecked && <Icon name="check" size={12} color="#FFFFFF" />}
+                </View>
+                <Text style={styles.checkLabel}>{item}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* ─── Notes for Admin (Optional) ─── */}
-        <Text style={styles.sectionHeading}>Notes for Admin (Optional)</Text>
-        <View style={styles.notesCard}>
-          <TextInput
-            style={styles.notesInput}
-            multiline
-            placeholder="Any specific requirements or questions..."
-            placeholderTextColor="#9CA3AF"
-            value={notes}
-            onChangeText={setNotes}
-          />
-        </View>
+        <Text style={styles.sectionLabel}>Additional notes</Text>
+        <TextInput
+          style={styles.notesInput}
+          multiline
+          placeholder="Add your comments here..."
+          placeholderTextColor="#8B968F"
+          value={notes}
+          onChangeText={setNotes}
+          textAlignVertical="top"
+        />
+      </ScrollView>
 
-        {/* ─── Confirm Button ─── */}
+      <View style={styles.footer}>
         <TouchableOpacity
           style={styles.confirmBtn}
-          activeOpacity={0.85}
           onPress={handleConfirm}
+          activeOpacity={0.85}
         >
-          <Icon name="calendar" size={18} color="#FFFFFF" />
-          <Text style={styles.confirmBtnText}>Confirm Schedule</Text>
+          <Text style={styles.confirmBtnText}>Confirm schedule</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
+    marginRight: 8,
   },
-  topTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0D4325',
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 40,
+    paddingTop: 4,
+    paddingBottom: 24,
   },
-  sectionHeading: {
+  reqHeaderBlock: {
+    marginBottom: 22,
+  },
+  reqTitle: {
     fontSize: 17,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 12,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 6,
+  },
+  reqMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
+  },
+  locationText: {
+    fontSize: 13,
+    color: '#5F6C64',
+    flexShrink: 1,
+  },
+  reqIdText: {
+    fontSize: 12,
+    color: '#7A867E',
+    fontWeight: '500',
+  },
+  sectionLabel: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#0D4E2B',
+    marginBottom: 10,
   },
   datesRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 22,
   },
   dateCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 14,
+    borderColor: '#D6DDD4',
+    borderRadius: 12,
+    paddingVertical: 10,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    justifyContent: 'center',
   },
   dateCardActive: {
-    backgroundColor: '#0B3B24',
-    borderColor: '#0B3B24',
+    backgroundColor: '#0D4E2B',
+    borderColor: '#0D4E2B',
   },
-  dateDayText: {
-    fontSize: 11,
+  dateDay: {
+    fontSize: 11.5,
+    color: '#6E7B73',
+    marginBottom: 2,
+  },
+  dateNum: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 0.5,
+    color: '#163020',
   },
-  dateNumText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#111827',
-    marginVertical: 2,
-  },
-  dateMonthText: {
+  dateMonth: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#6B7280',
+    color: '#6E7B73',
+    marginTop: 1,
   },
   dateTextActive: {
     color: '#FFFFFF',
   },
-  timeSlotsRow: {
+  slotsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 22,
   },
-  timeSlotCard: {
+  slotCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 16,
-    padding: 16,
+    borderColor: '#D6DDD4',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  timeSlotCardActive: {
-    backgroundColor: '#0B3B24',
-    borderColor: '#0B3B24',
+  slotCardActive: {
+    backgroundColor: '#0D4E2B',
+    borderColor: '#0D4E2B',
   },
   slotTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-    marginTop: 8,
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#163020',
+    marginBottom: 4,
   },
   slotTime: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 2,
+    fontSize: 11.5,
+    color: '#5F6C64',
+    textAlign: 'center',
   },
   slotTextActive: {
     color: '#FFFFFF',
   },
   slotSubActive: {
-    color: '#A8D5BA',
+    color: '#D5EBD9',
   },
-  checklistSection: {
-    marginBottom: 24,
+  checklistList: {
+    gap: 12,
+    marginBottom: 22,
   },
-  checklistSubtitle: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 18,
-    marginTop: -6,
-    marginBottom: 12,
-  },
-  checklistCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-    gap: 14,
-  },
-  checkItemRow: {
+  checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  circleCheckbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#9CA3AF',
+    borderColor: '#8B968F',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  circleCheckboxChecked: {
-    backgroundColor: '#0B3B24',
-    borderColor: '#0B3B24',
+  checkboxChecked: {
+    backgroundColor: '#0D4E2B',
+    borderColor: '#0D4E2B',
   },
-  checkItemText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  checkItemTextChecked: {
-    fontWeight: '700',
-    color: '#111827',
-  },
-  notesCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 14,
-    marginBottom: 24,
+  checkLabel: {
+    flex: 1,
+    fontSize: 13.5,
+    color: '#2B3E33',
+    lineHeight: 19,
   },
   notesInput: {
-    height: 90,
-    textAlignVertical: 'top',
-    fontSize: 14,
-    color: '#111827',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D6DDD4',
+    borderRadius: 12,
+    padding: 14,
+    minHeight: 104,
+    fontSize: 13.5,
+    color: '#163020',
+  },
+  footer: {
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 16,
+    backgroundColor: '#FAFBF9',
+    borderTopWidth: 1,
+    borderTopColor: '#EDF0EA',
   },
   confirmBtn: {
-    flexDirection: 'row',
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#0D4E2B',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0B3B24',
-    borderRadius: 16,
-    height: 54,
-    gap: 8,
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
   confirmBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+  },
+  emptyBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#5F6C64',
   },
 });
-

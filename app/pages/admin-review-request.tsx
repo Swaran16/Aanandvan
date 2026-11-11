@@ -1,59 +1,109 @@
-/**
- * Admin Review & Verification Screen
- * Matches Batch 4 — Image 5:
- * - Back button + Review Request title
- * - #REQ-2024-0042 header + submission date + status pill
- * - Uploaded Area Photos & Landmark Photos with photo captions
- * - Location Card with Map, Coordinates, and Address
- * - Requester Details Card (Rahul Jayakumar / Citizen)
- * - Request Description
- * - Volunteer Scheduled details preview (if drive is scheduled)
- * - Primary CTA: "Verify & Send to Volunteers" and "Reject Request"
- */
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StatusBar,
   Alert,
+  Image,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
+const DEFAULT_AREA = [
+  'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1511497584788-876760111969?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop',
+];
+
+const DEFAULT_LANDMARK = [
+  'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&auto=format&fit=crop',
+];
+
+function chunkIntoRows<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size));
+  }
+  return rows;
+}
+
 export default function AdminReviewRequestScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { requests, verifyRequest, rejectRequest, adminApproveSchedule } = useApp();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { requests, rejectRequest } = useApp();
 
-  const req = requests.find(r => r.id === id) || requests[0];
-  const isScheduled = req.status === 'scheduled';
+  const req = useMemo(() => {
+    if (!id) return requests[0];
+    return requests.find((r) => r.id === id) ?? requests[0];
+  }, [id, requests]);
 
-  const handleVerify = () => {
-    if (isScheduled) {
-      adminApproveSchedule(req.id);
-      Alert.alert(
-        'Schedule Approved ✅',
-        `The volunteer's plantation schedule for "${req.title}" has been approved! Status updated to In Progress.`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
-    } else {
-      verifyRequest(req.id);
-      Alert.alert(
-        'Request Verified & Published ✅',
-        `"${req.title}" has been verified and is now broadcasted to all local volunteers under Available Requests!`,
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+  if (!req) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Icon name="chevron-left" size={22} color="#163020" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Review request</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const areaPhotos =
+    req.areaPhotos && req.areaPhotos.length >= 2
+      ? req.areaPhotos
+      : [...(req.areaPhotos ?? []), ...DEFAULT_AREA].slice(0, 4);
+
+  const landmarkPhotos =
+    req.landmarkPhotos && req.landmarkPhotos.length > 0
+      ? req.landmarkPhotos
+      : DEFAULT_LANDMARK;
+
+  const areaRows = chunkIntoRows(areaPhotos, 3);
+  const landmarkRows = chunkIntoRows(landmarkPhotos, 3);
+
+  const badgeLabel =
+    req.status === 'pending'
+      ? 'Pending'
+      : req.status === 'verified'
+        ? 'Verified'
+        : req.status === 'rejected'
+          ? 'Need info'
+          : req.status.replace(/_/g, ' ');
+
+  const handleOpenMaps = () => {
+    const query = encodeURIComponent(req.coordinates || req.manualAddress || req.location);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+  };
+
+  const handleAskMoreInfo = () => {
+    rejectRequest(req.id);
+    if (Platform.OS === 'web') {
+      router.back();
+      return;
     }
+    Alert.alert(
+      'More Information Requested',
+      `The citizen (${req.citizenName}) will be notified to provide clearer details.`,
+      [{ text: 'OK', onPress: () => router.back() }]
+    );
   };
 
   const handleReject = () => {
-    Alert.alert('Confirm Rejection', `Are you sure you want to reject "${req.title}"?`, [
+    if (Platform.OS === 'web') {
+      rejectRequest(req.id);
+      router.back();
+      return;
+    }
+    Alert.alert('Reject Request', `Are you sure you want to reject "${req.title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Reject',
@@ -67,18 +117,16 @@ export default function AdminReviewRequestScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Icon name="chevron-left" size={24} color="#111827" />
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Review Request</Text>
-        <TouchableOpacity style={styles.menuBtn} onPress={() => alert('Options')}>
-          <Icon name="settings" size={20} color="#111827" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Review request</Text>
       </View>
 
       <ScrollView
@@ -86,471 +134,334 @@ export default function AdminReviewRequestScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Header Info ─── */}
-        <View style={styles.headerBlock}>
-          <Text style={styles.reqId}>#{req.id}</Text>
-          <Text style={styles.subDate}>Submitted {req.createdAt}, 10:30 AM</Text>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusPillText}>
-              {req.status === 'pending'
-                ? 'Pending'
-                : req.status === 'scheduled'
-                ? 'Schedule Pending Review'
-                : req.status.toUpperCase()}
-            </Text>
+        <View style={styles.topInfoRow}>
+          <View style={styles.topInfoLeft}>
+            <Text style={styles.title}>{req.title}</Text>
+            <View style={styles.locationRow}>
+              <Icon name="map-pin" size={14} color="#5F6C64" />
+              <Text style={styles.locationText}>{req.location}</Text>
+            </View>
+          </View>
+
+          <View style={styles.topInfoRight}>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{badgeLabel}</Text>
+            </View>
+            <Text style={styles.reqIdText}>#{req.id.toUpperCase()}</Text>
           </View>
         </View>
 
-        {/* ─── Volunteer Scheduled Drive Preview (if scheduled) ─── */}
-        {isScheduled && req.schedule && (
-          <View style={styles.scheduledCard}>
-            <View style={styles.scheduledHeaderRow}>
-              <Icon name="calendar" size={18} color="#0B3B24" />
-              <Text style={styles.scheduledTitle}>Volunteer Proposed Schedule</Text>
+        <Text style={styles.sectionTitle}>Area photographs</Text>
+        <View style={styles.gridGroup}>
+          {areaRows.map((row, rIdx) => (
+            <View key={`area-r-${rIdx}`} style={styles.photoRow}>
+              {row.map((uri, cIdx) => (
+                <View key={`area-${rIdx}-${cIdx}`} style={styles.photoCell}>
+                  <Image source={{ uri }} style={styles.photoImg} resizeMode="cover" />
+                </View>
+              ))}
+              {Array.from({ length: 3 - row.length }).map((_, eIdx) => (
+                <View key={`area-e-${rIdx}-${eIdx}`} style={styles.photoSpacer} />
+              ))}
             </View>
-            <View style={styles.scheduledInfoRow}>
-              <Text style={styles.scheduledLabel}>Drive Date:</Text>
-              <Text style={styles.scheduledValue}>{req.schedule.date}</Text>
-            </View>
-            <View style={styles.scheduledInfoRow}>
-              <Text style={styles.scheduledLabel}>Time Slot:</Text>
-              <Text style={styles.scheduledValue}>{req.schedule.timeSlot}</Text>
-            </View>
-            <View style={styles.scheduledInfoRow}>
-              <Text style={styles.scheduledLabel}>Checklist Ready:</Text>
-              <Text style={styles.scheduledValue}>
-                {req.schedule.checklist.join(', ') || 'All standard items'}
-              </Text>
-            </View>
-            {req.schedule.notes ? (
-              <View style={styles.scheduledInfoRow}>
-                <Text style={styles.scheduledLabel}>Volunteer Notes:</Text>
-                <Text style={styles.scheduledValue}>"{req.schedule.notes}"</Text>
-              </View>
-            ) : null}
-          </View>
-        )}
-
-        {/* ─── Uploaded Area Photos ─── */}
-        <Text style={styles.sectionTitle}>Uploaded Area Photos</Text>
-        <View style={styles.photosRow}>
-          <Image
-            source={{
-              uri:
-                req.areaPhotos[0] ||
-                'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
-            }}
-            style={styles.photoItem}
-          />
-          <Image
-            source={{
-              uri:
-                req.areaPhotos[1] ||
-                'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&auto=format&fit=crop&q=80',
-            }}
-            style={styles.photoItem}
-          />
+          ))}
         </View>
 
-        {/* ─── Landmark Photos ─── */}
-        <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
-          Landmark Photos
+        <Text style={styles.sectionTitle}>Landmark photographs</Text>
+        <View style={styles.gridGroup}>
+          {landmarkRows.map((row, rIdx) => (
+            <View key={`lm-r-${rIdx}`} style={styles.photoRow}>
+              {row.map((uri, cIdx) => (
+                <View key={`lm-${rIdx}-${cIdx}`} style={styles.photoCell}>
+                  <Image source={{ uri }} style={styles.photoImg} resizeMode="cover" />
+                </View>
+              ))}
+              {Array.from({ length: 3 - row.length }).map((_, eIdx) => (
+                <View key={`lm-e-${rIdx}-${eIdx}`} style={styles.photoSpacer} />
+              ))}
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Location</Text>
+        <Text style={styles.metaLabel}>Address</Text>
+        <Text style={styles.metaValue}>
+          {req.manualAddress || req.location}
         </Text>
-        <View style={styles.photosRow}>
-          <View style={styles.landmarkWrap}>
-            <Image
-              source={{
-                uri:
-                  req.landmarkPhotos[0] ||
-                  'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&auto=format&fit=crop&q=80',
-              }}
-              style={styles.photoItem}
-            />
-            <View style={styles.captionTag}>
-              <Text style={styles.captionText}>Near Community Gate</Text>
-            </View>
-          </View>
 
-          <View style={styles.landmarkWrap}>
-            <Image
-              source={{
-                uri:
-                  req.landmarkPhotos[1] ||
-                  'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=400&auto=format&fit=crop&q=80',
-              }}
-              style={styles.photoItem}
-            />
-            <View style={styles.captionTag}>
-              <Text style={styles.captionText}>Street Signboard</Text>
-            </View>
-          </View>
-        </View>
+        <Text style={[styles.metaLabel, { marginTop: 12 }]}>Nearby landmark</Text>
+        <Text style={styles.metaValue}>{req.landmark || 'Near main road'}</Text>
 
-        {/* ─── Location & Address ─── */}
-        <View style={styles.locationCard}>
-          <View style={styles.mapThumb}>
-            <Icon name="navigation" size={32} color="#9CA3AF" />
-            <TouchableOpacity
-              style={styles.openMapsBtn}
-              onPress={() => alert(`Maps opened for: ${req.coordinates}`)}
-            >
-              <Text style={styles.openMapsText}>Open in Maps ↗</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.locDetails}>
-            <View style={styles.locTitleRow}>
-              <Icon name="map-pin" size={16} color="#0B3B24" />
-              <Text style={styles.locMainTitle}>{req.location}</Text>
-            </View>
-
-            <Text style={styles.locFullAddress}>{req.manualAddress}</Text>
-
-            {req.landmark && (
-              <View style={styles.landmarkLine}>
-                <Text style={styles.landmarkLineLabel}>Nearby Landmark</Text>
-                <Text style={styles.landmarkLineValue}>{req.landmark}</Text>
-              </View>
-            )}
-
-            <View style={styles.coordsLine}>
-              <Text style={styles.coordsText}>
-                Latitude: <Text style={{ fontWeight: '700' }}>{req.coordinates.split(',')[0]}</Text>
-              </Text>
-              <Text style={styles.coordsText}>
-                Longitude: <Text style={{ fontWeight: '700' }}>{req.coordinates.split(',')[1] || '77.2090° E'}</Text>
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ─── Requester Details ─── */}
-        <View style={styles.requesterCard}>
-          <View style={styles.requesterAvatar}>
-            <Text style={styles.requesterAvatarText}>
-              {req.citizenName.substring(0, 2).toUpperCase()}
-            </Text>
-          </View>
-          <View>
-            <Text style={styles.requesterName}>{req.citizenName}</Text>
-            <Text style={styles.requesterMeta}>
-              {req.citizenEmail || 'citizen@aanandvan.in'} • {req.location.split(',')[0]}
-            </Text>
-          </View>
-        </View>
-
-        {/* ─── Request Description ─── */}
-        <View style={styles.descCard}>
-          <Text style={styles.descTitle}>Request Description</Text>
-          <Text style={styles.descBody}>{req.description}</Text>
-        </View>
-
-        {/* ─── Actions ─── */}
         <TouchableOpacity
-          style={styles.verifyMainBtn}
-          activeOpacity={0.85}
-          onPress={handleVerify}
+          style={styles.mapsBtn}
+          onPress={handleOpenMaps}
+          activeOpacity={0.8}
         >
-          <Icon name="check-circle" size={18} color="#FFFFFF" />
-          <Text style={styles.verifyMainBtnText}>
-            {isScheduled ? 'Approve & Confirm Drive' : 'Verify & Send to Volunteers'}
-          </Text>
+          <Icon name="navigation" size={16} color="#0D4E2B" />
+          <Text style={styles.mapsBtnText}>Open in maps</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.rejectTextBtn} onPress={handleReject}>
-          <Text style={styles.rejectTextBtnText}>Reject Request</Text>
-        </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { marginTop: 22 }]}>Description</Text>
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionText}>{`"${req.description}"`}</Text>
+        </View>
+
+        <View style={styles.submitterRow}>
+          <Image
+            source={{
+              uri:
+                req.citizenAvatar ||
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+            }}
+            style={styles.citizenAvatar}
+          />
+          <View>
+            <Text style={styles.submittedBy}>Submitted by: {req.citizenName}</Text>
+            <Text style={styles.submittedDate}>{req.createdAt}</Text>
+          </View>
+        </View>
       </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.verifyBtn}
+          onPress={() =>
+            router.push({
+              pathname: '/pages/verify-publish',
+              params: { id: req.id },
+            } as any)
+          }
+          activeOpacity={0.85}
+        >
+          <Text style={styles.verifyBtnText}>Verify & publish to volunteers</Text>
+        </TouchableOpacity>
+
+        <View style={styles.secondaryRow}>
+          <TouchableOpacity
+            style={styles.outlineBtn}
+            onPress={handleAskMoreInfo}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.outlineBtnText}>Ask more info</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.outlineBtn}
+            onPress={handleReject}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.outlineBtnText}>Reject request</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
+    marginRight: 8,
   },
-  topTitle: {
+  headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0B3B24',
-  },
-  menuBtn: {
-    padding: 6,
+    fontWeight: '600',
+    color: '#0D4325',
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 24,
   },
-  headerBlock: {
-    marginBottom: 16,
-  },
-  reqId: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  subDate: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  statusPill: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#D97706',
-  },
-  scheduledCard: {
-    backgroundColor: '#E8F5EE',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#C7EED8',
-    marginBottom: 18,
-    gap: 8,
-  },
-  scheduledHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  scheduledTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0B3B24',
-  },
-  scheduledInfoRow: {
+  topInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 2,
-  },
-  scheduledLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4B5563',
-  },
-  scheduledValue: {
-    fontSize: 12,
-    color: '#111827',
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0B3B24',
-    marginBottom: 10,
-  },
-  photosRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 8,
-  },
-  photoItem: {
-    flex: 1,
-    height: 120,
-    borderRadius: 14,
-  },
-  landmarkWrap: {
-    flex: 1,
-    position: 'relative',
-  },
-  captionTag: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  captionText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  locationCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-    marginTop: 14,
-    marginBottom: 16,
-  },
-  mapThumb: {
-    height: 120,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  openMapsBtn: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  openMapsText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  locDetails: {
-    padding: 16,
-    gap: 8,
-  },
-  locTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  locMainTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  locFullAddress: {
-    fontSize: 13,
-    color: '#4B5563',
-    lineHeight: 18,
-  },
-  landmarkLine: {
-    marginTop: 4,
-  },
-  landmarkLineLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-  },
-  landmarkLineValue: {
-    fontSize: 13,
-    color: '#0B3B24',
-    fontWeight: '600',
-  },
-  coordsLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  coordsText: {
-    fontSize: 11,
-    color: '#6B7280',
-  },
-  requesterCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-    gap: 12,
-    marginBottom: 16,
-  },
-  requesterAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0B3B24',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  requesterAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  requesterName: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  requesterMeta: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  descCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
-  descTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#0B3B24',
-    marginBottom: 6,
+  topInfoLeft: {
+    flex: 1,
+    paddingRight: 12,
   },
-  descBody: {
+  topInfoRight: {
+    alignItems: 'flex-end',
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 4,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  locationText: {
     fontSize: 13,
-    color: '#374151',
+    color: '#5F6C64',
+    flexShrink: 1,
+  },
+  statusBadge: {
+    backgroundColor: '#FBF0C4',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#92580A',
+    textTransform: 'capitalize',
+  },
+  reqIdText: {
+    fontSize: 11.5,
+    color: '#6E7B73',
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  sectionTitle: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#0D4E2B',
+    marginBottom: 10,
+  },
+  gridGroup: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  photoRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  photoCell: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#E5EAE3',
+  },
+  photoSpacer: {
+    flex: 1,
+    aspectRatio: 1,
+  },
+  photoImg: {
+    width: '100%',
+    height: '100%',
+  },
+  metaLabel: {
+    fontSize: 12,
+    color: '#7A867E',
+    marginBottom: 4,
+  },
+  metaValue: {
+    fontSize: 14,
     lineHeight: 20,
+    color: '#163020',
   },
-  verifyMainBtn: {
+  mapsBtn: {
+    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0B3B24',
-    borderRadius: 16,
-    height: 52,
+    height: 44,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    borderColor: '#0D4E2B',
+    backgroundColor: '#FFFFFF',
     gap: 8,
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
-  verifyMainBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  rejectTextBtn: {
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  rejectTextBtnText: {
-    color: '#DC2626',
+  mapsBtnText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: '#0D4E2B',
+  },
+  descriptionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5EAE2',
+    padding: 16,
+    marginBottom: 16,
+  },
+  descriptionText: {
+    fontSize: 13.5,
+    lineHeight: 21,
+    fontStyle: 'italic',
+    color: '#4F5C54',
+  },
+  submitterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  citizenAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E5EAE3',
+  },
+  submittedBy: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#163020',
+  },
+  submittedDate: {
+    fontSize: 12,
+    color: '#6E7B73',
+  },
+  footer: {
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 16,
+    backgroundColor: '#FAFBF9',
+    borderTopWidth: 1,
+    borderTopColor: '#EAEEE7',
+    gap: 10,
+  },
+  verifyBtn: {
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: '#0D4E2B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifyBtnText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  outlineBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    borderColor: '#0D4E2B',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outlineBtnText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#0D4E2B',
   },
 });
-

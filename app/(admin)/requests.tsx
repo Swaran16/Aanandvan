@@ -1,627 +1,404 @@
-/**
- * Admin Plantation Requests Management Screen (Tab 2)
- * Matches Batch 4 — Image 4:
- * - Summary chips: 8 Pending, 15 Verified, 23 Assigned
- * - Tabs: Pending, Verified, Assigned, Completed
- * - Sort dropdown: Sort: Newest First
- * - Request cards with photo grid + "+2 more" badge, requester avatar, Duplicate Risk indicator
- * - Actions: [Reject], [Approve], [Review →]
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+  FlatList,
   Image,
-  StatusBar,
-  Alert,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
+import { PlantationRequest } from '@/types';
+
+type FilterTab = 'pending' | 'needs_info' | 'verified';
+
+const FALLBACK_PHOTOS = [
+  'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=300&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1448375240586-882707db888b?w=300&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=300&auto=format&fit=crop',
+];
 
 export default function AdminRequestsScreen() {
-  const { requests, verifyRequest, rejectRequest, adminApproveSchedule } = useApp();
-  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'assigned' | 'completed'>('pending');
+  const { requests } = useApp();
+  const [filter, setFilter] = useState<FilterTab>('pending');
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
-  const verifiedCount = requests.filter(r => r.status === 'verified').length;
-  const assignedCount = requests.filter(
-    r => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+  const pendingCount = requests.filter(
+    (r) => r.status === 'pending' || r.status === 'scheduled'
+  ).length;
+  const needsInfoCount = requests.filter((r) => r.status === 'rejected').length;
+  const verifiedCount = requests.filter(
+    (r) =>
+      r.status === 'verified' ||
+      r.status === 'assigned' ||
+      r.status === 'in_progress' ||
+      r.status === 'completed'
   ).length;
 
-  const filteredRequests = requests.filter(req => {
-    if (activeTab === 'pending') return req.status === 'pending' || req.status === 'scheduled';
-    if (activeTab === 'verified') return req.status === 'verified';
-    if (activeTab === 'assigned')
-      return req.status === 'assigned' || req.status === 'in_progress' || req.status === 'scheduled';
-    if (activeTab === 'completed') return req.status === 'completed';
-    return true;
-  });
+  const filteredRequests = useMemo(() => {
+    return requests.filter((req) => {
+      if (filter === 'pending') {
+        return req.status === 'pending' || req.status === 'scheduled';
+      }
+      if (filter === 'needs_info') {
+        return req.status === 'rejected';
+      }
+      return (
+        req.status === 'verified' ||
+        req.status === 'assigned' ||
+        req.status === 'in_progress' ||
+        req.status === 'completed'
+      );
+    });
+  }, [requests, filter]);
 
-  const handleApprove = (id: string, title: string, isScheduled?: boolean) => {
-    if (isScheduled) {
-      adminApproveSchedule(id);
-      Alert.alert('Schedule Confirmed ✅', `Plantation drive approved for "${title}". Volunteer can now proceed!`);
-    } else {
-      verifyRequest(id);
-      Alert.alert('Request Verified ✅', `"${title}" has been verified and is now available to volunteers!`);
-    }
-  };
+  const renderCard = ({ item }: { item: PlantationRequest }) => {
+    const photos = [...(item.areaPhotos ?? []), ...(item.landmarkPhotos ?? []), ...FALLBACK_PHOTOS].slice(
+      0,
+      5
+    );
+    const hasDuplicateRisk = item.duplicateRisk === 'Potential match';
 
-  const handleReject = (id: string, title: string) => {
-    Alert.alert('Confirm Rejection', `Are you sure you want to reject "${title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: () => {
-          rejectRequest(id);
-        },
-      },
-    ]);
-  };
-
-  return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <View style={styles.topLeft}>
-          <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={() => router.push('/(admin)' as any)}
-          >
-            <Icon name="chevron-left" size={22} color="#111827" />
-          </TouchableOpacity>
-          <Text style={styles.screenHeading}>Plantation Requests</Text>
-        </View>
-
-        <View style={styles.topRight}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => alert('Search')}>
-            <Icon name="search" size={20} color="#111827" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => alert('Exporting requests CSV...')}
-          >
-            <Icon name="share" size={20} color="#111827" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ─── Summary Count Chips ─── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.summaryChipsRow}
-        >
-          <View style={styles.summaryChip}>
-            <View style={[styles.dotIndicator, { backgroundColor: '#F59E0B' }]} />
-            <Text style={styles.summaryChipText}>{pendingCount} Pending</Text>
-          </View>
-
-          <View style={styles.summaryChip}>
-            <View style={[styles.dotIndicator, { backgroundColor: '#3B82F6' }]} />
-            <Text style={styles.summaryChipText}>{verifiedCount} Verified</Text>
-          </View>
-
-          <View style={styles.summaryChip}>
-            <View style={[styles.dotIndicator, { backgroundColor: '#8B5CF6' }]} />
-            <Text style={styles.summaryChipText}>{assignedCount} Assigned</Text>
-          </View>
-        </ScrollView>
-
-        {/* ─── Tab Switcher ─── */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'pending' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('pending')}
-          >
-            <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'pending' && styles.tabBtnTextActive,
-              ]}
-            >
-              Pending
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'verified' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('verified')}
-          >
-            <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'verified' && styles.tabBtnTextActive,
-              ]}
-            >
-              Verified
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'assigned' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('assigned')}
-          >
-            <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'assigned' && styles.tabBtnTextActive,
-              ]}
-            >
-              Assigned
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'completed' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('completed')}
-          >
-            <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'completed' && styles.tabBtnTextActive,
-              ]}
-            >
-              Completed
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Sort Row ─── */}
-        <View style={styles.sortRow}>
-          <View style={styles.sortPill}>
-            <Text style={styles.sortText}>Sort: Newest First</Text>
-            <Icon name="chevron-down" size={14} color="#374151" />
-          </View>
-
-          <TouchableOpacity
-            style={styles.filterBtn}
-            onPress={() => alert('Filter options')}
-          >
-            <Icon name="filter" size={16} color="#374151" />
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Request Cards ─── */}
-        <View style={styles.cardsContainer}>
-          {filteredRequests.map(req => {
-            const isScheduledAwaitingAdmin = req.status === 'scheduled';
-
+    return (
+      <View style={styles.card}>
+        <View style={styles.photosStrip}>
+          {photos.map((uri, idx) => {
+            const isLast = idx === 4;
             return (
-              <View key={req.id} style={styles.card}>
-                {/* Photo Grid Preview */}
-                <View style={styles.photoGrid}>
-                  <Image
-                    source={{
-                      uri:
-                        req.areaPhotos[0] ||
-                        'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop&q=80',
-                    }}
-                    style={styles.gridPhoto}
-                  />
-                  <Image
-                    source={{
-                      uri:
-                        req.areaPhotos[1] ||
-                        'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=300&auto=format&fit=crop&q=80',
-                    }}
-                    style={styles.gridPhoto}
-                  />
-                  <Image
-                    source={{
-                      uri:
-                        req.landmarkPhotos[0] ||
-                        'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300&auto=format&fit=crop&q=80',
-                    }}
-                    style={styles.gridPhoto}
-                  />
-                  <View style={styles.morePhotosBox}>
-                    <Text style={styles.morePhotosText}>+2 more</Text>
+              <View key={`${item.id}-ph-${idx}`} style={styles.stripCell}>
+                <Image source={{ uri }} style={styles.stripImg} resizeMode="cover" />
+                {isLast && (
+                  <View style={styles.moreOverlay}>
+                    <Text style={styles.moreText}>+2 more</Text>
                   </View>
-                </View>
-
-                {/* Card Header & Content */}
-                <View style={styles.cardContent}>
-                  <View style={styles.metaLine}>
-                    <Text style={styles.reqIdText}>#{req.id}</Text>
-                    <Text style={styles.dateText}>{req.createdAt}</Text>
-                  </View>
-
-                  <Text style={styles.cardTitle}>{req.title}</Text>
-                  <Text style={styles.cardAddressSnippet} numberOfLines={2}>
-                    {req.manualAddress || req.location}
-                  </Text>
-
-                  {/* Scheduled Volunteer banner if scheduled */}
-                  {isScheduledAwaitingAdmin && req.schedule && (
-                    <View style={styles.scheduledBanner}>
-                      <Icon name="calendar" size={14} color="#0B3B24" />
-                      <Text style={styles.scheduledBannerText}>
-                        Volunteer scheduled drive for {req.schedule.date} (
-                        {req.schedule.timeSlot})
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Citizen Submitter */}
-                  <View style={styles.submitterRow}>
-                    <Image
-                      source={{
-                        uri:
-                          req.citizenAvatar ||
-                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-                      }}
-                      style={styles.submitterAvatar}
-                    />
-                    <Text style={styles.submitterText}>
-                      Submitted by: {req.citizenName}
-                    </Text>
-                  </View>
-
-                  {/* Duplicate Risk & Action Buttons */}
-                  <View style={styles.bottomActionsRow}>
-                    <View style={styles.riskBadgeRow}>
-                      <View style={styles.greenBar} />
-                      <Text style={styles.riskText}>
-                        Duplicate Risk: None detected
-                      </Text>
-                    </View>
-
-                    <View style={styles.actionButtonsGroup}>
-                      <TouchableOpacity
-                        style={styles.rejectBtn}
-                        onPress={() => handleReject(req.id, req.title)}
-                      >
-                        <Text style={styles.rejectBtnText}>Reject</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.approveBtn}
-                        onPress={() =>
-                          handleApprove(
-                            req.id,
-                            req.title,
-                            isScheduledAwaitingAdmin
-                          )
-                        }
-                      >
-                        <Text style={styles.approveBtnText}>
-                          {isScheduledAwaitingAdmin ? 'Confirm' : 'Approve'}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.reviewBtn}
-                        onPress={() =>
-                          router.push({
-                            pathname: '/pages/admin-review-request',
-                            params: { id: req.id },
-                          } as any)
-                        }
-                      >
-                        <Text style={styles.reviewBtnText}>Review →</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
+                )}
               </View>
             );
           })}
         </View>
-      </ScrollView>
+
+        <Text style={styles.reqIdText}>#{item.id.toUpperCase()}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={styles.cardDesc} numberOfLines={2}>
+          {item.manualAddress || item.description}
+        </Text>
+
+        <View style={styles.submitterRow}>
+          <Image
+            source={{
+              uri:
+                item.citizenAvatar ||
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+            }}
+            style={styles.citizenAvatar}
+          />
+          <View>
+            <Text style={styles.submittedBy}>Submitted by: {item.citizenName}</Text>
+            <Text style={styles.submittedDate}>{item.createdAt}</Text>
+          </View>
+        </View>
+
+        {hasDuplicateRisk && (
+          <View style={styles.duplicateBox}>
+            <Text style={styles.duplicateText}>
+              Possible duplicate of #REQ-2024-0042 (about 20 meters away)
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.reviewBtn}
+          onPress={() =>
+            router.push({
+              pathname: '/pages/admin-review-request',
+              params: { id: item.id },
+            } as any)
+          }
+          activeOpacity={0.85}
+        >
+          <Text style={styles.reviewBtnText}>Review request</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={22} color="#163020" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Plantation requests</Text>
+      </View>
+
+      <View style={styles.filtersWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'pending' && styles.filterPillActive]}
+            onPress={() => setFilter('pending')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[styles.filterText, filter === 'pending' && styles.filterTextActive]}
+            >
+              Pending ({pendingCount})
+            </Text>
+            {filter === 'pending' && <Icon name="close" size={12} color="#FFFFFF" />}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'needs_info' && styles.filterPillActive]}
+            onPress={() => setFilter('needs_info')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                filter === 'needs_info' && styles.filterTextActive,
+              ]}
+            >
+              Needs info ({needsInfoCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'verified' && styles.filterPillActive]}
+            onPress={() => setFilter('verified')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[styles.filterText, filter === 'verified' && styles.filterTextActive]}
+            >
+              Verified ({verifiedCount})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
+      <FlatList
+        data={filteredRequests}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCard}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListFooterComponent={
+          <Text style={styles.footerNote}>
+            Note: There might be duplication of requests.
+          </Text>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyBox}>
+            <Icon name="requests" size={36} color="#8BA093" />
+            <Text style={styles.emptyTitle}>No requests in this filter</Text>
+            <Text style={styles.emptySub}>Switch tabs above to inspect other requests.</Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  topLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  backBtn: {
+    padding: 4,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0D4325',
+  },
+  filtersWrap: {
+    paddingBottom: 10,
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
     gap: 8,
   },
-  menuBtn: {
-    padding: 4,
-  },
-  screenHeading: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
-  },
-  topRight: {
+  filterPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  iconBtn: {
-    padding: 6,
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: '#F8FAF9',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  summaryChipsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  summaryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    gap: 6,
-  },
-  dotIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  summaryChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#374151',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
-    marginBottom: 16,
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  tabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  tabBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  tabBtnTextActive: {
-    color: '#111827',
-    fontWeight: '700',
-  },
-  sortRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sortPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1E8DA',
-    borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    gap: 6,
-  },
-  sortText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  filterBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    borderRadius: 999,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D1E8DA',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#CED7CD',
+    gap: 6,
   },
-  cardsContainer: {
-    gap: 18,
+  filterPillActive: {
+    backgroundColor: '#0D4E2B',
+    borderColor: '#0D4E2B',
+  },
+  filterText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#4F5C54',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 28,
+    gap: 14,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#EAEEE7',
     shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
-  photoGrid: {
+  photosStrip: {
     flexDirection: 'row',
-    padding: 12,
-    gap: 8,
+    gap: 6,
+    marginBottom: 12,
   },
-  gridPhoto: {
+  stripCell: {
     flex: 1,
-    height: 72,
-    borderRadius: 10,
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#E5EAE3',
   },
-  morePhotosBox: {
-    flex: 1,
-    height: 72,
-    borderRadius: 10,
-    backgroundColor: '#E5E7EB',
+  stripImg: {
+    width: '100%',
+    height: '100%',
+  },
+  moreOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(17, 24, 39, 0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  morePhotosText: {
-    fontSize: 12,
+  moreText: {
+    fontSize: 10.5,
     fontWeight: '700',
-    color: '#4B5563',
-  },
-  cardContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  metaLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    color: '#FFFFFF',
   },
   reqIdText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#6B7280',
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 11.5,
+    color: '#7A867E',
+    marginBottom: 4,
+    fontWeight: '500',
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0B3E22',
     marginBottom: 4,
   },
-  cardAddressSnippet: {
-    fontSize: 13,
-    color: '#4B5563',
+  cardDesc: {
+    fontSize: 12.5,
     lineHeight: 18,
-    marginBottom: 10,
-  },
-  scheduledBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5EE',
-    padding: 8,
-    borderRadius: 8,
-    gap: 6,
-    marginBottom: 10,
-  },
-  scheduledBannerText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#0B3B24',
-    flex: 1,
+    color: '#4F5C54',
+    marginBottom: 12,
   },
   submitterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
+    gap: 10,
+    marginBottom: 12,
   },
-  submitterAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  citizenAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#E5EAE3',
   },
-  submitterText: {
+  submittedBy: {
+    fontSize: 12.5,
+    color: '#5F6C64',
+  },
+  submittedDate: {
+    fontSize: 11.5,
+    color: '#7A867E',
+  },
+  duplicateBox: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  duplicateText: {
     fontSize: 12,
-    color: '#6B7280',
-  },
-  bottomActionsRow: {
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
-  },
-  riskBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  greenBar: {
-    width: 4,
-    height: 12,
-    borderRadius: 2,
-    backgroundColor: '#10B981',
-  },
-  riskText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#059669',
-  },
-  actionButtonsGroup: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  rejectBtn: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: '#EF4444',
-    borderRadius: 12,
-    paddingVertical: 9,
-    alignItems: 'center',
-  },
-  rejectBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#EF4444',
-  },
-  approveBtn: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 9,
-    alignItems: 'center',
-  },
-  approveBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#10B981',
+    lineHeight: 17,
+    color: '#92580A',
+    fontWeight: '500',
   },
   reviewBtn: {
-    flex: 1.2,
-    backgroundColor: '#0B3B24',
-    borderRadius: 12,
-    paddingVertical: 9,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: '#0D4E2B',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   reviewBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
+  footerNote: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: '#6E7B73',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  emptyBox: {
+    alignItems: 'center',
+    paddingVertical: 56,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#163020',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: '#6C7870',
+    textAlign: 'center',
+  },
 });
-

@@ -1,20 +1,13 @@
 /**
- * Role Selection Screen — Aanandvan
- *
- * "Create an Account" screen with two role cards:
- *   - I'm a Citizen
- *   - I'm a Volunteer (with "Verification Required" badge)
- *
- * After selecting a role, navigates to the registration form
- * with the chosen role as a query param.
- *
- * Matches Figma: back arrow, centered leaf-badge icon,
- * "Join the Green Movement" heading, bordered role cards,
- * "Already have an account? Login here" footer, and
- * privacy/terms footer text.
+ * Role Selection / Create an Account Screen — Aanandvan (Design 5)
+ * Matches Design 5:
+ * - Header: Back arrow + "Create an Account"
+ * - Left-aligned "Join the Green Movement" + mission subtitle
+ * - Radio list options: "I'm a citizen" & "I'm a volunteer" ("Verification required" pill)
+ * - Bottom CTA: "Continue", "Already have an account? Login here", Privacy Protocol & Terms/Help links
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -24,113 +17,149 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadow } from '@/constants';
 import { Text } from '@/components/common';
+import { Icon } from '@/components/common/Icon';
 
 export default function RoleSelectScreen() {
-  const [selectedRole, setSelectedRole] = React.useState<'citizen' | 'volunteer'>('citizen');
+  const [selectedRole, setSelectedRole] = useState<'citizen' | 'volunteer'>('citizen');
 
-  const handleSelect = (role: 'citizen' | 'volunteer') => {
-    setSelectedRole(role);
+  const handleContinue = () => {
     router.push({
       pathname: '/(auth)/register',
-      params: { role },
-    });
+      params: { role: selectedRole },
+    } as any);
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/onboarding');
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" />
+
+      {/* ─── Header ─── */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={26} color="#0B3B24" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Create an Account</Text>
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Header ─── */}
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create an Account</Text>
-          <View style={{ width: 36 }} />
-        </View>
-
-        {/* ─── Icon Badge ─── */}
-        <View style={styles.iconSection}>
-          <View style={styles.iconCircle}>
-            <LeafIcon />
-          </View>
-          <Text style={styles.movementTitle}>Join the Green Movement</Text>
-          <Text style={styles.movementSub}>
-            Choose how you want to contribute to{'\n'}Aanandvan's environmental mission.
+        {/* ─── Top Content ─── */}
+        <View style={styles.topSection}>
+          <Text style={styles.title}>Join the Green Movement</Text>
+          <Text style={styles.subtitle}>
+            Choose how you want to contribute to Aanandvan's environmental mission.
           </Text>
-        </View>
 
-        {/* ─── Role Cards ─── */}
-        <View style={styles.cardsSection}>
-          {/* Citizen Card */}
-          <TouchableOpacity
-            style={[
-              styles.roleCard,
-              selectedRole === 'citizen' && styles.roleCardSelected,
-            ]}
-            activeOpacity={0.8}
-            onPress={() => handleSelect('citizen')}
-          >
-            <View style={styles.roleIconCircle}>
-              <Text style={styles.roleEmoji}>👤</Text>
-            </View>
-            <View style={styles.roleTextWrap}>
-              <Text style={styles.roleName}>I'm a Citizen</Text>
-              <Text style={styles.roleDesc}>
-                Report locations for potential plantations and track ecological growth in your neighborhood.
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Volunteer Card */}
-          <TouchableOpacity
-            style={[
-              styles.roleCard,
-              selectedRole === 'volunteer' && styles.roleCardSelected,
-            ]}
-            activeOpacity={0.8}
-            onPress={() => handleSelect('volunteer')}
-          >
-            <View style={[styles.roleIconCircle, { backgroundColor: '#C8E6C9' }]}>
-              <Text style={styles.roleEmoji}>🪴</Text>
-            </View>
-            <View style={styles.roleTextWrap}>
-              <Text style={styles.roleName}>I'm a Volunteer</Text>
-              <View style={styles.verificationBadge}>
-                <Text style={styles.verificationText}>VERIFICATION REQUIRED</Text>
+          {/* Radio Options List */}
+          <View style={styles.radioList}>
+            {/* Option 1: Citizen */}
+            <TouchableOpacity
+              style={styles.radioItem}
+              activeOpacity={0.75}
+              onPress={() => setSelectedRole('citizen')}
+            >
+              <View
+                style={[
+                  styles.radioOuter,
+                  selectedRole === 'citizen' && styles.radioOuterSelected,
+                ]}
+              >
+                {selectedRole === 'citizen' && <View style={styles.radioInner} />}
               </View>
-              <Text style={styles.roleDesc}>
-                Apply for plantation drives, lead local teams, and earn certifications for your environmental service.
+
+              <View style={styles.radioBody}>
+                <Text style={styles.radioTitle}>I'm a citizen</Text>
+                <Text style={styles.radioDesc}>
+                  Report locations for potential plantations and track ecological growth in your neighborhood.
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Option 2: Volunteer */}
+            <TouchableOpacity
+              style={styles.radioItem}
+              activeOpacity={0.75}
+              onPress={() => setSelectedRole('volunteer')}
+            >
+              <View
+                style={[
+                  styles.radioOuter,
+                  selectedRole === 'volunteer' && styles.radioOuterSelected,
+                ]}
+              >
+                {selectedRole === 'volunteer' && <View style={styles.radioInner} />}
+              </View>
+
+              <View style={styles.radioBody}>
+                <View style={styles.volunteerTitleRow}>
+                  <Text style={styles.radioTitle}>I'm a volunteer</Text>
+                  <View style={styles.verificationBadge}>
+                    <Text style={styles.verificationText}>Verification required</Text>
+                  </View>
+                </View>
+                <Text style={styles.radioDesc}>
+                  Apply for plantation drives, lead local teams, and earn certifications for your environmental service.
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ─── Bottom CTA & Footer ─── */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={styles.continueBtn}
+            activeOpacity={0.88}
+            onPress={handleContinue}
+          >
+            <Text style={styles.continueBtnText}>Continue</Text>
+          </TouchableOpacity>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.loginPrompt}>Already have an account? </Text>
+            <TouchableOpacity
+              onPress={() => router.replace('/(auth)/login' as any)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.loginLink}>Login here</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.footer}>
+            <View style={styles.shieldRow}>
+              <View style={styles.shieldBadge}>
+                <Icon name="shield" size={12} color="#9CA3AF" />
+              </View>
+              <Text style={styles.footerText}>
+                Your data is protected by Aanandvan Privacy Protocol
               </Text>
             </View>
-          </TouchableOpacity>
-        </View>
 
-        {/* ─── Login Link ─── */}
-        <View style={styles.loginRow}>
-          <Text style={styles.loginHint}>Already have an account?  </Text>
-          <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-            <Text style={styles.loginLink}>Login here</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Footer ─── */}
-        <View style={styles.footer}>
-          <View style={styles.footerShield}>
-            <Text style={styles.footerShieldIcon}>🛡</Text>
-            <Text style={styles.footerText}>
-              Your data is protected by Aanandvan Privacy Protocol
-            </Text>
-          </View>
-          <View style={styles.footerLinks}>
-            <Text style={styles.footerLinkText}>Terms of Service</Text>
-            <Text style={styles.footerDot}>  •  </Text>
-            <Text style={styles.footerLinkText}>Help Center</Text>
+            <View style={styles.linksRow}>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Text style={styles.footerLink}>Terms of Service</Text>
+              </TouchableOpacity>
+              <Text style={styles.footerPipe}>|</Text>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Text style={styles.footerLink}>Help Center</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -138,207 +167,177 @@ export default function RoleSelectScreen() {
   );
 }
 
-// ─── Inline Leaf Icon ─────────────────────────────────────────────────────────
-
-const LeafIcon: React.FC = () => (
-  <View style={leafStyles.wrap}>
-    {/* Main leaf body */}
-    <View style={leafStyles.leafBody} />
-    {/* Leaf stem */}
-    <View style={leafStyles.leafStem} />
-  </View>
-);
-
-const leafStyles = StyleSheet.create({
-  wrap: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  leafBody: {
-    width: 20,
-    height: 20,
-    borderRadius: 12,
-    borderTopLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    backgroundColor: Colors.white,
-    transform: [{ rotate: '45deg' }],
-  },
-  leafStem: {
-    position: 'absolute',
-    bottom: 3,
-    left: 6,
-    width: 2,
-    height: 14,
-    backgroundColor: Colors.white,
-    borderRadius: 1,
-    transform: [{ rotate: '-45deg' }],
-  },
-});
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing[5],
-    paddingTop: Spacing[4],
-    paddingBottom: Spacing[6],
+  safe: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-
-  // Header
-  headerRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing[6],
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
   },
   backBtn: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  backArrow: {
-    fontSize: 22,
-    color: Colors.textPrimary,
-    fontWeight: FontWeight.bold,
+    marginRight: 6,
   },
   headerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0B3B24',
+    letterSpacing: -0.2,
   },
-
-  // Icon section
-  iconSection: {
-    alignItems: 'center',
-    gap: Spacing[3],
-    marginBottom: Spacing[7],
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.brandPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadow.md,
+  topSection: {
+    width: '100%',
   },
-  movementTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    textAlign: 'center',
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0B3B24',
+    marginBottom: 4,
   },
-  movementSub: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
+  subtitle: {
+    fontSize: 13.5,
+    color: '#7B8782',
+    lineHeight: 19,
+    marginBottom: 24,
   },
-
-  // Role cards
-  cardsSection: {
-    gap: Spacing[4],
-    marginBottom: Spacing[8],
+  radioList: {
+    gap: 22,
   },
-  roleCard: {
+  radioItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 24,
-    padding: Spacing[5],
-    gap: Spacing[4],
-    backgroundColor: Colors.white,
+    gap: 14,
   },
-  roleCardSelected: {
-    borderColor: '#1D3B26',
-    borderWidth: 2,
-    backgroundColor: '#FAFCFA',
-  },
-  roleIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EBF5EE',
+  radioOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.8,
+    borderColor: '#6B7280',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
-  roleEmoji: { fontSize: 22 },
-  roleTextWrap: {
+  radioOuterSelected: {
+    borderColor: '#0B3B24',
+  },
+  radioInner: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: '#0B3B24',
+  },
+  radioBody: {
     flex: 1,
-    gap: Spacing[2],
   },
-  roleName: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
+  radioTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0B3B24',
   },
-  roleDesc: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    lineHeight: 20,
+  volunteerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   verificationBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.warningLight,
-    paddingHorizontal: Spacing[3],
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: BorderRadius.sm,
+    borderRadius: 12,
   },
   verificationText: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    color: Colors.warning,
-    letterSpacing: 0.5,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#92400E',
   },
-
-  // Login link
+  radioDesc: {
+    fontSize: 13,
+    color: '#7B8782',
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  bottomSection: {
+    width: '100%',
+    paddingTop: 32,
+  },
+  continueBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#0A4D2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  continueBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   loginRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing[8],
+    justifyContent: 'center',
+    marginBottom: 18,
   },
-  loginHint: { fontSize: FontSize.sm, color: Colors.textSecondary },
+  loginPrompt: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '400',
+  },
   loginLink: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.brandPrimary,
+    fontSize: 14,
+    color: '#0B3B24',
+    fontWeight: '700',
   },
-
-  // Footer
   footer: {
     alignItems: 'center',
-    gap: Spacing[2],
-    marginTop: 'auto' as any,
+    gap: 8,
   },
-  footerShield: {
+  shieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing[2],
+    justifyContent: 'center',
+    gap: 6,
   },
-  footerShieldIcon: { fontSize: 14, opacity: 0.5 },
+  shieldBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   footerText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    opacity: 0.7,
+    fontSize: 11.5,
+    color: '#9CA3AF',
   },
-  footerLinks: {
+  linksRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
   },
-  footerLinkText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+  footerLink: {
+    fontSize: 11.5,
+    color: '#9CA3AF',
   },
-  footerDot: {
-    fontSize: 11,
-    color: Colors.textSecondary,
+  footerPipe: {
+    fontSize: 11.5,
+    color: '#D1D5DB',
   },
 });

@@ -66,7 +66,7 @@ export default function CitizenHomeScreen() {
             <TouchableOpacity
               style={styles.bellBtn}
               activeOpacity={0.8}
-              onPress={() => alert('No new notifications')}
+              onPress={() => router.push('/pages/notifications' as any)}
             >
               <Icon name="bell" size={20} color="#FFFFFF" />
             </TouchableOpacity>

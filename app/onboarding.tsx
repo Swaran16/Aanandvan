@@ -1,7 +1,9 @@
 /**
  * Onboarding Screen — Aanandvan
- * Responsive 4-slide horizontal onboarding flow
- * Fully adapts dynamically to any screen width/height
+ * Redesigned 3-slide full-bleed atmospheric onboarding flow:
+ * - Slide 1: Every Tree Makes a Difference (with centered Aanandvan logo badge)
+ * - Slide 2: Found an empty space perfect for a tree?
+ * - Slide 3: Join the green movement ("Log in" & "Create account")
  */
 
 import React, { useRef, useState, useCallback } from 'react';
@@ -10,72 +12,65 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Image,
+  ImageBackground,
   StatusBar,
-  Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
-  ImageSourcePropType,
   useWindowDimensions,
-  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '@/constants';
 import { Text } from '@/components/common';
 
-// ─── Onboarding Data ──────────────────────────────────────────────────────────
-
-interface StepItem {
-  icon: string;
-  title: string;
-  description: string;
-}
+// ─── Types & Data ─────────────────────────────────────────────────────────────
 
 interface OnboardingSlide {
   id: string;
-  image: ImageSourcePropType;
+  imageUri: string;
+  fallbackColor: string;
+  showLogo?: boolean;
   title: string;
   description: string;
-  darkTheme?: boolean;
-  steps?: StepItem[];
+  primaryLabel: string;
+  secondaryLabel: string;
+  isLast?: boolean;
 }
 
 const SLIDES: OnboardingSlide[] = [
   {
     id: '1',
-    image: require('../assets/images/onboarding1.png'),
-    title: 'Every Tree Makes a Difference',
+    imageUri:
+      'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1200&auto=format&fit=crop&q=80',
+    fallbackColor: '#132419',
+    showLogo: true,
+    title: 'Every Tree Makes a\nDifference',
     description:
-      'Millions of trees are lost every year. Together, we can change that by identifying spaces and planting trees in our own neighborhoods.',
+      'Millions of trees are lost every year.\nTogether, we can change that by\nidentifying spaces and planting trees in\nour own neighborhoods.',
+    primaryLabel: 'Next',
+    secondaryLabel: 'Skip',
   },
   {
     id: '2',
-    image: require('../assets/images/onboarding2.png'),
-    title: 'Spot a Location, Report It Instantly',
+    imageUri:
+      'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?w=1200&auto=format&fit=crop&q=80',
+    fallbackColor: '#1A2418',
+    title: 'Found an empty space perfect\nfor a tree?',
     description:
-      'Found an empty space perfect for a tree? Take photos, add the address, and submit a plantation request right from your phone in minutes.',
+      'Take photos, add the address, and submit a\nplantation request right from your phone.',
+    primaryLabel: 'Next',
+    secondaryLabel: 'Skip',
   },
   {
     id: '3',
-    image: require('../assets/images/onboarding3.png'),
-    title: 'Volunteers Bring the Green to Life',
+    imageUri:
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=1200&auto=format&fit=crop&q=80',
+    fallbackColor: '#0E2014',
+    title: 'Join the green movement',
     description:
-      'Verified volunteers accept plantation requests, collect saplings from partnered nurseries, plant trees, and continue caring for them until they thrive.',
-    steps: [
-      { icon: '✅', title: '1. Accept request', description: 'Review and claim local planting tasks' },
-      { icon: '🌱', title: '2. Collect saplings', description: 'Pick up young trees from registered nurseries' },
-      { icon: '🌳', title: '3. Plant at location', description: 'Follow eco-guidelines for successful planting' },
-      { icon: '📸', title: '4. Maintain and upload', description: 'Regular watering and growth photo updates' },
-    ],
-  },
-  {
-    id: '4',
-    image: require('../assets/images/onboarding4.png'),
-    title: 'Join the Green Movement',
-    description:
-      'Report locations, volunteer to plant, and watch your community grow greener — one tree at a time.',
-    darkTheme: true,
+      'Report locations, volunteer to plant,\nand watch your community grow\ngreener — one tree at a time.',
+    primaryLabel: 'Log in',
+    secondaryLabel: 'Create account',
+    isLast: true,
   },
 ];
 
@@ -83,8 +78,7 @@ const SLIDES: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
   const { width, height } = useWindowDimensions();
-  const flatListRef = useRef<FlatList>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef<FlatList<OnboardingSlide>>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const goToNext = useCallback(() => {
@@ -103,12 +97,17 @@ export default function OnboardingScreen() {
     });
   }, []);
 
-  const handleGetStarted = useCallback(() => {
-    router.replace('/(auth)/login');
+  const handleLogin = useCallback(() => {
+    router.push('/(auth)/login' as any);
+  }, []);
+
+  const handleRegister = useCallback(() => {
+    router.push('/(auth)/role-select' as any);
   }, []);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (width <= 0) return;
       const idx = Math.round(e.nativeEvent.contentOffset.x / width);
       if (idx >= 0 && idx < SLIDES.length) {
         setActiveIndex(idx);
@@ -117,405 +116,268 @@ export default function OnboardingScreen() {
     [width]
   );
 
-  const currentSlide = SLIDES[activeIndex] || SLIDES[0];
-
   return (
     <View style={styles.root}>
-      <StatusBar barStyle={currentSlide.darkTheme ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="light-content" />
 
-      <Animated.FlatList
-        ref={flatListRef as any}
+      <FlatList
+        ref={flatListRef}
         data={SLIDES}
         keyExtractor={item => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         bounces={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false, listener: handleScroll }
-        )}
+        onMomentumScrollEnd={handleScroll}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
-        renderItem={({ item, index }) =>
-          item.darkTheme ? (
-            <DarkSlide
-              slide={item}
-              width={width}
-              height={height}
-              onGetStarted={handleGetStarted}
-              onLogin={handleGetStarted}
-              scrollX={scrollX}
-            />
-          ) : (
-            <LightSlide
-              slide={item}
-              width={width}
-              height={height}
-              slideIndex={index}
-              onNext={goToNext}
-              onSkip={goToLast}
-              scrollX={scrollX}
-            />
-          )
-        }
+        getItemLayout={(_, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
+        renderItem={({ item, index }) => (
+          <View style={[styles.slide, { width, height, backgroundColor: item.fallbackColor }]}>
+            <ImageBackground
+              source={{ uri: item.imageUri }}
+              style={styles.bgImage}
+              resizeMode="cover"
+            >
+              {/* Atmospheric dark scrim for high text contrast */}
+              <View style={styles.topScrim} />
+              <View style={styles.bottomScrim} />
+
+              <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+                {/* Middle area: Dummy Aanandvan Logo on Screen 1 */}
+                <View style={styles.middleZone}>
+                  {item.showLogo && (
+                    <View style={styles.logoBadge}>
+                      <TreeLogoIcon size={54} color="#FFFFFF" />
+                      <Text style={styles.logoLabel}>Aanandvan</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Bottom Content Block */}
+                <View style={styles.bottomContent}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.description}>{item.description}</Text>
+
+                  {/* Pagination Indicators on Slides 1 & 2 */}
+                  {!item.isLast && (
+                    <View style={styles.dotsRow}>
+                      {SLIDES.map((s, dotIdx) => {
+                        const isActive = dotIdx === index;
+                        return (
+                          <View
+                            key={s.id}
+                            style={[
+                              styles.dot,
+                              isActive ? styles.dotActive : styles.dotInactive,
+                            ]}
+                          />
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  {/* Primary Yellow Pill CTA */}
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryBtn,
+                      item.isLast && { marginTop: 22 },
+                    ]}
+                    activeOpacity={0.88}
+                    onPress={item.isLast ? handleLogin : goToNext}
+                  >
+                    <Text style={styles.primaryBtnText}>{item.primaryLabel}</Text>
+                  </TouchableOpacity>
+
+                  {/* Secondary Action ("Skip" or "Create account") */}
+                  <TouchableOpacity
+                    style={styles.secondaryBtn}
+                    activeOpacity={0.75}
+                    onPress={item.isLast ? handleRegister : goToLast}
+                  >
+                    <Text style={styles.secondaryBtnText}>{item.secondaryLabel}</Text>
+                  </TouchableOpacity>
+                </View>
+              </SafeAreaView>
+            </ImageBackground>
+          </View>
+        )}
       />
     </View>
   );
 }
 
-// ─── Dot Indicator ────────────────────────────────────────────────────────────
+// ─── Dummy Tree Logo (matching Splash / Welcome badge) ───────────────────────
 
-const DotIndicator: React.FC<{
-  scrollX: Animated.Value;
-  width: number;
-  dark?: boolean;
-}> = ({ scrollX, width, dark = false }) => (
-  <View style={dotStyles.row}>
-    {SLIDES.map((_, i) => {
-      const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-      const dotWidth = scrollX.interpolate({
-        inputRange,
-        outputRange: [8, 24, 8],
-        extrapolate: 'clamp',
-      });
-      const opacity = scrollX.interpolate({
-        inputRange,
-        outputRange: [0.35, 1, 0.35],
-        extrapolate: 'clamp',
-      });
-      return (
-        <Animated.View
-          key={i}
-          style={[
-            dotStyles.dot,
-            {
-              width: dotWidth,
-              opacity,
-              backgroundColor: dark ? '#FFFFFF' : '#1B4332',
-            },
-          ]}
-        />
-      );
-    })}
+const TreeLogoIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => (
+  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        width: size * 0.12,
+        height: size * 0.35,
+        backgroundColor: color,
+        borderRadius: 4,
+        opacity: 0.9,
+      }}
+    />
+    <View
+      style={{
+        position: 'absolute',
+        bottom: size * 0.28,
+        width: size * 0.82,
+        height: size * 0.42,
+        borderRadius: size * 0.5,
+        backgroundColor: color,
+        opacity: 0.85,
+      }}
+    />
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        width: size * 0.6,
+        height: size * 0.52,
+        borderRadius: size * 0.5,
+        backgroundColor: color,
+        opacity: 0.9,
+      }}
+    />
   </View>
 );
 
-const dotStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
-});
-
-// ─── Light Slide (slides 1-3) ─────────────────────────────────────────────────
-
-const LightSlide: React.FC<{
-  slide: OnboardingSlide;
-  width: number;
-  height: number;
-  slideIndex: number;
-  onNext: () => void;
-  onSkip: () => void;
-  scrollX: Animated.Value;
-}> = ({ slide, width, height, slideIndex, onNext, onSkip, scrollX }) => {
-  const imageHeight = Math.min(Math.max(height * 0.4, 240), 380);
-
-  return (
-    <View style={[lightStyles.slide, { width }]}>
-      {/* Illustration */}
-      <View style={[lightStyles.imageContainer, { width, height: imageHeight }]}>
-        <Image source={slide.image} style={lightStyles.image} resizeMode="cover" />
-      </View>
-
-      {/* White rounded bottom card */}
-      <View style={lightStyles.card}>
-        <ScrollView
-          contentContainerStyle={lightStyles.cardScroll}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          {/* Dots */}
-          <DotIndicator scrollX={scrollX} width={width} />
-
-          {/* Title */}
-          <Text style={lightStyles.title}>{slide.title}</Text>
-
-          {/* Description */}
-          <Text style={lightStyles.description}>{slide.description}</Text>
-
-          {/* Steps (slide 3 only) */}
-          {slide.steps && (
-            <View style={lightStyles.stepsContainer}>
-              {slide.steps.map((step, idx) => (
-                <View key={idx} style={lightStyles.stepRow}>
-                  <View style={lightStyles.stepIconBadge}>
-                    <Text style={lightStyles.stepIcon}>{step.icon}</Text>
-                  </View>
-                  <View style={lightStyles.stepText}>
-                    <Text style={lightStyles.stepTitle}>{step.title}</Text>
-                    <Text style={lightStyles.stepDesc}>{step.description}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Next Button */}
-          <TouchableOpacity style={lightStyles.nextBtn} onPress={onNext} activeOpacity={0.85}>
-            <Text style={lightStyles.nextBtnText}>Next  →</Text>
-          </TouchableOpacity>
-
-          {/* Skip */}
-          {slideIndex < SLIDES.length - 1 && (
-            <TouchableOpacity onPress={onSkip} style={lightStyles.skipBtn} activeOpacity={0.7}>
-              <Text style={lightStyles.skipText}>
-                {slideIndex === 2 ? 'Skip for now' : 'Skip'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
-      </View>
-    </View>
-  );
-};
-
-const lightStyles = StyleSheet.create({
-  slide: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  imageContainer: {
-    overflow: 'hidden',
-    backgroundColor: '#E8F5EE',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  card: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    marginTop: -20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  cardScroll: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 28,
-    gap: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0B3B24',
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  description: {
-    fontSize: 14,
-    color: '#4B6E5A',
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  stepsContainer: {
-    gap: 10,
-    marginTop: 6,
-    marginBottom: 6,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#F7FAF8',
-    padding: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E8F5EE',
-  },
-  stepIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#D8EFE1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepIcon: {
-    fontSize: 16,
-  },
-  stepText: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  stepDesc: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 1,
-  },
-  nextBtn: {
-    backgroundColor: '#0B3B24',
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 6,
-    alignSelf: 'stretch',
-  },
-  nextBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  skipBtn: {
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  skipText: {
-    fontSize: 13,
-    color: '#2D6A4F',
-    fontWeight: '600',
-  },
-});
-
-// ─── Dark Slide (slide 4) ─────────────────────────────────────────────────────
-
-const DarkSlide: React.FC<{
-  slide: OnboardingSlide;
-  width: number;
-  height: number;
-  onGetStarted: () => void;
-  onLogin: () => void;
-  scrollX: Animated.Value;
-}> = ({ slide, width, height, onGetStarted, onLogin, scrollX }) => {
-  const imageHeight = Math.min(Math.max(height * 0.42, 240), 380);
-
-  return (
-    <SafeAreaView style={[darkStyles.slide, { width }]} edges={['bottom']}>
-      {/* Illustration */}
-      <View style={[darkStyles.imageContainer, { width, height: imageHeight }]}>
-        <Image source={slide.image} style={darkStyles.image} resizeMode="cover" />
-      </View>
-
-      {/* Bottom content */}
-      <View style={darkStyles.content}>
-        <ScrollView
-          contentContainerStyle={darkStyles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          <DotIndicator scrollX={scrollX} width={width} dark />
-
-          <Text style={darkStyles.title}>{slide.title}</Text>
-          <Text style={darkStyles.description}>{slide.description}</Text>
-
-          <TouchableOpacity
-            style={darkStyles.getStartedBtn}
-            onPress={onGetStarted}
-            activeOpacity={0.85}
-          >
-            <Text style={darkStyles.getStartedText}>Get Started</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={darkStyles.loginBtn}
-            onPress={onLogin}
-            activeOpacity={0.8}
-          >
-            <Text style={darkStyles.loginText}>Log In</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
-  );
-};
-
-const darkStyles = StyleSheet.create({
-  slide: {
-    flex: 1,
-    backgroundColor: '#0B3B24',
-  },
-  imageContainer: {
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 24,
-    gap: 12,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 30,
-  },
-  description: {
-    fontSize: 14,
-    color: '#C8E6C9',
-    textAlign: 'center',
-    lineHeight: 21,
-    opacity: 0.9,
-  },
-  getStartedBtn: {
-    alignSelf: 'stretch',
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  getStartedText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  loginBtn: {
-    alignSelf: 'stretch',
-    height: 52,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loginText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0B3B24',
+    backgroundColor: '#0E2014',
+  },
+  slide: {
+    flex: 1,
+  },
+  bgImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  topScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(8, 18, 12, 0.48)',
+  },
+  bottomScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '58%',
+    backgroundColor: 'rgba(6, 14, 9, 0.52)',
+  },
+  safeArea: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+  },
+  middleZone: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20,
+  },
+  logoBadge: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(11, 59, 36, 0.88)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  logoLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  bottomContent: {
+    paddingBottom: 24,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 35,
+    letterSpacing: -0.4,
+    marginBottom: 12,
+  },
+  description: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 22,
+    fontWeight: '400',
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 20,
+    marginBottom: 18,
+  },
+  dot: {
+    height: 4,
+    borderRadius: 2,
+  },
+  dotActive: {
+    width: 20,
+    backgroundColor: '#FFD600',
+  },
+  dotInactive: {
+    width: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+  },
+  primaryBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFD600',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  secondaryBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    marginTop: 4,
+  },
+  secondaryBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F9D68',
   },
 });

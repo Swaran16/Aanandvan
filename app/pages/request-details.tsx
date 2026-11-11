@@ -1,105 +1,132 @@
-/**
- * Dynamic Universal Request Details Screen
- * Seamlessly adapts based on the active role and request state:
- * - Matches Batch 1 Image 3, Batch 3 Image 1, and Batch 3 Image 3
- * - Hero banner with request ID, title, and location status
- * - Populated area photos & landmark photos
- * - Satellite map preview with GPS tag & "Get Directions"
- * - Assigned Volunteer card with "Contact" button (for citizen)
- * - "Accept Request" -> "Schedule Plantation" -> "Upload Activity" (for volunteer)
- */
-
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Image,
-  StatusBar,
-  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
+import { AcceptRequestModal } from '@/components/volunteer/AcceptRequestModal';
 import { useApp } from '@/context/AppContext';
 
+const DEFAULT_AREA_PHOTOS = [
+  'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1511497584788-876760111969?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop',
+];
+
+const DEFAULT_LANDMARK_PHOTOS = [
+  'https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=600&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&auto=format&fit=crop',
+];
+
+const STATUS_BADGE: Record<string, { label: string; bg: string; fg: string }> = {
+  submitted: { label: 'Submitted', bg: '#FEF3C7', fg: '#92400E' },
+  verified: { label: 'Available', bg: '#CCF2DB', fg: '#0D4E2B' },
+  assigned: { label: 'Assigned', bg: '#CCF2DB', fg: '#0D4E2B' },
+  scheduled: { label: 'Scheduled', bg: '#DCFCE7', fg: '#166534' },
+  in_progress: { label: 'In Progress', bg: '#E0F2FE', fg: '#0369A1' },
+  completed: { label: 'Completed', bg: '#CCF2DB', fg: '#0D4E2B' },
+  maintenance_due: { label: 'Maintenance', bg: '#FEE2E2', fg: '#B91C1C' },
+  rejected: { label: 'Rejected', bg: '#FEE2E2', fg: '#B91C1C' },
+};
+
+function chunkIntoRows<T>(items: T[], size: number): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    rows.push(items.slice(i, i + size));
+  }
+  return rows;
+}
+
 export default function RequestDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { requests, currentRole, volunteerAcceptRequest } = useApp();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { currentRole, requests } = useApp();
+  const [acceptModalVisible, setAcceptModalVisible] = useState(false);
 
-  const req = requests.find(r => r.id === id) || requests[0];
+  const req = useMemo(() => {
+    if (!id) return requests[0];
+    return requests.find((r) => r.id === id) ?? requests[0];
+  }, [id, requests]);
 
-  const isCitizen = currentRole === 'citizen';
+  if (!req) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Icon name="chevron-left" size={22} color="#163020" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Request details</Text>
+        </View>
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyText}>Request not found.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const isVolunteer = currentRole === 'volunteer';
   const isAdmin = currentRole === 'admin';
-
   const isVerified = req.status === 'verified';
   const isAssigned = req.status === 'assigned';
   const isScheduled = req.status === 'scheduled';
   const isInProgress = req.status === 'in_progress';
   const isCompleted = req.status === 'completed';
 
-  const handleVolunteerAction = () => {
-    if (isVerified) {
-      volunteerAcceptRequest(req.id);
-      Alert.alert(
-        'Request Accepted! 🎉',
-        `You are now assigned to "${req.title}". Please proceed to schedule the plantation drive.`,
-        [
-          {
-            text: 'Schedule Now',
-            onPress: () =>
-              router.push({
-                pathname: '/pages/schedule-plantation',
-                params: { id: req.id },
-              } as any),
-          },
-        ]
-      );
-    } else if (isAssigned) {
-      router.push({
-        pathname: '/pages/schedule-plantation',
-        params: { id: req.id },
-      } as any);
-    } else if (isScheduled) {
-      Alert.alert(
-        'Scheduled Awaiting Admin',
-        'Your scheduled drive is currently pending Admin confirmation. You will be able to post plantation updates once confirmed.'
-      );
-    } else if (isInProgress) {
-      router.push({
-        pathname: '/pages/upload-activity',
-        params: { id: req.id },
-      } as any);
-    }
+  const statusMeta = STATUS_BADGE[req.status] ?? {
+    label: req.status.replace(/_/g, ' '),
+    bg: '#CCF2DB',
+    fg: '#0D4E2B',
+  };
+
+  const formattedId = req.id.toUpperCase().startsWith('REQ-')
+    ? `#${req.id.toUpperCase()}`
+    : `#${req.id.toUpperCase()}`;
+
+  const areaPhotos: string[] =
+    req.areaPhotos && req.areaPhotos.length >= 2
+      ? req.areaPhotos
+      : [...(req.areaPhotos ?? []), ...DEFAULT_AREA_PHOTOS].slice(0, 4);
+
+  const landmarkPhotos: string[] =
+    req.landmarkPhotos && req.landmarkPhotos.length > 0
+      ? req.landmarkPhotos
+      : DEFAULT_LANDMARK_PHOTOS;
+
+  const areaRows = chunkIntoRows(areaPhotos, 3);
+  const landmarkRows = chunkIntoRows(landmarkPhotos, 3);
+
+  const saplingCount = 5;
+  const distanceLabel =
+    req.distanceKm !== undefined ? `${req.distanceKm.toFixed(1)} kms` : '1.2 kms';
+
+  const handleGetDirections = () => {
+    const query = encodeURIComponent(req.location);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
+  };
+
+  const handleAcceptAndSchedule = () => {
+    setAcceptModalVisible(false);
+    router.push({ pathname: '/pages/schedule-plantation', params: { id: req.id } } as any);
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Icon name="chevron-left" size={24} color="#111827" />
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Aanandvan</Text>
-        <View style={styles.topRightActions}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => alert('Notification settings')}
-          >
-            <Icon name="bell" size={20} color="#111827" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => alert('Share request link')}
-          >
-            <Icon name="share" size={20} color="#111827" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Request details</Text>
       </View>
 
       <ScrollView
@@ -107,663 +134,402 @@ export default function RequestDetailsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Hero Green Header Card ─── */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroCardTop}>
-            <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeText}>
-                {req.status.toUpperCase()}
+        <View style={styles.topInfoRow}>
+          <View style={styles.topInfoLeft}>
+            <Text style={styles.title}>{req.title}</Text>
+            <View style={styles.locationRow}>
+              <Icon name="map-pin" size={14} color="#5F6C64" />
+              <Text style={styles.locationText}>{req.location}</Text>
+            </View>
+          </View>
+
+          <View style={styles.topInfoRight}>
+            <View style={[styles.statusBadge, { backgroundColor: statusMeta.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: statusMeta.fg }]}>
+                {statusMeta.label}
               </Text>
             </View>
-            <Text style={styles.heroReqCode}>#{req.id}</Text>
-          </View>
-
-          <Text style={styles.heroTitle}>{req.title}</Text>
-          <Text style={styles.heroSubtitle}>
-            {req.manualAddress || req.location}
-          </Text>
-        </View>
-
-        {/* ─── Status Ribbon (for Citizen) ─── */}
-        {isCitizen && (
-          <View style={styles.statusRibbon}>
-            <View style={styles.statusDotRow}>
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor:
-                      req.status === 'pending'
-                        ? '#F59E0B'
-                        : req.status === 'completed'
-                        ? '#10B981'
-                        : '#3B82F6',
-                  },
-                ]}
-              />
-              <Text style={styles.statusRibbonText}>
-                Current Status:{' '}
-                <Text style={{ fontWeight: '800' }}>
-                  {req.status === 'pending'
-                    ? 'Pending Verification'
-                    : req.status === 'verified'
-                    ? 'Verified by Admin'
-                    : req.status === 'assigned'
-                    ? 'Assigned to Volunteer'
-                    : req.status === 'scheduled'
-                    ? 'Drive Scheduled'
-                    : req.status === 'in_progress'
-                    ? 'Plantation In Progress'
-                    : 'Completed'}
-                </Text>
-              </Text>
-            </View>
-            <Text style={styles.statusRibbonTime}>Updated recently</Text>
-          </View>
-        )}
-
-        {/* ─── Description ─── */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Icon name="document" size={16} color="#0B3B24" />
-            <Text style={styles.sectionTitle}>Description</Text>
-          </View>
-          <Text style={styles.descriptionText}>"{req.description}"</Text>
-        </View>
-
-        {/* ─── Area Photographs ─── */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Icon name="calendar" size={16} color="#0B3B24" />
-            <Text style={styles.sectionTitle}>Area Photographs</Text>
-          </View>
-          <View style={styles.photosRow}>
-            {req.areaPhotos.map((photo, i) => (
-              <Image key={i} source={{ uri: photo }} style={styles.photoThumb} />
-            ))}
+            <Text style={styles.reqIdText}>{formattedId}</Text>
           </View>
         </View>
 
-        {/* ─── Landmark Photographs ─── */}
-        {req.landmarkPhotos.length > 0 && (
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Icon name="building" size={16} color="#0B3B24" />
-              <Text style={styles.sectionTitle}>Landmark Photographs</Text>
-            </View>
-            <View style={styles.photosRow}>
-              {req.landmarkPhotos.map((photo, i) => (
-                <Image key={i} source={{ uri: photo }} style={styles.photoThumb} />
+        <Text style={styles.sectionTitle}>Area photographs</Text>
+        <View style={styles.gridGroup}>
+          {areaRows.map((row, rowIndex) => (
+            <View key={`area-row-${rowIndex}`} style={styles.photoRow}>
+              {row.map((uri, colIndex) => (
+                <View key={`area-${rowIndex}-${colIndex}`} style={styles.photoCell}>
+                  <Image source={{ uri }} style={styles.photoImg} resizeMode="cover" />
+                </View>
+              ))}
+              {Array.from({ length: 3 - row.length }).map((_, emptyIdx) => (
+                <View key={`area-empty-${rowIndex}-${emptyIdx}`} style={styles.photoSpacer} />
               ))}
             </View>
-          </View>
-        )}
+          ))}
+        </View>
 
-        {/* ─── Location & Address ─── */}
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Icon name="map-pin" size={16} color="#0B3B24" />
-            <Text style={styles.sectionTitle}>Location & Address</Text>
-          </View>
-
-          {/* Map Preview */}
-          <View style={styles.mapPreviewBox}>
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=600&auto=format&fit=crop&q=80',
-              }}
-              style={styles.mapImage}
-            />
-            <View style={styles.gpsPill}>
-              <Icon name="navigation" size={12} color="#0B3B24" />
-              <Text style={styles.gpsText}>{req.coordinates}</Text>
+        <Text style={styles.sectionTitle}>Landmark photographs</Text>
+        <View style={styles.gridGroup}>
+          {landmarkRows.map((row, rowIndex) => (
+            <View key={`landmark-row-${rowIndex}`} style={styles.photoRow}>
+              {row.map((uri, colIndex) => (
+                <View key={`landmark-${rowIndex}-${colIndex}`} style={styles.photoCell}>
+                  <Image source={{ uri }} style={styles.photoImg} resizeMode="cover" />
+                </View>
+              ))}
+              {Array.from({ length: 3 - row.length }).map((_, emptyIdx) => (
+                <View
+                  key={`landmark-empty-${rowIndex}-${emptyIdx}`}
+                  style={styles.photoSpacer}
+                />
+              ))}
             </View>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Location</Text>
+        <View style={styles.metricsRow}>
+          <View style={styles.metricCol}>
+            <Text style={styles.metricLabel}>Distance from you</Text>
+            <Text style={styles.metricValue}>{distanceLabel}</Text>
           </View>
-
-          <View style={styles.addressBlock}>
-            <Text style={styles.addressLabel}>Manual Address</Text>
-            <Text style={styles.addressValue}>{req.manualAddress}</Text>
-
-            {req.landmark && (
-              <View style={styles.landmarkRow}>
-                <Icon name="map-pin" size={14} color="#0B3B24" />
-                <Text style={styles.landmarkText}>
-                  Nearby Landmark: {req.landmark}
-                </Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={styles.directionsBtn}
-              onPress={() => alert(`Navigating to coordinates: ${req.coordinates}`)}
-            >
-              <Icon name="navigation" size={16} color="#0B3B24" />
-              <Text style={styles.directionsBtnText}>Get Directions</Text>
-            </TouchableOpacity>
+          <View style={styles.metricCol}>
+            <Text style={styles.metricLabel}>Space for</Text>
+            <Text style={styles.metricValue}>about {saplingCount} saplings</Text>
           </View>
         </View>
 
-        {/* ─── Citizen View: Requester & Volunteer Cards ─── */}
-        {isCitizen && (
-          <>
-            <View style={styles.sectionCard}>
-              <Text style={styles.subCardLabel}>REQUESTED BY</Text>
-              <View style={styles.personRow}>
-                <View style={styles.personAvatarBox}>
-                  <Icon name="profile" size={20} color="#0B3B24" />
-                </View>
-                <View>
-                  <Text style={styles.personName}>{req.citizenName}</Text>
-                  <Text style={styles.personSub}>
-                    Community Member • 5 Requests
-                  </Text>
-                </View>
-              </View>
-            </View>
+        <TouchableOpacity
+          style={styles.directionsBtn}
+          onPress={handleGetDirections}
+          activeOpacity={0.8}
+        >
+          <Icon name="navigation" size={16} color="#0D4E2B" />
+          <Text style={styles.directionsBtnText}>Get directions</Text>
+        </TouchableOpacity>
 
-            <View style={styles.sectionCard}>
-              <Text style={styles.subCardLabel}>ASSIGNED VOLUNTEER</Text>
-              <View style={styles.volunteerAssignRow}>
-                <View style={styles.volunteerLeft}>
-                  <View style={styles.volAvatarCircle}>
-                    <Icon name="plant" size={20} color="#0B3B24" />
-                  </View>
-                  <View>
-                    <View style={styles.volNameRow}>
-                      <Text style={styles.personName}>
-                        {req.assignedVolunteerName || 'Amit Kumar'}
-                      </Text>
-                      <View style={styles.verifiedTag}>
-                        <Text style={styles.verifiedTagText}>✓ Verified</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.personSub}>
-                      {req.assignedVolunteerLevel || 'Level 4 • 25+ Plantations'}
-                    </Text>
-                  </View>
-                </View>
+        <Text style={[styles.sectionTitle, { marginTop: 22 }]}>Description</Text>
+        <View style={styles.descriptionCard}>
+          <Text style={styles.descriptionText}>{`"${req.description}"`}</Text>
+        </View>
 
-                <TouchableOpacity
-                  style={styles.contactBtn}
-                  onPress={() => alert('Opening direct chat with volunteer')}
-                >
-                  <Icon name="message" size={14} color="#FFFFFF" />
-                  <Text style={styles.contactBtnText}>Contact</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Help Needed Card */}
-            <View style={styles.helpCard}>
-              <Text style={styles.helpTitle}>HELP NEEDED?</Text>
-              <Text style={styles.helpSubtitle}>
-                Need to reschedule or update your request details?
-              </Text>
-              <TouchableOpacity
-                style={styles.contactSupportBtn}
-                onPress={() => alert('Support helpline: help@aanandvan.in')}
-              >
-                <Text style={styles.contactSupportText}>Contact Support</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-
-        {/* ─── Volunteer Actions ─── */}
-        {isVolunteer && (
-          <View style={styles.actionSection}>
-            {isVerified && (
-              <TouchableOpacity
-                style={styles.primaryActionBtn}
-                activeOpacity={0.85}
-                onPress={handleVolunteerAction}
-              >
-                <Icon name="check" size={18} color="#FFFFFF" />
-                <Text style={styles.primaryActionBtnText}>Accept Request</Text>
-              </TouchableOpacity>
-            )}
-
-            {isAssigned && (
-              <TouchableOpacity
-                style={[styles.primaryActionBtn, { backgroundColor: '#0B3B24' }]}
-                activeOpacity={0.85}
-                onPress={handleVolunteerAction}
-              >
-                <Icon name="calendar" size={18} color="#FFFFFF" />
-                <Text style={styles.primaryActionBtnText}>
-                  Schedule Plantation Drive
+        {!isVolunteer && (
+          <View style={styles.metaCard}>
+            <Text style={styles.metaCardLabel}>Requested by</Text>
+            <Text style={styles.metaCardValue}>{req.citizenName}</Text>
+            {req.assignedVolunteerName ? (
+              <>
+                <Text style={[styles.metaCardLabel, { marginTop: 10 }]}>
+                  Assigned volunteer
                 </Text>
-              </TouchableOpacity>
-            )}
-
-            {isScheduled && (
-              <View style={styles.pendingScheduleCard}>
-                <Icon name="clock" size={18} color="#D97706" />
-                <Text style={styles.pendingScheduleText}>
-                  Scheduled for {req.schedule?.date} ({req.schedule?.timeSlot}).
-                  Awaiting Admin confirmation.
-                </Text>
-              </View>
-            )}
-
-            {isInProgress && (
-              <TouchableOpacity
-                style={[styles.primaryActionBtn, { backgroundColor: '#0B3B24' }]}
-                activeOpacity={0.85}
-                onPress={handleVolunteerAction}
-              >
-                <Icon name="upload" size={18} color="#FFFFFF" />
-                <Text style={styles.primaryActionBtnText}>
-                  Upload Plantation Activity
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {isCompleted && (
-              <View style={styles.completedCard}>
-                <Icon name="check-circle" size={20} color="#059669" />
-                <Text style={styles.completedText}>
-                  Plantation Drive Successfully Completed!
-                </Text>
-              </View>
-            )}
+                <Text style={styles.metaCardValue}>{req.assignedVolunteerName}</Text>
+              </>
+            ) : null}
           </View>
         )}
 
-        {/* ─── Admin Action Shortcut ─── */}
+        {req.schedule ? (
+          <View style={styles.metaCard}>
+            <Text style={styles.metaCardLabel}>Scheduled plantation</Text>
+            <Text style={styles.metaCardValue}>
+              {req.schedule.date} • {req.schedule.timeSlot}
+            </Text>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View style={styles.footer}>
+        {isVolunteer && isVerified && (
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => setAcceptModalVisible(true)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryBtnText}>Accept request</Text>
+          </TouchableOpacity>
+        )}
+
+        {isVolunteer && isAssigned && (
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() =>
+              router.push({ pathname: '/pages/schedule-plantation', params: { id: req.id } } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryBtnText}>Schedule plantation</Text>
+          </TouchableOpacity>
+        )}
+
+        {isVolunteer && isScheduled && (
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() =>
+              router.push({ pathname: '/pages/collect-saplings', params: { id: req.id } } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryBtnText}>Collect saplings</Text>
+          </TouchableOpacity>
+        )}
+
+        {isVolunteer && isInProgress && (
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() =>
+              router.push({ pathname: '/pages/upload-activity', params: { id: req.id } } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryBtnText}>Upload plantation activity</Text>
+          </TouchableOpacity>
+        )}
+
+        {isVolunteer && isCompleted && (
+          <View style={styles.completedBanner}>
+            <Icon name="check-circle" size={18} color="#0D4E2B" />
+            <Text style={styles.completedText}>Plantation drive completed</Text>
+          </View>
+        )}
+
         {isAdmin && (
           <TouchableOpacity
-            style={styles.primaryActionBtn}
+            style={styles.primaryBtn}
             onPress={() =>
               router.push({
                 pathname: '/pages/admin-review-request',
                 params: { id: req.id },
               } as any)
             }
+            activeOpacity={0.85}
           >
-            <Text style={styles.primaryActionBtnText}>
-              Open Full Admin Verification Review →
-            </Text>
+            <Text style={styles.primaryBtnText}>Open admin verification review</Text>
           </TouchableOpacity>
         )}
-      </ScrollView>
+      </View>
+
+      <AcceptRequestModal
+        visible={acceptModalVisible}
+        requestTitle={req.title}
+        requestLocation={req.location}
+        onAcceptAndSchedule={handleAcceptAndSchedule}
+        onClose={() => setAcceptModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: '#FAFBF9',
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
+    marginRight: 8,
   },
-  topTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
-  },
-  topRightActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconBtn: {
-    padding: 6,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0D4325',
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 24,
   },
-  heroCard: {
-    backgroundColor: '#0B3B24',
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  heroCardTop: {
+  topInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
-  heroBadge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 10,
+  topInfoLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  topInfoRight: {
+    alignItems: 'flex-end',
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 4,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  locationText: {
+    fontSize: 13,
+    color: '#5F6C64',
+    flexShrink: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 10,
+    borderRadius: 999,
   },
-  heroBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#065F46',
-  },
-  heroReqCode: {
+  statusBadgeText: {
     fontSize: 12,
-    color: '#A8D5BA',
     fontWeight: '600',
+    textTransform: 'capitalize',
   },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.4,
-  },
-  heroSubtitle: {
-    fontSize: 13,
-    color: '#D8EFE1',
-    marginTop: 4,
-  },
-  statusRibbon: {
-    backgroundColor: '#FFF7ED',
-    borderWidth: 1,
-    borderColor: '#FED7AA',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusDotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusRibbonText: {
-    fontSize: 13,
-    color: '#C2410C',
-  },
-  statusRibbonTime: {
-    fontSize: 11,
-    color: '#9CA3AF',
-  },
-  sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+  reqIdText: {
+    fontSize: 11.5,
+    color: '#6E7B73',
+    marginTop: 6,
+    fontWeight: '500',
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0B3B24',
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#0D4E2B',
+    marginBottom: 10,
   },
-  descriptionText: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 22,
-    fontStyle: 'italic',
+  gridGroup: {
+    gap: 10,
+    marginBottom: 20,
   },
-  photosRow: {
+  photoRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 4,
   },
-  photoThumb: {
+  photoCell: {
     flex: 1,
-    height: 85,
-    borderRadius: 12,
-  },
-  mapPreviewBox: {
-    position: 'relative',
-    height: 140,
-    borderRadius: 14,
+    aspectRatio: 1,
+    borderRadius: 10,
     overflow: 'hidden',
-    marginBottom: 14,
+    backgroundColor: '#E5EAE3',
   },
-  mapImage: {
+  photoSpacer: {
+    flex: 1,
+    aspectRatio: 1,
+  },
+  photoImg: {
     width: '100%',
     height: '100%',
   },
-  gpsPill: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
+  metricsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
+    alignItems: 'flex-start',
+    marginBottom: 14,
   },
-  gpsText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0B3B24',
+  metricCol: {
+    flex: 1,
   },
-  addressBlock: {
-    gap: 6,
-  },
-  addressLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 0.5,
-  },
-  addressValue: {
-    fontSize: 13,
-    color: '#1F2937',
-    lineHeight: 18,
-  },
-  landmarkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  landmarkText: {
+  metricLabel: {
     fontSize: 12,
-    color: '#0B3B24',
-    fontWeight: '600',
+    color: '#7A867E',
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#163020',
   },
   directionsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: '#0B3B24',
-    borderRadius: 12,
     height: 44,
-    marginTop: 10,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    borderColor: '#0D4E2B',
+    backgroundColor: '#FFFFFF',
+    gap: 8,
   },
   directionsBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  subCardLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 0.6,
-    marginBottom: 10,
-  },
-  personRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  personAvatarBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#E8F5EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  personName: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  personSub: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  volunteerAssignRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  volunteerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  volAvatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#D1FAE5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  volNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  verifiedTag: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  verifiedTagText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#059669',
-  },
-  contactBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0B3B24',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 4,
-  },
-  contactBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  helpCard: {
-    backgroundColor: '#0B3B24',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 16,
-  },
-  helpTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#A8D5BA',
-    letterSpacing: 0.6,
-  },
-  helpSubtitle: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  contactSupportBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  contactSupportText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  actionSection: {
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  primaryActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0B3B24',
-    borderRadius: 16,
-    height: 52,
-    gap: 8,
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  primaryActionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  pendingScheduleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
-  },
-  pendingScheduleText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#92400E',
-    lineHeight: 18,
+    fontSize: 14,
     fontWeight: '600',
+    color: '#0D4E2B',
   },
-  completedCard: {
+  descriptionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D6DDD4',
+    padding: 16,
+  },
+  descriptionText: {
+    fontSize: 13.5,
+    lineHeight: 21,
+    fontStyle: 'italic',
+    color: '#4F5C54',
+  },
+  metaCard: {
+    marginTop: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E6EBE4',
+    padding: 14,
+  },
+  metaCardLabel: {
+    fontSize: 11.5,
+    color: '#7A867E',
+    marginBottom: 2,
+  },
+  metaCardValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#163020',
+  },
+  footer: {
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 16,
+    backgroundColor: '#FAFBF9',
+    borderTopWidth: 1,
+    borderTopColor: '#EDF0EA',
+  },
+  primaryBtn: {
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#0D4E2B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  completedBanner: {
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#CCF2DB',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DCFCE7',
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
+    justifyContent: 'center',
+    gap: 8,
   },
   completedText: {
-    fontSize: 13,
-    color: '#065F46',
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0D4E2B',
+  },
+  emptyBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#5F6C64',
   },
 });
-

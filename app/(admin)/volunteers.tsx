@@ -1,662 +1,326 @@
-/**
- * Admin Volunteer Management Screen (Tab 3)
- * Matches Batch 4 — Image 2:
- * - Summary chips: 5 Pending, 42 Verified, 8 Rejected
- * - Tabs: Pending, Verified, Rejected, Suspended
- * - Volunteer cards with avatar, contact details, location, applied date
- * - Approve & Reject actions with full dynamic state updates
- * - "View Full Application →" linking to Priya Sharma profile (Batch 4 Image 3)
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+  FlatList,
   Image,
-  StatusBar,
-  Alert,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
+import { VolunteerApplication } from '@/types';
+
+type FilterKey = 'all' | 'pending' | 'verified' | 'rejected';
 
 export default function AdminVolunteersScreen() {
-  const { volunteers, approveVolunteer, rejectVolunteer } = useApp();
-  const [activeTab, setActiveTab] = useState<'pending' | 'verified' | 'rejected' | 'suspended'>('pending');
+  const { volunteers } = useApp();
+  const [filter, setFilter] = useState<FilterKey>('all');
 
-  const pendingCount = volunteers.filter(v => v.status === 'pending').length;
-  const verifiedCount = volunteers.filter(v => v.status === 'verified').length + 41;
-  const rejectedCount = volunteers.filter(v => v.status === 'rejected').length + 8;
+  const pendingCount = volunteers.filter((v) => v.status === 'pending').length;
+  const verifiedCount = volunteers.filter((v) => v.status === 'verified').length;
+  const rejectedCount = volunteers.filter((v) => v.status === 'rejected').length;
 
-  const filteredVolunteers = volunteers.filter(v => v.status === activeTab);
+  const filteredVolunteers = useMemo(() => {
+    if (filter === 'all') return volunteers;
+    return volunteers.filter((v) => v.status === filter);
+  }, [volunteers, filter]);
 
-  const handleApprove = (id: string, name: string) => {
-    approveVolunteer(id);
-    Alert.alert('Volunteer Approved 🎉', `${name} is now an official verified volunteer!`);
+  const openVolunteer = (vol: VolunteerApplication) => {
+    router.push({
+      pathname: '/pages/volunteer-details',
+      params: { id: vol.id },
+    } as any);
   };
 
-  const handleReject = (id: string, name: string) => {
-    Alert.alert('Confirm Rejection', `Are you sure you want to reject ${name}'s application?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: () => {
-          rejectVolunteer(id);
-        },
-      },
-    ]);
+  const renderCard = ({ item }: { item: VolunteerApplication }) => {
+    const isPending = item.status === 'pending';
+    const isVerified = item.status === 'verified';
+    const isRejected = item.status === 'rejected';
+
+    const badge = isPending
+      ? { label: 'Verification pending', bg: '#FBF0C4', fg: '#92580A' }
+      : isVerified
+        ? { label: 'Approved', bg: '#CCF2DB', fg: '#0D4E2B' }
+        : { label: 'Rejected', bg: '#FEE2E2', fg: '#B91C1C' };
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardTopRow}>
+          {item.avatar ? (
+            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder} />
+          )}
+
+          <View style={styles.cardInfo}>
+            <Text style={styles.cardName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={styles.cardApplied}>Applied on: {item.appliedDate}</Text>
+          </View>
+
+          <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.statusText, { color: badge.fg }]}>{badge.label}</Text>
+          </View>
+        </View>
+
+        {!isRejected && (
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => openVolunteer(item)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.actionBtnText}>
+              {isPending ? 'Review application' : 'View profile'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={22} color="#163020" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Volunteer management</Text>
+      </View>
 
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <View style={styles.topLeft}>
-          <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={() => router.push('/(admin)' as any)}
-          >
-            <Icon name="chevron-left" size={22} color="#111827" />
-          </TouchableOpacity>
-          <Text style={styles.screenHeading}>Volunteer Management</Text>
+      <View style={styles.summaryRow}>
+        <View style={[styles.summaryCard, { backgroundColor: '#DFE7EE' }]}>
+          <Text style={styles.summaryNum}>{pendingCount}</Text>
+          <Text style={styles.summaryLabel}>Pending requests</Text>
         </View>
 
-        <View style={styles.topRight}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => alert('Search volunteers')}>
-            <Icon name="search" size={20} color="#111827" />
-          </TouchableOpacity>
-          <View style={styles.adminMiniAvatar}>
-            <Text style={styles.adminMiniAvatarText}>AD</Text>
-          </View>
+        <View style={[styles.summaryCard, { backgroundColor: '#D6E4D8' }]}>
+          <Text style={styles.summaryNum}>{verifiedCount}</Text>
+          <Text style={styles.summaryLabel}>Verified</Text>
+        </View>
+
+        <View style={[styles.summaryCard, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAEFE7' }]}>
+          <Text style={styles.summaryNum}>{rejectedCount}</Text>
+          <Text style={styles.summaryLabel}>Rejected</Text>
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ─── Summary Count Chips ─── */}
-        <View style={styles.summaryChipsRow}>
-          <View style={styles.summaryChip}>
-            <View style={[styles.dotIndicator, { backgroundColor: '#F59E0B' }]} />
-            <Text style={styles.summaryChipText}>{pendingCount} PENDING</Text>
-          </View>
-
-          <View style={styles.summaryChip}>
-            <View style={[styles.dotIndicator, { backgroundColor: '#10B981' }]} />
-            <Text style={styles.summaryChipText}>{verifiedCount} VERIFIED</Text>
-          </View>
-
-          <View style={styles.summaryChip}>
-            <View style={[styles.dotIndicator, { backgroundColor: '#EF4444' }]} />
-            <Text style={styles.summaryChipText}>{rejectedCount} REJECTED</Text>
-          </View>
-        </View>
-
-        {/* ─── Tab Switcher ─── */}
-        <View style={styles.tabContainer}>
+      <View style={styles.filtersWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'pending' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('pending')}
+            style={[styles.filterPill, filter === 'all' && styles.filterPillActive]}
+            onPress={() => setFilter('all')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
+              All ({volunteers.length})
+            </Text>
+            {filter === 'all' && <Icon name="close" size={12} color="#FFFFFF" />}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'pending' && styles.filterPillActive]}
+            onPress={() => setFilter('pending')}
+            activeOpacity={0.8}
           >
             <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'pending' && styles.tabBtnTextActive,
-              ]}
+              style={[styles.filterText, filter === 'pending' && styles.filterTextActive]}
             >
               Pending ({pendingCount})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'verified' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('verified')}
+            style={[styles.filterPill, filter === 'verified' && styles.filterPillActive]}
+            onPress={() => setFilter('verified')}
+            activeOpacity={0.8}
           >
             <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'verified' && styles.tabBtnTextActive,
-              ]}
+              style={[styles.filterText, filter === 'verified' && styles.filterTextActive]}
             >
               Verified ({verifiedCount})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'rejected' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('rejected')}
+            style={[styles.filterPill, filter === 'rejected' && styles.filterPillActive]}
+            onPress={() => setFilter('rejected')}
+            activeOpacity={0.8}
           >
             <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'rejected' && styles.tabBtnTextActive,
-              ]}
+              style={[styles.filterText, filter === 'rejected' && styles.filterTextActive]}
             >
               Rejected ({rejectedCount})
             </Text>
           </TouchableOpacity>
+        </ScrollView>
+      </View>
 
-          <TouchableOpacity
-            style={[styles.tabBtn, activeTab === 'suspended' && styles.tabBtnActive]}
-            onPress={() => setActiveTab('suspended')}
-          >
-            <Text
-              style={[
-                styles.tabBtnText,
-                activeTab === 'suspended' && styles.tabBtnTextActive,
-              ]}
-            >
-              Suspended (2)
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Volunteer Cards List ─── */}
-        <View style={styles.cardsContainer}>
-          {filteredVolunteers.map(vol => {
-            const isPending = vol.status === 'pending';
-            const isVerified = vol.status === 'verified';
-
-            return (
-              <View key={vol.id} style={styles.card}>
-                <View style={styles.cardTop}>
-                  <View style={styles.avatarWrap}>
-                    <Image
-                      source={{
-                        uri:
-                          vol.avatar ||
-                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-                      }}
-                      style={styles.avatarImg}
-                    />
-                    {isPending && (
-                      <View style={styles.hourglassTag}>
-                        <Icon name="clock" size={10} color="#D97706" />
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={styles.detailsBlock}>
-                    <View style={styles.nameStatusRow}>
-                      <Text style={styles.volunteerName}>{vol.name}</Text>
-                      <View
-                        style={[
-                          styles.statusPill,
-                          isPending ? styles.statusPillPending : styles.statusPillVerified,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.statusPillText,
-                            isPending
-                              ? styles.statusPillTextPending
-                              : styles.statusPillTextVerified,
-                          ]}
-                        >
-                          {isPending ? 'PENDING' : 'VERIFIED'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text style={styles.contactText}>
-                      {vol.email} • {vol.phone}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Location & Applied Tags */}
-                <View style={styles.tagsRow}>
-                  <View style={styles.metaPill}>
-                    <Icon name="map-pin" size={12} color="#6B7280" />
-                    <Text style={styles.metaPillText}>{vol.city}</Text>
-                  </View>
-
-                  <View style={styles.metaPill}>
-                    <Icon name="calendar" size={12} color="#6B7280" />
-                    <Text style={styles.metaPillText}>Applied: {vol.appliedDate}</Text>
-                  </View>
-                </View>
-
-                {/* Stats if Verified */}
-                {isVerified && (
-                  <View style={styles.statsRow}>
-                    <View style={styles.volStatBox}>
-                      <Text style={styles.volStatNum}>
-                        {vol.plantationsCount || 23}
-                      </Text>
-                      <Text style={styles.volStatLabel}>PLANTATIONS</Text>
-                    </View>
-                    <View style={styles.volStatBox}>
-                      <Text style={styles.volStatNum}>
-                        {vol.lastActive || '2d ago'}
-                      </Text>
-                      <Text style={styles.volStatLabel}>LAST ACTIVE</Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* Action Buttons for Pending */}
-                {isPending ? (
-                  <View style={styles.pendingActionsBlock}>
-                    <View style={styles.buttonRow}>
-                      <TouchableOpacity
-                        style={styles.approveBtn}
-                        onPress={() => handleApprove(vol.id, vol.name)}
-                      >
-                        <Icon name="check" size={15} color="#FFFFFF" />
-                        <Text style={styles.approveBtnText}>Approve</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.rejectBtn}
-                        onPress={() => handleReject(vol.id, vol.name)}
-                      >
-                        <Icon name="close" size={14} color="#DC2626" />
-                        <Text style={styles.rejectBtnText}>Reject</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.viewFullAppBtn}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/pages/volunteer-details',
-                          params: { id: vol.id },
-                        } as any)
-                      }
-                    >
-                      <Text style={styles.viewFullAppText}>
-                        View Full Application →
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.verifiedActionsBlock}>
-                    <TouchableOpacity
-                      style={styles.viewProfileBtn}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/pages/volunteer-details',
-                          params: { id: vol.id },
-                        } as any)
-                      }
-                    >
-                      <Text style={styles.viewProfileBtnText}>View Profile</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.suspendBtn}
-                      onPress={() => alert('Suspend options')}
-                    >
-                      <Text style={styles.suspendBtnText}>Suspend</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </View>
-      </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.85}
-        onPress={() => alert('Invite new volunteer')}
-      >
-        <Icon name="users" size={22} color="#FFFFFF" />
-      </TouchableOpacity>
+      <FlatList
+        data={filteredVolunteers}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCard}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  topLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  menuBtn: {
+  backBtn: {
     padding: 4,
+    marginRight: 8,
   },
-  screenHeading: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0D4325',
   },
-  topRight: {
+  summaryRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBtn: {
-    padding: 6,
-  },
-  adminMiniAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#0B3B24',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adminMiniAvatarText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  scroll: {
-    flex: 1,
-    backgroundColor: '#F8FAF9',
-  },
-  scrollContent: {
+    gap: 10,
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
+    marginBottom: 14,
   },
-  summaryChipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  summaryChip: {
+  summaryCard: {
     flex: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  summaryNum: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 2,
+  },
+  summaryLabel: {
+    fontSize: 11.5,
+    color: '#4F5C54',
+  },
+  filtersWrap: {
+    paddingBottom: 10,
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 8,
-    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#CED7CD',
     gap: 6,
   },
-  dotIndicator: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+  filterPillActive: {
+    backgroundColor: '#0D4E2B',
+    borderColor: '#0D4E2B',
   },
-  summaryChipText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#374151',
+  filterText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#4F5C54',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#E5E7EB',
-    borderRadius: 12,
-    padding: 3,
-    gap: 2,
-    marginBottom: 16,
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
-    alignItems: 'center',
-  },
-  tabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  tabBtnText: {
-    fontSize: 11,
+  filterTextActive: {
+    color: '#FFFFFF',
     fontWeight: '600',
-    color: '#6B7280',
   },
-  tabBtnTextActive: {
-    color: '#111827',
-    fontWeight: '700',
-  },
-  cardsContainer: {
-    gap: 16,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    paddingBottom: 28,
+    gap: 12,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#EAEEE7',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.03,
     shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  cardTop: {
+  cardTopRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
-  avatarWrap: {
-    position: 'relative',
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#ECEFE9',
   },
-  avatarImg: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  avatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#ECEFE9',
   },
-  hourglassTag: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  detailsBlock: {
+  cardInfo: {
     flex: 1,
-    justifyContent: 'center',
   },
-  nameStatusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  cardName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 3,
   },
-  volunteerName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#111827',
-  },
-  statusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  statusPillPending: {
-    backgroundColor: '#FEF3C7',
-  },
-  statusPillVerified: {
-    backgroundColor: '#DCFCE7',
-  },
-  statusPillText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  statusPillTextPending: {
-    color: '#D97706',
-  },
-  statusPillTextVerified: {
-    color: '#059669',
-  },
-  contactText: {
+  cardApplied: {
     fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+    color: '#6E7B73',
   },
-  tagsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  metaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+  statusBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    gap: 4,
-  },
-  metaPillText: {
-    fontSize: 11,
-    color: '#4B5563',
-    fontWeight: '500',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-  },
-  volStatBox: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  volStatNum: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0B3B24',
-  },
-  volStatLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  pendingActionsBlock: {
-    marginTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  approveBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0B3B24',
-    paddingVertical: 10,
-    borderRadius: 12,
-    gap: 6,
-  },
-  approveBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  rejectBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-    borderRadius: 12,
-    gap: 6,
-  },
-  rejectBtnText: {
-    color: '#DC2626',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  viewFullAppBtn: {
-    alignItems: 'center',
-    marginTop: 10,
     paddingVertical: 4,
+    borderRadius: 999,
   },
-  viewFullAppText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  verifiedActionsBlock: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
-  },
-  viewProfileBtn: {
-    flex: 1,
-    backgroundColor: '#E5E7EB',
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  viewProfileBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#374151',
-  },
-  suspendBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  suspendBtnText: {
-    fontSize: 13,
+  statusText: {
+    fontSize: 11,
     fontWeight: '600',
-    color: '#6B7280',
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0B3B24',
+  actionBtn: {
+    marginTop: 14,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: '#0D4E2B',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+  },
+  actionBtnText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
-

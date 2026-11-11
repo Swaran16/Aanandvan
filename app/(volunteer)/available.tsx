@@ -1,370 +1,362 @@
-/**
- * Volunteer Available Requests Screen (Tab 2)
- * Matches Batch 2 — Image 2:
- * - Back button + Aanandvan top bar
- * - Title: "Available Requests"
- * - Search bar: "Search by area or tree species..."
- * - Filter pills: [Nearest], [Newest], [My City], [Popular]
- * - Request cards with distance tag, bookmark, address, description
- * - Primary "Accept Request" button
- * - Tapping card opens details with Accept & Schedule actions
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+  FlatList,
   Image,
-  StatusBar,
+  Pressable,
+  StyleSheet,
   TextInput,
-  Alert,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
+import { AcceptRequestModal } from '@/components/volunteer/AcceptRequestModal';
 import { useApp } from '@/context/AppContext';
+import { PlantationRequest } from '@/types';
 
-export default function VolunteerAvailableScreen() {
-  const { requests, volunteerAcceptRequest } = useApp();
-  const [activeFilter, setActiveFilter] = useState<'nearest' | 'newest' | 'city' | 'popular'>('nearest');
+type FilterType = 'nearest' | 'newest' | 'saved';
+
+const formatRequestCode = (id: string) => {
+  if (id.toUpperCase().startsWith('REQ-')) return `#${id.toUpperCase()}`;
+  return `#${id.toUpperCase()}`;
+};
+
+export default function AvailableRequestsScreen() {
+  const { requests } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
-  const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
+  const [activeFilter, setActiveFilter] = useState<FilterType>('nearest');
+  const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
+  const [selectedRequest, setSelectedRequest] = useState<PlantationRequest | null>(null);
 
-  // Show requests that are verified and open for volunteers (or newly assigned)
-  const availableList = requests.filter(r => {
-    const isAvailable = r.status === 'verified';
-    if (!isAvailable) return false;
+  const availableRequests = useMemo(() => {
+    const base = requests.filter((r) => r.status === 'verified');
+    const q = searchQuery.trim().toLowerCase();
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    let filtered = base.filter((req) => {
+      if (activeFilter === 'saved' && !savedIds[req.id]) {
+        return false;
+      }
+      if (!q) return true;
       return (
-        r.title.toLowerCase().includes(q) ||
-        r.location.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q)
+        req.title.toLowerCase().includes(q) ||
+        req.location.toLowerCase().includes(q) ||
+        req.id.toLowerCase().includes(q) ||
+        req.description.toLowerCase().includes(q)
+      );
+    });
+
+    if (activeFilter === 'nearest') {
+      filtered = [...filtered].sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+    } else if (activeFilter === 'newest') {
+      filtered = [...filtered].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
-    return true;
-  });
 
-  const toggleBookmark = (id: string) => {
-    setBookmarked(prev => ({ ...prev, [id]: !prev[id] }));
+    return filtered;
+  }, [requests, searchQuery, activeFilter, savedIds]);
+
+  const toggleSave = (id: string) => {
+    setSavedIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAccept = (id: string, title: string) => {
-    volunteerAcceptRequest(id);
-    Alert.alert(
-      'Request Accepted!',
-      `You have successfully accepted "${title}". It is now added to "My Assigned Work". Would you like to schedule the plantation drive now?`,
-      [
-        { text: 'Later', style: 'cancel' },
-        {
-          text: 'Schedule Now',
-          onPress: () =>
-            router.push({
-              pathname: '/pages/schedule-plantation',
-              params: { id },
-            } as any),
-        },
-      ]
+  const handleOpenDetails = (req: PlantationRequest) => {
+    router.push({ pathname: '/pages/request-details', params: { id: req.id } } as any);
+  };
+
+  const handleAcceptAndSchedule = () => {
+    if (!selectedRequest) return;
+    const reqId = selectedRequest.id;
+    setSelectedRequest(null);
+    router.push({ pathname: '/pages/schedule-plantation', params: { id: reqId } } as any);
+  };
+
+  const renderCard = ({ item }: { item: PlantationRequest }) => {
+    const isSaved = !!savedIds[item.id];
+    const imageUrl =
+      item.areaPhotos?.[0] ||
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop';
+    const distanceLabel =
+      item.distanceKm !== undefined ? `${item.distanceKm.toFixed(1)} km away` : '1.2 km away';
+
+    return (
+      <View style={styles.card}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => handleOpenDetails(item)}
+          style={styles.imageWrapper}
+        >
+          <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
+          <View style={styles.distanceBadge}>
+            <Icon name="map-pin" size={12} color="#0D4E2B" />
+            <Text style={styles.distanceText}>{distanceLabel}</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.metaRow}>
+          <Text style={styles.reqIdText}>{formatRequestCode(item.id)}</Text>
+          <TouchableOpacity
+            onPress={() => toggleSave(item.id)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
+            <Icon
+              name="bookmark"
+              size={18}
+              color={isSaved ? '#0D4E2B' : '#4C5A52'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+
+        <View style={styles.locationRow}>
+          <Icon name="map-pin" size={13} color="#5D6B63" />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {item.location}
+          </Text>
+        </View>
+
+        <Text style={styles.descriptionText} numberOfLines={3}>
+          {item.description}
+        </Text>
+
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            style={styles.viewDetailsBtn}
+            onPress={() => handleOpenDetails(item)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewDetailsText}>View details</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.acceptBtn}
+            onPress={() => setSelectedRequest(item)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.acceptBtnText}>Accept request</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content" />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.push('/(volunteer)' as any)}
+          onPress={() => router.back()}
           style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="chevron-left" size={24} color="#111827" />
+          <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Aanandvan</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Available requests</Text>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.pageHeading}>Available Requests</Text>
+      <View style={styles.searchContainer}>
+        <Icon name="search" size={18} color="#7A867E" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by area, request ID, city"
+          placeholderTextColor="#8B968F"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery('')}>
+            <Icon name="close" size={16} color="#7A867E" />
+          </Pressable>
+        )}
+      </View>
 
-        {/* ─── Search Bar ─── */}
-        <View style={styles.searchBar}>
-          <Icon name="search" size={18} color="#6B7280" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by area or tree species..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="close" size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        {/* ─── Filter Pills ─── */}
-        <View style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'nearest' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('nearest')}
-          >
-            <Text
-              style={[
-                styles.filterPillText,
-                activeFilter === 'nearest' && styles.filterPillTextActive,
-              ]}
-            >
-              Nearest
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'newest' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('newest')}
-          >
-            <Text
-              style={[
-                styles.filterPillText,
-                activeFilter === 'newest' && styles.filterPillTextActive,
-              ]}
-            >
-              Newest
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'city' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('city')}
-          >
-            <Text
-              style={[
-                styles.filterPillText,
-                activeFilter === 'city' && styles.filterPillTextActive,
-              ]}
-            >
-              My City
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'popular' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('popular')}
-          >
-            <Text
-              style={[
-                styles.filterPillText,
-                activeFilter === 'popular' && styles.filterPillTextActive,
-              ]}
-            >
-              Popular
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ─── Requests List ─── */}
-        <View style={styles.cardsList}>
-          {availableList.map(req => {
-            const isSaved = bookmarked[req.id];
-            const distance = req.distanceKm ? `${req.distanceKm} km away` : '1.2 km away';
-
-            return (
-              <View key={req.id} style={styles.cardContainer}>
-                {/* Image Banner with Distance Badge */}
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/pages/request-details',
-                      params: { id: req.id },
-                    } as any)
-                  }
-                >
-                  <View style={styles.imageWrapper}>
-                    <Image
-                      source={{
-                        uri:
-                          req.areaPhotos[0] ||
-                          'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&auto=format&fit=crop&q=80',
-                      }}
-                      style={styles.cardImage}
-                    />
-                    <View style={styles.distanceBadge}>
-                      <Icon name="map-pin" size={11} color="#0B3B24" />
-                      <Text style={styles.distanceText}>{distance}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-
-                {/* Card Content */}
-                <View style={styles.cardBody}>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.requestId}>#{req.id}</Text>
-                    <TouchableOpacity
-                      onPress={() => toggleBookmark(req.id)}
-                      style={styles.bookmarkBtn}
-                    >
-                      <Icon
-                        name="bookmark"
-                        size={18}
-                        color={isSaved ? '#0B3B24' : '#9CA3AF'}
-                      />
-                    </TouchableOpacity>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      router.push({
-                        pathname: '/pages/request-details',
-                        params: { id: req.id },
-                      } as any)
-                    }
-                  >
-                    <Text style={styles.cardTitle}>{req.title}</Text>
-                    <Text style={styles.cardAddress} numberOfLines={1}>
-                      {req.manualAddress || req.location}
-                    </Text>
-                    <Text style={styles.cardSnippet} numberOfLines={2}>
-                      {req.description}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Accept Request Button */}
-                  <TouchableOpacity
-                    style={styles.acceptBtn}
-                    activeOpacity={0.85}
-                    onPress={() => handleAccept(req.id, req.title)}
-                  >
-                    <Text style={styles.acceptBtnText}>Accept Request</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Load More Button */}
+      <View style={styles.filtersRow}>
         <TouchableOpacity
-          style={styles.loadMoreBtn}
-          onPress={() => alert('All current verified requests loaded')}
+          style={[styles.filterPill, activeFilter === 'nearest' && styles.filterPillActive]}
+          onPress={() => setActiveFilter('nearest')}
+          activeOpacity={0.8}
         >
-          <Text style={styles.loadMoreText}>Load More Requests ⌄</Text>
+          <Text
+            style={[
+              styles.filterText,
+              activeFilter === 'nearest' && styles.filterTextActive,
+            ]}
+          >
+            Nearest
+          </Text>
+          {activeFilter === 'nearest' && (
+            <Icon name="close" size={12} color="#FFFFFF" />
+          )}
         </TouchableOpacity>
-      </ScrollView>
 
-      
+        <TouchableOpacity
+          style={[styles.filterPill, activeFilter === 'newest' && styles.filterPillActive]}
+          onPress={() => setActiveFilter('newest')}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.filterText,
+              activeFilter === 'newest' && styles.filterTextActive,
+            ]}
+          >
+            Newest
+          </Text>
+          {activeFilter === 'newest' && (
+            <Icon name="close" size={12} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterPill, activeFilter === 'saved' && styles.filterPillActive]}
+          onPress={() => setActiveFilter('saved')}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.filterText,
+              activeFilter === 'saved' && styles.filterTextActive,
+            ]}
+          >
+            Saved
+          </Text>
+          {activeFilter === 'saved' && (
+            <Icon name="close" size={12} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        data={availableRequests}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCard}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyBox}>
+            <Icon name="plant" size={38} color="#8BA093" />
+            <Text style={styles.emptyTitle}>No matching requests</Text>
+            <Text style={styles.emptySub}>
+              {activeFilter === 'saved'
+                ? 'Bookmark requests to find them quickly under Saved.'
+                : 'Try clearing your search or checking back soon for new verified requests.'}
+            </Text>
+          </View>
+        }
+      />
+
+      <AcceptRequestModal
+        visible={!!selectedRequest}
+        requestTitle={selectedRequest?.title ?? ''}
+        requestLocation={selectedRequest?.location ?? ''}
+        onAcceptAndSchedule={handleAcceptAndSchedule}
+        onClose={() => setSelectedRequest(null)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9F6',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
+    marginRight: 8,
   },
-  topTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0D4325',
   },
-  scroll: {
-    flex: 1,
-    backgroundColor: '#F8FAF9',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 90,
-  },
-  pageHeading: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0B3B24',
-    marginBottom: 16,
-    letterSpacing: -0.4,
-  },
-  searchBar: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1E8DA',
-    borderRadius: 14,
-    height: 48,
+    marginHorizontal: 16,
     paddingHorizontal: 14,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D6DDD4',
     gap: 10,
-    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
+    color: '#163020',
+    paddingVertical: 0,
   },
-  filterRow: {
+  filtersRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 10,
   },
   filterPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#CED7CD',
+    gap: 6,
   },
   filterPillActive: {
-    backgroundColor: '#0B3B24',
-    borderColor: '#0B3B24',
+    backgroundColor: '#0D4E2B',
+    borderColor: '#0D4E2B',
   },
-  filterPillText: {
+  filterText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontWeight: '500',
+    color: '#4F5C54',
   },
-  filterPillTextActive: {
+  filterTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  cardsList: {
-    gap: 18,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 110,
+    gap: 14,
   },
-  cardContainer: {
+  card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    overflow: 'hidden',
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#EAEEE7',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
   imageWrapper: {
-    position: 'relative',
-    width: '100%',
     height: 150,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#E5EAE3',
+    marginBottom: 10,
   },
   cardImage: {
     width: '100%',
@@ -372,97 +364,102 @@ const styles = StyleSheet.create({
   },
   distanceBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: 10,
+    left: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(216, 239, 225, 0.95)',
+    backgroundColor: '#CCF2DB',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 999,
     gap: 4,
   },
   distanceText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  cardBody: {
-    padding: 16,
+    fontWeight: '600',
+    color: '#0D4E2B',
   },
   metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 4,
   },
-  requestId: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  bookmarkBtn: {
-    padding: 4,
+  reqIdText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#88958D',
+    letterSpacing: 0.3,
   },
   cardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#111827',
-    marginTop: 2,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 4,
   },
-  cardAddress: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 8,
   },
-  cardSnippet: {
+  locationText: {
+    fontSize: 12.5,
+    color: '#5F6C64',
+    flex: 1,
+  },
+  descriptionText: {
     fontSize: 13,
-    color: '#4B5563',
-    lineHeight: 18,
-    marginTop: 8,
-    marginBottom: 14,
+    lineHeight: 19,
+    color: '#4F5C54',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    gap: 12,
+  },
+  viewDetailsBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewDetailsText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: '#0D4E2B',
   },
   acceptBtn: {
-    backgroundColor: '#0B3B24',
-    borderRadius: 14,
-    height: 46,
+    flex: 1.5,
+    backgroundColor: '#0D4E2B',
+    paddingVertical: 11,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
   acceptBtnText: {
+    fontSize: 13.5,
+    fontWeight: '600',
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
   },
-  loadMoreBtn: {
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: '#0B3B24',
-    marginTop: 20,
-  },
-  loadMoreText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0B3B24',
+  emptyBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    paddingVertical: 56,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#163020',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: '#6C7870',
+    textAlign: 'center',
+    lineHeight: 19,
   },
 });
-

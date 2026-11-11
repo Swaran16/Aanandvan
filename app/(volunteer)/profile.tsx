@@ -1,36 +1,51 @@
-/**
- * Volunteer Profile Screen (Tab 4)
- * Custom designed profile for Volunteer (Amit Kumar)
- */
-
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StatusBar,
   Alert,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
-import { Icon } from '@/components/common/Icon';
+import { Icon, IconName } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
-export default function VolunteerProfileScreen() {
-  const { currentUser, logout, requests } = useApp();
+const formatMaskedPhone = (phone?: string) => {
+  if (!phone) return '+91*******425';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '+91*******425';
+  const lastThree = digits.slice(-3);
+  return `+91*******${lastThree}`;
+};
 
+export default function VolunteerProfileScreen() {
+  const { currentUser, requests, maintenanceItems, logout } = useApp();
+  const [isAvailable, setIsAvailable] = useState(true);
+
+  const completedCount = currentUser.treesCount ?? 25;
   const assignedCount = requests.filter(
-    r => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+    (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+  ).length;
+  const careDueCount = maintenanceItems.filter(
+    (m) => m.status === 'needs_water' || m.status === 'pruning_needed' || m.isUrgent
   ).length;
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
+    if (Platform.OS === 'web') {
+      logout();
+      router.replace('/(auth)/login' as any);
+      return;
+    }
+
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Logout',
+        text: 'Log Out',
         style: 'destructive',
         onPress: () => {
           logout();
@@ -40,336 +55,257 @@ export default function VolunteerProfileScreen() {
     ]);
   };
 
+  const handleMenuPress = (label: string) => {
+    if (Platform.OS === 'web') return;
+    Alert.alert(label, `${label} settings will be available soon.`);
+  };
+
+  const menuRows: Array<{
+    id: string;
+    icon: IconName;
+    label: string;
+    rightValue?: string;
+    onPress: () => void;
+  }> = [
+    {
+      id: 'edit',
+      icon: 'profile',
+      label: 'Edit profile',
+      onPress: () => handleMenuPress('Edit profile'),
+    },
+    {
+      id: 'service',
+      icon: 'map-pin',
+      label: 'Service area',
+      rightValue: 'Within 5 km',
+      onPress: () => handleMenuPress('Service area'),
+    },
+    {
+      id: 'certs',
+      icon: 'bookmark',
+      label: 'Certificates',
+      onPress: () => handleMenuPress('Certificates'),
+    },
+    {
+      id: 'notifs',
+      icon: 'bell',
+      label: 'Notifications',
+      onPress: () => handleMenuPress('Notifications'),
+    },
+    {
+      id: 'help',
+      icon: 'help',
+      label: 'Help Centre',
+      onPress: () => handleMenuPress('Help Centre'),
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content"  />
-
-      {/* ─── Hero Header ─── */}
-      <View style={styles.heroHeader}>
-        <SafeAreaView edges={['top']} style={styles.safeHero}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.userSection}>
-              <View style={styles.avatarWrapper}>
-                <Image
-                  source={{
-                    uri:
-                      currentUser.avatar ||
-                      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80',
-                  }}
-                  style={styles.avatar}
-                />
-                <View style={styles.verifiedBadge}>
-                  <Icon name="check" size={12} color="#FFFFFF" />
-                </View>
-              </View>
-
-              <View style={styles.nameBlock}>
-                <Text style={styles.userName}>{currentUser.name || 'Amit Kumar'}</Text>
-                <View style={styles.roleBadge}>
-                  <Text style={styles.roleBadgeText}>Verified Volunteer</Text>
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.settingsIconBtn}
-              onPress={() => alert('Volunteer Settings')}
-            >
-              <Icon name="settings" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
-
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── 3 Floating Stat Cards ─── */}
-        <View style={styles.floatingStatsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>ASSIGNED</Text>
+        <Text style={styles.pageTitle}>Profile</Text>
+
+        <View style={styles.userRow}>
+          <Image
+            source={{
+              uri:
+                currentUser.avatar ||
+                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=240&auto=format&fit=crop&q=80',
+            }}
+            style={styles.avatar}
+          />
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{currentUser.name || 'Amit Kumar'}</Text>
+            <Text style={styles.userPhone}>{formatMaskedPhone(currentUser.phone)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { backgroundColor: '#DFE7EE' }]}>
+            <Text style={styles.statValue}>{String(completedCount).padStart(2, '0')}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: '#D6E4D8' }]}>
             <Text style={styles.statValue}>{String(assignedCount).padStart(2, '0')}</Text>
+            <Text style={styles.statLabel}>Assigned</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>COMPLETED</Text>
-            <Text style={styles.statValue}>23</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>HOURS</Text>
-            <Text style={[styles.statValue, { color: '#10B981' }]}>48</Text>
+          <View style={[styles.statCard, { backgroundColor: '#EEF5B2' }]}>
+            <Text style={styles.statValue}>{String(careDueCount).padStart(2, '0')}</Text>
+            <Text style={styles.statLabel}>Care due</Text>
           </View>
         </View>
 
-        {/* ─── Volunteer Information ─── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.cardHeaderTitle}>Volunteer Details</Text>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>
-              {currentUser.email || 'amit.kumar@example.com'}
-            </Text>
-          </View>
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mobile</Text>
-            <Text style={styles.infoValue}>
-              {currentUser.phone || '+91 98123 45678'}
-            </Text>
-          </View>
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Operating City</Text>
-            <Text style={styles.infoValue}>{currentUser.city || 'Gurugram'}</Text>
-          </View>
+        <View style={styles.availabilityBox}>
+          <Text style={styles.availabilityText}>Available for new requests</Text>
+          <Switch
+            value={isAvailable}
+            onValueChange={setIsAvailable}
+            trackColor={{ false: '#D1D5DB', true: '#0D4E2B' }}
+            thumbColor="#FFFFFF"
+          />
         </View>
 
-        {/* ─── Settings & Support ─── */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.cardHeaderTitle}>Volunteer Tools</Text>
+        <View style={styles.menuList}>
+          {menuRows.map((row) => (
+            <TouchableOpacity
+              key={row.id}
+              style={styles.menuRow}
+              onPress={row.onPress}
+              activeOpacity={0.75}
+            >
+              <View style={styles.menuLeft}>
+                <Icon name={row.icon} size={18} color="#2B3E33" />
+                <Text style={styles.menuLabel}>{row.label}</Text>
+              </View>
+
+              <View style={styles.menuRight}>
+                {row.rightValue ? (
+                  <Text style={styles.menuRightValue}>{row.rightValue}</Text>
+                ) : null}
+                <Icon name="chevron-right" size={18} color="#5F6C64" />
+              </View>
+            </TouchableOpacity>
+          ))}
 
           <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push('/pages/my-assigned-work' as any)}
+            style={styles.logoutRow}
+            onPress={handleLogout}
+            activeOpacity={0.75}
           >
-            <View style={styles.menuItemLeft}>
-              <Icon name="check" size={18} color="#4B5563" />
-              <Text style={styles.menuItemText}>My Assigned Work</Text>
-            </View>
-            <Icon name="chevron-right" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push('/pages/upload-activity' as any)}
-          >
-            <View style={styles.menuItemLeft}>
-              <Icon name="camera" size={18} color="#4B5563" />
-              <Text style={styles.menuItemText}>Upload Plantation Activity</Text>
-            </View>
-            <Icon name="chevron-right" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => alert('Support line active')}
-          >
-            <View style={styles.menuItemLeft}>
-              <Icon name="help" size={18} color="#4B5563" />
-              <Text style={styles.menuItemText}>Help & Support</Text>
-            </View>
-            <Icon name="chevron-right" size={18} color="#9CA3AF" />
+            <Icon name="logout" size={18} color="#B91C1C" />
+            <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
-
-        {/* ─── Logout ─── */}
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          activeOpacity={0.8}
-          onPress={handleLogout}
-        >
-          <Icon name="logout" size={18} color="#DC2626" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
-  },
-  heroHeader: {
-    backgroundColor: '#0B3B24',
-    paddingBottom: 40,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  safeHero: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  userSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  avatarWrapper: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#0B3B24',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nameBlock: {
-    gap: 4,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.4,
-  },
-  roleBadge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  roleBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  settingsIconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingTop: 14,
+    paddingBottom: 100,
   },
-  floatingStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -28,
+  pageTitle: {
+    fontSize: 19,
+    fontWeight: '600',
+    color: '#0D4325',
     marginBottom: 20,
-    gap: 12,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 22,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E5EAE3',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16.5,
+    fontWeight: '700',
+    color: '#163020',
+    marginBottom: 2,
+  },
+  userPhone: {
+    fontSize: 13.5,
+    color: '#5F6C64',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 0.5,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-    marginTop: 6,
-  },
-  sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  cardHeaderTitle: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#0B3B24',
+    color: '#0B3E22',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#4F5C54',
+  },
+  availabilityBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F7F8F5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 14,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  infoValue: {
-    fontSize: 14,
+  availabilityText: {
+    fontSize: 14.5,
     fontWeight: '600',
-    color: '#111827',
+    color: '#163020',
   },
-  menuItem: {
+  menuList: {
+    marginTop: 4,
+  },
+  menuRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF1EC',
   },
-  menuItemLeft: {
+  menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
-  menuItemText: {
+  menuLabel: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '500',
+    color: '#163020',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  logoutBtn: {
+  menuRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
-    borderRadius: 16,
-    height: 52,
-    marginTop: 8,
+  },
+  menuRightValue: {
+    fontSize: 13,
+    color: '#6E7B73',
+  },
+  logoutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 18,
   },
   logoutText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#DC2626',
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#B91C1C',
   },
 });

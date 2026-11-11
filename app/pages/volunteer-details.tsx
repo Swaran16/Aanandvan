@@ -1,81 +1,101 @@
-/**
- * Admin Volunteer Application Details Screen
- * Matches Batch 4 — Image 3:
- * - Initials avatar (PS) + Priya Sharma + PENDING REVIEW badge + Applied date
- * - Personal Information card (Name, Phone, Email, Pincode, Address, Coordinates with View on Map)
- * - Volunteer Vision quoted statement
- * - Admin Notes box with "Save Note"
- * - Fixed bottom action buttons: [Reject] & [Approve]
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  StatusBar,
   Alert,
+  Image,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
+import { RejectVolunteerModal } from '@/components/admin/RejectVolunteerModal';
 import { useApp } from '@/context/AppContext';
 
 export default function VolunteerDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const { volunteers, approveVolunteer, rejectVolunteer, saveVolunteerAdminNote } = useApp();
 
-  const vol = volunteers.find(v => v.id === id) || volunteers[0];
-  const [adminNote, setAdminNote] = useState(vol.adminNotes || '');
+  const vol = useMemo(() => {
+    if (!id) return volunteers[0];
+    return volunteers.find((v) => v.id === id) ?? volunteers[0];
+  }, [id, volunteers]);
 
-  const initials = vol.name
-    .split(' ')
-    .map(p => p[0])
-    .join('')
-    .substring(0, 2);
+  const [adminNote, setAdminNote] = useState(vol?.adminNotes || '');
+  const [rejectModalVisible, setRejectModalVisible] = useState(false);
+
+  if (!vol) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Icon name="chevron-left" size={22} color="#163020" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Volunteer application</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const badge =
+    vol.status === 'verified'
+      ? { label: 'Approved', bg: '#CCF2DB', fg: '#0D4E2B' }
+      : vol.status === 'rejected'
+        ? { label: 'Rejected', bg: '#FEE2E2', fg: '#B91C1C' }
+        : { label: 'Verification pending', bg: '#FBF0C4', fg: '#92580A' };
+
+  const handleOpenMap = () => {
+    const q = encodeURIComponent(vol.coordinates || vol.address);
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
+  };
+
+  const handleSaveRemark = () => {
+    saveVolunteerAdminNote(vol.id, adminNote);
+    if (Platform.OS !== 'web') {
+      Alert.alert('Remark Saved', 'Internal admin remarks updated.');
+    }
+  };
 
   const handleApprove = () => {
     approveVolunteer(vol.id);
-    Alert.alert('Volunteer Approved 🎉', `${vol.name} is now approved!`, [
-      { text: 'Back to List', onPress: () => router.back() },
+    if (Platform.OS === 'web') {
+      router.back();
+      return;
+    }
+    Alert.alert('Approved', `${vol.name} is now a verified volunteer.`, [
+      { text: 'OK', onPress: () => router.back() },
     ]);
   };
 
   const handleReject = () => {
-    Alert.alert('Reject Application', `Are you sure you want to reject ${vol.name}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: () => {
-          rejectVolunteer(vol.id);
-          router.back();
-        },
-      },
-    ]);
+    setRejectModalVisible(true);
   };
 
-  const handleSaveNote = () => {
-    saveVolunteerAdminNote(vol.id, adminNote);
-    Alert.alert('Note Saved', 'Admin notes have been stored securely.');
+  const handleConfirmReject = (reason: string, message: string) => {
+    if (message || reason) {
+      saveVolunteerAdminNote(vol.id, `${reason}${message ? ` — ${message}` : ''}`);
+    }
+    rejectVolunteer(vol.id);
+    setRejectModalVisible(false);
+    router.back();
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Icon name="chevron-left" size={24} color="#111827" />
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Volunteer Application</Text>
-        <TouchableOpacity style={styles.menuBtn} onPress={() => alert('Application log')}>
-          <Icon name="settings" size={20} color="#111827" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Volunteer application</Text>
       </View>
 
       <ScrollView
@@ -83,400 +103,318 @@ export default function VolunteerDetailsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Header Profile Card ─── */}
-        <View style={styles.profileHeaderCard}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+        {/* Applicant Summary */}
+        <View style={styles.profileCenter}>
+          {vol.avatar ? (
+            <Image source={{ uri: vol.avatar }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatarPlaceholder} />
+          )}
 
           <Text style={styles.applicantName}>{vol.name}</Text>
-          <View
-            style={[
-              styles.statusPill,
-              vol.status === 'verified' ? styles.statusPillVerified : styles.statusPillPending,
-            ]}
+
+          <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.statusText, { color: badge.fg }]}>{badge.label}</Text>
+          </View>
+
+          <Text style={styles.appliedText}>Applied on: {vol.appliedDate}</Text>
+        </View>
+
+        {/* Personal Information */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.cardHeading}>Personal information</Text>
+
+          <Text style={styles.fieldLabel}>Full name</Text>
+          <View style={styles.readOnlyBox}>
+            <Text style={styles.readOnlyText}>{vol.name}</Text>
+          </View>
+
+          <Text style={styles.fieldLabel}>Mobile no.</Text>
+          <View style={styles.readOnlyBox}>
+            <Text style={styles.readOnlyText}>{vol.phone}</Text>
+          </View>
+
+          <Text style={styles.fieldLabel}>Email address</Text>
+          <View style={styles.readOnlyBox}>
+            <Text style={styles.readOnlyText}>{vol.email}</Text>
+          </View>
+
+          <Text style={styles.fieldLabel}>Pincode</Text>
+          <View style={styles.readOnlyBox}>
+            <Text style={styles.readOnlyText}>{vol.pincode}</Text>
+          </View>
+
+          <Text style={styles.fieldLabel}>Current address</Text>
+          <View style={styles.readOnlyBox}>
+            <Text style={styles.readOnlyText}>{vol.address}</Text>
+          </View>
+
+          <Text style={styles.fieldLabel}>Location</Text>
+          <TouchableOpacity
+            style={styles.locationBox}
+            onPress={handleOpenMap}
+            activeOpacity={0.8}
           >
-            <Text
-              style={[
-                styles.statusPillText,
-                vol.status === 'verified'
-                  ? styles.statusPillTextVerified
-                  : styles.statusPillTextPending,
-              ]}
-            >
-              {vol.status === 'verified' ? 'VERIFIED VOLUNTEER' : 'PENDING REVIEW'}
-            </Text>
-          </View>
+            <View style={styles.locationLeft}>
+              <Icon name="map-pin" size={16} color="#0D4E2B" />
+              <Text style={styles.locationCoords}>{vol.coordinates}</Text>
+            </View>
+            <Icon name="share" size={16} color="#0D4E2B" />
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.appliedRow}>
-            <Icon name="calendar" size={13} color="#6B7280" />
-            <Text style={styles.appliedText}>Applied: {vol.appliedDate}</Text>
+        {/* Volunteer's Vision */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.cardHeading}>Volunteer's vision</Text>
+          <View style={styles.visionQuoteBox}>
+            <Text style={styles.visionText}>{`"${vol.visionQuote}"`}</Text>
           </View>
         </View>
 
-        {/* ─── Personal Information ─── */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Personal Information</Text>
-
-          <View style={styles.fieldBlock}>
-            <Text style={styles.fieldLabel}>Full Name</Text>
-            <Text style={styles.fieldValue}>{vol.name}</Text>
-          </View>
-
-          <View style={styles.fieldBlock}>
-            <Text style={styles.fieldLabel}>Mobile Number</Text>
-            <View style={styles.valueRow}>
-              <Icon name="phone" size={14} color="#0B3B24" />
-              <Text style={styles.fieldValue}>{vol.phone}</Text>
-            </View>
-          </View>
-
-          <View style={styles.fieldBlock}>
-            <Text style={styles.fieldLabel}>Email Address</Text>
-            <View style={styles.valueRow}>
-              <Icon name="mail" size={14} color="#0B3B24" />
-              <Text style={styles.fieldValue}>{vol.email}</Text>
-            </View>
-          </View>
-
-          <View style={styles.fieldBlock}>
-            <Text style={styles.fieldLabel}>Pincode</Text>
-            <Text style={styles.fieldValue}>{vol.pincode}</Text>
-          </View>
-
-          <View style={styles.fieldBlock}>
-            <Text style={styles.fieldLabel}>Residential Address</Text>
-            <Text style={styles.fieldValue}>{vol.address}</Text>
-          </View>
-
-          <View style={[styles.fieldBlock, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <Text style={styles.fieldLabel}>Current Location Status</Text>
-            <View style={styles.locationStatusRow}>
-              <View style={styles.coordsBadge}>
-                <Icon name="map-pin" size={13} color="#0B3B24" />
-                <Text style={styles.coordsText}>{vol.coordinates}</Text>
-              </View>
-              <View style={styles.verifiedTag}>
-                <Text style={styles.verifiedTagText}>Verified</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => alert(`Opening location: ${vol.coordinates}`)}
-                style={styles.viewOnMapBtn}
-              >
-                <Text style={styles.viewOnMapText}>View on Map ↗</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* ─── Volunteer Vision ─── */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Volunteer Vision</Text>
-          <View style={styles.visionBox}>
-            <Text style={styles.visionQuoteText}>"{vol.visionQuote}"</Text>
-          </View>
-        </View>
-
-        {/* ─── Admin Notes ─── */}
-        <View style={styles.adminNotesCard}>
-          <View style={styles.adminNotesHeader}>
-            <Icon name="document" size={16} color="#0B3B24" />
-            <Text style={styles.adminNotesTitle}>Admin Notes</Text>
-          </View>
+        {/* Admin Remarks */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.cardHeading}>Admin remarks</Text>
           <TextInput
-            style={styles.adminNotesInput}
+            style={styles.remarksInput}
             multiline
-            placeholder="Add internal observations about this applicant..."
-            placeholderTextColor="#9CA3AF"
+            placeholder="For internal purpose only..."
+            placeholderTextColor="#8B968F"
             value={adminNote}
             onChangeText={setAdminNote}
+            textAlignVertical="top"
           />
-          <TouchableOpacity style={styles.saveNoteBtn} onPress={handleSaveNote}>
-            <Text style={styles.saveNoteBtnText}>Save Note</Text>
+
+          <TouchableOpacity
+            style={styles.saveRemarkBtn}
+            onPress={handleSaveRemark}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.saveRemarkText}>Save remark</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* ─── Fixed Bottom Actions ─── */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.rejectBottomBtn} onPress={handleReject}>
-          <Icon name="close" size={16} color="#DC2626" />
-          <Text style={styles.rejectBottomText}>Reject</Text>
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.approveBtn}
+          onPress={handleApprove}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.approveBtnText}>Approve</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.approveBottomBtn} onPress={handleApprove}>
-          <Icon name="check" size={16} color="#FFFFFF" />
-          <Text style={styles.approveBottomText}>Approve</Text>
+        <TouchableOpacity
+          style={styles.rejectBtn}
+          onPress={handleReject}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.rejectBtnText}>Reject</Text>
         </TouchableOpacity>
       </View>
+
+      <RejectVolunteerModal
+        visible={rejectModalVisible}
+        applicantName={vol.name}
+        onConfirmReject={handleConfirmReject}
+        onClose={() => setRejectModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
+    marginRight: 8,
   },
-  topTitle: {
+  headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
-  },
-  menuBtn: {
-    padding: 6,
+    fontWeight: '600',
+    color: '#0D4325',
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 110,
+    paddingTop: 6,
+    paddingBottom: 24,
+    gap: 16,
   },
-  profileHeaderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 20,
+  profileCenter: {
     alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
+    marginBottom: 4,
   },
-  avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#0B3B24',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  applicantName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3B24',
-  },
-  statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 8,
+  avatarImg: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#ECEFE9',
     marginBottom: 10,
   },
-  statusPillPending: {
-    backgroundColor: '#FEF3C7',
+  avatarPlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#ECEFE9',
+    marginBottom: 10,
   },
-  statusPillVerified: {
-    backgroundColor: '#DCFCE7',
+  applicantName: {
+    fontSize: 16.5,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 6,
   },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '800',
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginBottom: 6,
   },
-  statusPillTextPending: {
-    color: '#B45309',
-  },
-  statusPillTextVerified: {
-    color: '#059669',
-  },
-  appliedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  statusText: {
+    fontSize: 11.5,
+    fontWeight: '600',
   },
   appliedText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#6E7B73',
   },
-  card: {
+  sectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#EAEEE7',
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0B3B24',
+  cardHeading: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#163020',
     marginBottom: 14,
   },
-  fieldBlock: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
   fieldLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#6B7280',
-    marginBottom: 4,
+    fontSize: 12,
+    color: '#5F6C64',
+    marginBottom: 6,
   },
-  fieldValue: {
+  readOnlyBox: {
+    borderWidth: 1,
+    borderColor: '#DCE2DA',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginBottom: 14,
+    backgroundColor: '#FFFFFF',
+  },
+  readOnlyText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
+    color: '#2B3E33',
+    lineHeight: 20,
   },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  locationStatusRow: {
+  locationBox: {
+    borderWidth: 1,
+    borderColor: '#DCE2DA',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 6,
+    backgroundColor: '#FFFFFF',
   },
-  coordsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  coordsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  verifiedTag: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  verifiedTagText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#065F46',
-  },
-  viewOnMapBtn: {
-    paddingVertical: 2,
-  },
-  viewOnMapText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  visionBox: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 14,
-    padding: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: '#0B3B24',
-  },
-  visionQuoteText: {
-    fontSize: 13,
-    color: '#374151',
-    lineHeight: 20,
-    fontStyle: 'italic',
-  },
-  adminNotesCard: {
-    backgroundColor: '#FEFCE8',
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#FEF08A',
-    marginBottom: 20,
-  },
-  adminNotesHeader: {
+  locationLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 10,
   },
-  adminNotesTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#854D0E',
+  locationCoords: {
+    fontSize: 13.5,
+    color: '#163020',
+    textDecorationLine: 'underline',
   },
-  adminNotesInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+  visionQuoteBox: {
     borderWidth: 1,
-    borderColor: '#FEF08A',
-    padding: 12,
-    height: 80,
-    textAlignVertical: 'top',
-    fontSize: 13,
-    color: '#111827',
+    borderColor: '#E5EAE2',
+    borderRadius: 10,
+    padding: 14,
+    backgroundColor: '#FAFBF9',
   },
-  saveNoteBtn: {
-    borderWidth: 1.5,
-    borderColor: '#0B3B24',
-    borderRadius: 12,
-    paddingVertical: 9,
+  visionText: {
+    fontSize: 13.5,
+    lineHeight: 20,
+    fontStyle: 'italic',
+    color: '#4F5C54',
+  },
+  remarksInput: {
+    borderWidth: 1,
+    borderColor: '#DCE2DA',
+    borderRadius: 10,
+    padding: 14,
+    minHeight: 94,
+    fontSize: 13.5,
+    color: '#163020',
+    marginBottom: 14,
+  },
+  saveRemarkBtn: {
+    height: 44,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    borderColor: '#0D4E2B',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
   },
-  saveNoteBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
+  saveRemarkText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0D4E2B',
   },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+  footer: {
     flexDirection: 'row',
     gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 16,
+    backgroundColor: '#FAFBF9',
+    borderTopWidth: 1,
+    borderTopColor: '#EAEEE7',
   },
-  rejectBottomBtn: {
+  approveBtn: {
     flex: 1,
-    flexDirection: 'row',
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: '#0D4E2B',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
-    borderRadius: 14,
-    height: 50,
-    gap: 6,
   },
-  rejectBottomText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#DC2626',
-  },
-  approveBottomBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0B3B24',
-    borderRadius: 14,
-    height: 50,
-    gap: 6,
-  },
-  approveBottomText: {
-    fontSize: 15,
-    fontWeight: '700',
+  approveBtnText: {
+    fontSize: 14.5,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
+  rejectBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: 999,
+    borderWidth: 1.2,
+    borderColor: '#0D4E2B',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rejectBtnText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#0D4E2B',
+  },
 });
-

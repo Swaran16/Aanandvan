@@ -44,7 +44,19 @@ export default function RootLayout() {
             options={{ headerShown: false, animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
+            name="pages/request-submitted"
+            options={{ headerShown: false, animation: 'fade' }}
+          />
+          <Stack.Screen
+            name="pages/notifications"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
             name="pages/schedule-plantation"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/collect-saplings"
             options={{ headerShown: false, animation: 'slide_from_right' }}
           />
           <Stack.Screen
@@ -52,11 +64,19 @@ export default function RootLayout() {
             options={{ headerShown: false, animation: 'slide_from_right' }}
           />
           <Stack.Screen
+            name="pages/update-submitted"
+            options={{ headerShown: false, animation: 'fade' }}
+          />
+          <Stack.Screen
             name="pages/volunteer-details"
             options={{ headerShown: false, animation: 'slide_from_right' }}
           />
           <Stack.Screen
             name="pages/admin-review-request"
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="pages/verify-publish"
             options={{ headerShown: false, animation: 'slide_from_right' }}
           />
           <Stack.Screen

@@ -39,7 +39,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Overview',
+          title: 'Dashboard',
           tabBarIcon: ({ color, focused }) => {
             const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
             return (
@@ -79,14 +79,28 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="inbox"
         options={{
-          title: 'Profile',
+          title: 'Inbox',
           tabBarIcon: ({ color, focused }) => {
             const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
             return (
               <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
-                <Icon name="profile" size={20} color={iconColor} />
+                <Icon name="message" size={20} color={iconColor} />
+              </View>
+            );
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, focused }) => {
+            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
+            return (
+              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
+                <Icon name="settings" size={20} color={iconColor} />
               </View>
             );
           },

@@ -1,6 +1,6 @@
 /**
- * Login Screen — Aanandvan
- * Role-based authentication supporting Citizen, Volunteer, and Admin
+ * Login Screen — Aanandvan (Design 4)
+ * Clean OTP-based mobile login screen, properly center-aligned.
  */
 
 import React, { useState } from 'react';
@@ -17,7 +17,6 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
@@ -25,213 +24,148 @@ import { UserRole } from '@/types';
 
 export default function LoginScreen() {
   const { loginAs } = useApp();
-  const [role, setRole] = useState<UserRole>('citizen');
-  const [email, setEmail] = useState('citizen@aanandvan.in');
-  const [password, setPassword] = useState('citizen123');
+  const [mobile, setMobile] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRoleSelect = (selectedRole: UserRole) => {
-    setRole(selectedRole);
-    if (selectedRole === 'citizen') {
-      setEmail('citizen@aanandvan.in');
-      setPassword('citizen123');
-    } else if (selectedRole === 'volunteer') {
-      setEmail('volunteer@aanandvan.in');
-      setPassword('volunteer123');
-    } else {
-      setEmail('admin@aanandvan.in');
-      setPassword('admin123');
-    }
+  const handleMobileChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9\s]/g, '');
+    setMobile(cleaned);
+    if (errorMsg) setErrorMsg('');
   };
 
-  const handleLogin = (targetRole?: UserRole) => {
-    const roleToLogin = targetRole || role;
+  const inferRoleFromNumber = (digits: string): UserRole => {
+    if (digits === '9999900000') return 'admin';
+    if (digits === '9812345678' || digits === '9123456789') return 'volunteer';
+    return 'citizen';
+  };
+
+  const handleSendOtp = () => {
+    const digitsOnly = mobile.replace(/\s+/g, '');
+    if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    const finalDigits = digitsOnly.length === 10 ? digitsOnly : '9876543210';
+    const inferredRole = inferRoleFromNumber(finalDigits);
+
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      loginAs(roleToLogin, email);
-      if (roleToLogin === 'admin') {
-        router.replace('/(admin)' as any);
-      } else if (roleToLogin === 'volunteer') {
-        router.replace('/(volunteer)' as any);
-      } else {
-        router.replace('/(citizen)' as any);
-      }
-    }, 400);
+      router.push({
+        pathname: '/(auth)/otp',
+        params: {
+          mobile: `+91 ${finalDigits.slice(0, 5)} ${finalDigits.slice(5)}`,
+          role: inferredRole,
+          source: 'login',
+        },
+      } as any);
+    }, 350);
+  };
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/onboarding');
+    }
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content"  />
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* ─── Top Navigation Header ─── */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="chevron-left" size={26} color="#0B3B24" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Welcome back to Aanandvan</Text>
+      </View>
+
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={styles.scrollCenter}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header Banner */}
-          <View style={styles.header}>
-            <View style={styles.logoRow}>
-              <View style={styles.logoBadge}>
-                <Icon name="tree" size={24} color="#FFFFFF" />
-              </View>
-              <Text style={styles.headerTitle}>Aanandvan</Text>
-            </View>
-            <Text style={styles.headerSubtitle}>
-              Empowering communities to plant, protect, and preserve green canopies.
+          {/* ─── Center-Aligned Form Block ─── */}
+          <View style={styles.centerCard}>
+            <Text style={styles.instructionText}>
+              Enter your registered mobile number. We will send you a 6-digit OTP.
             </Text>
-          </View>
-
-          <View style={styles.body}>
-            {/* Role Select Tabs */}
-            <Text style={styles.sectionLabel}>SELECT ROLE</Text>
-            <View style={styles.roleTabsContainer}>
-              <TouchableOpacity
-                style={[styles.roleTab, role === 'citizen' && styles.roleTabActive]}
-                onPress={() => handleRoleSelect('citizen')}
-              >
-                <Icon
-                  name="profile"
-                  size={16}
-                  color={role === 'citizen' ? '#0B3B24' : '#6B7280'}
-                />
-                <Text
-                  style={[
-                    styles.roleTabText,
-                    role === 'citizen' && styles.roleTabTextActive,
-                  ]}
-                >
-                  Citizen
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.roleTab, role === 'volunteer' && styles.roleTabActive]}
-                onPress={() => handleRoleSelect('volunteer')}
-              >
-                <Icon
-                  name="plant"
-                  size={16}
-                  color={role === 'volunteer' ? '#0B3B24' : '#6B7280'}
-                />
-                <Text
-                  style={[
-                    styles.roleTabText,
-                    role === 'volunteer' && styles.roleTabTextActive,
-                  ]}
-                >
-                  Volunteer
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.roleTab, role === 'admin' && styles.roleTabActive]}
-                onPress={() => handleRoleSelect('admin')}
-              >
-                <Icon
-                  name="overview"
-                  size={16}
-                  color={role === 'admin' ? '#0B3B24' : '#6B7280'}
-                />
-                <Text
-                  style={[
-                    styles.roleTabText,
-                    role === 'admin' && styles.roleTabTextActive,
-                  ]}
-                >
-                  Admin
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Quick Demo Access Bar */}
-            <View style={styles.quickAccessCard}>
-              <Text style={styles.quickAccessTitle}>⚡ Instant Demo Access</Text>
-              <Text style={styles.quickAccessSub}>
-                Tap any role to immediately test without typing credentials:
-              </Text>
-              <View style={styles.demoButtonsRow}>
-                <TouchableOpacity
-                  style={styles.demoBtn}
-                  onPress={() => handleLogin('citizen')}
-                >
-                  <Text style={styles.demoBtnText}>Citizen</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.demoBtn, styles.demoBtnVolunteer]}
-                  onPress={() => handleLogin('volunteer')}
-                >
-                  <Text style={styles.demoBtnText}>Volunteer</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.demoBtn, styles.demoBtnAdmin]}
-                  onPress={() => handleLogin('admin')}
-                >
-                  <Text style={styles.demoBtnText}>Admin</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Form Inputs */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email / Mobile Number</Text>
-              <View style={styles.inputBox}>
-                <Icon name="mail" size={18} color="#6B7280" />
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Enter email or mobile"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.inputBox}>
-                <Icon name="lock" size={18} color="#6B7280" />
+              <Text style={styles.inputLabel}>Mobile number</Text>
+              <View style={[styles.phoneInputWrap, errorMsg ? styles.phoneInputError : undefined]}>
+                <View style={styles.countryCodeBox}>
+                  <Text style={styles.countryCodeText}>+91</Text>
+                </View>
                 <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  placeholder="Enter password"
+                  style={styles.phoneInput}
+                  placeholder="00000 00000"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                  maxLength={11}
+                  value={mobile}
+                  onChangeText={handleMobileChange}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSendOtp}
                 />
               </View>
+              {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
             </View>
 
-            {/* Login Action */}
+            {/* New to Aanandvan? Create an account */}
+            <View style={styles.signupRow}>
+              <Text style={styles.signupPrompt}>New to Aanandvan? </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(auth)/role-select' as any)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.signupLink}>Create an account</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Primary CTA Button */}
             <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={() => handleLogin()}
+              style={styles.sendOtpBtn}
+              activeOpacity={0.88}
+              onPress={handleSendOtp}
               disabled={loading}
-              activeOpacity={0.85}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryBtnText}>
-                  Login as {role.charAt(0).toUpperCase() + role.slice(1)}
-                </Text>
+                <Text style={styles.sendOtpText}>Send OTP</Text>
               )}
             </TouchableOpacity>
 
-            {/* Role Helper Info */}
-            <View style={styles.infoBox}>
-              <Icon name="info" size={16} color="#0B3B24" />
-              <Text style={styles.infoBoxText}>
-                {role === 'citizen' &&
-                  'Citizens can submit plantation requests, monitor live admin verification, and track assigned volunteers.'}
-                {role === 'volunteer' &&
-                  'Volunteers can discover available community drives, accept requests, schedule planting, and post before/after updates.'}
-                {role === 'admin' &&
-                  'Admins can verify citizen requests, approve volunteer applications, review schedules, and track platform metrics.'}
-              </Text>
-            </View>
+            {/* Admin Quick Login Button */}
+            <TouchableOpacity
+              style={styles.adminBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                loginAs('admin');
+                router.replace('/(admin)' as any);
+              }}
+            >
+              <Text style={styles.adminBtnText}>Admin</Text>
+            </TouchableOpacity>
+
+            {/* Privacy Footer */}
+            <Text style={styles.privacyText}>
+              Your data is protected by Aanandvan Privacy Protocol.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -239,191 +173,155 @@ export default function LoginScreen() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F7FAF8',
-  },
-  scroll: {
-    paddingBottom: 32,
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    backgroundColor: '#0B3B24',
-    paddingHorizontal: 24,
-    paddingTop: 36,
-    paddingBottom: 32,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
   },
-  logoBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  backBtn: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 6,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#C8E6C9',
-    marginTop: 10,
-    lineHeight: 20,
-  },
-  body: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4B6E5A',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  roleTabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#E5EFEA',
-    borderRadius: 14,
-    padding: 4,
-    gap: 6,
-    marginBottom: 20,
-  },
-  roleTab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  roleTabActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  roleTabText: {
-    fontSize: 13,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#6B7280',
-  },
-  roleTabTextActive: {
     color: '#0B3B24',
-    fontWeight: '700',
+    letterSpacing: -0.2,
   },
-  quickAccessCard: {
-    backgroundColor: '#E8F5EE',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#C7EED8',
-  },
-  quickAccessTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0B3B24',
-    marginBottom: 4,
-  },
-  quickAccessSub: {
-    fontSize: 12,
-    color: '#374151',
-    marginBottom: 12,
-    lineHeight: 16,
-  },
-  demoButtonsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  demoBtn: {
+  keyboardView: {
     flex: 1,
-    backgroundColor: '#1B4332',
-    paddingVertical: 10,
-    borderRadius: 10,
+  },
+  scrollCenter: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+  },
+  centerCard: {
+    width: '100%',
+    maxWidth: 420,
     alignItems: 'center',
   },
-  demoBtnVolunteer: {
-    backgroundColor: '#2D6A4F',
-  },
-  demoBtnAdmin: {
-    backgroundColor: '#0F3E2E',
-  },
-  demoBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
+  instructionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0B3B24',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   inputGroup: {
-    marginBottom: 16,
+    width: '100%',
+    marginBottom: 18,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 6,
+    color: '#0B3B24',
+    marginBottom: 8,
   },
-  inputBox: {
+  phoneInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1E8DA',
-    borderRadius: 12,
-    paddingHorizontal: 14,
     height: 50,
-    gap: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
   },
-  input: {
+  phoneInputError: {
+    borderColor: '#DC2626',
+  },
+  countryCodeBox: {
+    paddingHorizontal: 16,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  countryCodeText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  phoneInput: {
     flex: 1,
-    fontSize: 14,
+    height: '100%',
+    paddingHorizontal: 14,
+    fontSize: 15,
     color: '#111827',
   },
-  primaryBtn: {
-    backgroundColor: '#0B3B24',
-    borderRadius: 14,
-    height: 52,
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 6,
+  },
+  signupRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: 20,
   },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+  signupPrompt: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontWeight: '400',
+  },
+  signupLink: {
+    fontSize: 13,
+    color: '#0B3B24',
     fontWeight: '700',
   },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: '#F0FDF4',
-    padding: 14,
-    borderRadius: 12,
-    marginTop: 20,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: '#DCFCE7',
+  sendOtpBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#0A4D2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
-  infoBoxText: {
-    flex: 1,
+  sendOtpText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  adminBtn: {
+    width: '100%',
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.2,
+    borderColor: '#0A4D2E',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  adminBtnText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#0A4D2E',
+  },
+  privacyText: {
     fontSize: 12,
-    color: '#166534',
+    color: '#9CA3AF',
+    textAlign: 'center',
     lineHeight: 18,
   },
 });

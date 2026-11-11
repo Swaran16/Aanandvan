@@ -1,442 +1,289 @@
-/**
- * Citizen Plantation Requests Screen (Tab 2)
- * Matches Batch 1 — Image 2 exactly:
- * - Top bar with Back arrow, Aanandvan title, Search icon
- * - Filter chips: All Requests, Pending, Verified, In Progress
- * - Title: "Plantation Requests"
- * - Subtitle: "Manage your active and historical tree planting initiatives."
- * - Dynamic cards with status pills matching full life-cycle
- * - Floating action button (+) to create request
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+  FlatList,
   Image,
-  StatusBar,
-  TextInput,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
+import { PlantationRequest, PlantationStatus } from '@/types';
+
+type FilterTab = 'all' | 'pending' | 'verified' | 'in_progress' | 'completed';
+
+const FILTERS: Array<{ key: FilterTab; label: string }> = [
+  { key: 'all', label: 'All Requests' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'verified', label: 'Verified' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'completed', label: 'Completed' },
+];
+
+const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: string }> = {
+  pending: { label: 'Pending', bg: '#FEF3C7', fg: '#92580A' },
+  verified: { label: 'Verified', bg: '#CCF2DB', fg: '#0D4E2B' },
+  assigned: { label: 'In-progress', bg: '#E0E7FF', fg: '#3730A3' },
+  scheduled: { label: 'In-progress', bg: '#E0E7FF', fg: '#3730A3' },
+  in_progress: { label: 'In-progress', bg: '#E0E7FF', fg: '#3730A3' },
+  completed: { label: 'Completed', bg: '#DBEAFE', fg: '#1E40AF' },
+  rejected: { label: 'Need info', bg: '#FEE2E2', fg: '#B91C1C' },
+};
 
 export default function CitizenRequestsScreen() {
   const { requests } = useApp();
-  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'verified' | 'in_progress'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
-  const filteredRequests = requests.filter(req => {
-    // Filter by tab
-    if (activeFilter === 'pending' && req.status !== 'pending') return false;
-    if (activeFilter === 'verified' && req.status !== 'verified') return false;
-    if (
-      activeFilter === 'in_progress' &&
-      req.status !== 'in_progress' &&
-      req.status !== 'assigned' &&
-      req.status !== 'scheduled'
-    )
-      return false;
+  const filteredRequests = useMemo(() => {
+    return requests.filter((req) => {
+      if (activeFilter === 'pending') return req.status === 'pending' || req.status === 'rejected';
+      if (activeFilter === 'verified') return req.status === 'verified';
+      if (activeFilter === 'in_progress') {
+        return (
+          req.status === 'assigned' ||
+          req.status === 'scheduled' ||
+          req.status === 'in_progress'
+        );
+      }
+      if (activeFilter === 'completed') return req.status === 'completed';
+      return true;
+    });
+  }, [requests, activeFilter]);
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        req.title.toLowerCase().includes(q) ||
-        req.id.toLowerCase().includes(q) ||
-        req.location.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const renderCard = ({ item }: { item: PlantationRequest }) => {
+    const badge = STATUS_STYLE[item.status] ?? {
+      label: item.status,
+      bg: '#E5EAE3',
+      fg: '#163020',
+    };
+    const thumb =
+      item.areaPhotos?.[0] ||
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop&q=80';
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.8}
+        onPress={() =>
+          router.push({
+            pathname: '/pages/request-details',
+            params: { id: item.id },
+          } as any)
+        }
+      >
+        <Image source={{ uri: thumb }} style={styles.thumb} resizeMode="cover" />
+
+        <View style={styles.cardBody}>
+          <View style={styles.cardTopRow}>
+            <Text style={styles.reqIdText}>{item.id}</Text>
+            <View style={[styles.badgePill, { backgroundColor: badge.bg }]}>
+              <Text style={[styles.badgeText, { color: badge.fg }]}>{badge.label}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={styles.cardLocation} numberOfLines={1}>
+            {item.location}
+          </Text>
+          <Text style={styles.cardDate}>{item.createdAt}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
-
-      {/* ─── Top Bar ─── */}
-      <View style={styles.topBar}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => router.push('/(citizen)' as any)}
+          onPress={() => router.back()}
           style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="chevron-left" size={24} color="#111827" />
+          <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.barTitle}>Aanandvan</Text>
-        <TouchableOpacity
-          style={styles.searchBtn}
-          onPress={() => setShowSearch(!showSearch)}
-        >
-          <Icon name="search" size={20} color="#111827" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My requests</Text>
       </View>
 
-      {/* Optional Search Bar */}
-      {showSearch && (
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={16} color="#6B7280" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by ID, name or location..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoFocus
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="close" size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      )}
-
-      {/* ─── Filter Pills ─── */}
-      <View style={styles.filtersScroll}>
-        <TouchableOpacity
-          style={[styles.filterChip, activeFilter === 'all' && styles.filterChipActive]}
-          onPress={() => setActiveFilter('all')}
+      <View style={styles.filtersWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
         >
-          <Text
-            style={[
-              styles.filterChipText,
-              activeFilter === 'all' && styles.filterChipTextActive,
-            ]}
-          >
-            All Requests
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterChip, activeFilter === 'pending' && styles.filterChipActive]}
-          onPress={() => setActiveFilter('pending')}
-        >
-          <Text
-            style={[
-              styles.filterChipText,
-              activeFilter === 'pending' && styles.filterChipTextActive,
-            ]}
-          >
-            Pending
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterChip, activeFilter === 'verified' && styles.filterChipActive]}
-          onPress={() => setActiveFilter('verified')}
-        >
-          <Text
-            style={[
-              styles.filterChipText,
-              activeFilter === 'verified' && styles.filterChipTextActive,
-            ]}
-          >
-            Verified
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterChip,
-            activeFilter === 'in_progress' && styles.filterChipActive,
-          ]}
-          onPress={() => setActiveFilter('in_progress')}
-        >
-          <Text
-            style={[
-              styles.filterChipText,
-              activeFilter === 'in_progress' && styles.filterChipTextActive,
-            ]}
-          >
-            In Progress
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ─── Main Content ─── */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Plantation Requests</Text>
-          <Text style={styles.pageSubtitle}>
-            Manage your active and historical tree planting initiatives.
-          </Text>
-        </View>
-
-        {/* Requests List */}
-        <View style={styles.cardsContainer}>
-          {filteredRequests.map(req => {
-            const isPending = req.status === 'pending';
-            const isVerified = req.status === 'verified';
-            const isInProgress =
-              req.status === 'in_progress' ||
-              req.status === 'assigned' ||
-              req.status === 'scheduled';
-            const isCompleted = req.status === 'completed';
-
-            const badgeBg = isPending
-              ? '#D1FAE5'
-              : isVerified
-              ? '#DCFCE7'
-              : isInProgress
-              ? '#CCFBF1'
-              : '#065F46';
-
-            const badgeColor = isPending
-              ? '#065F46'
-              : isVerified
-              ? '#047857'
-              : isInProgress
-              ? '#0F766E'
-              : '#FFFFFF';
-
-            const badgeLabel = isPending
-              ? 'Pending'
-              : isVerified
-              ? 'Verified'
-              : isInProgress
-              ? 'In Progress'
-              : 'Completed';
-
+          {FILTERS.map((tab) => {
+            const active = activeFilter === tab.key;
             return (
               <TouchableOpacity
-                key={req.id}
-                style={styles.requestCard}
+                key={tab.key}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+                onPress={() => setActiveFilter(tab.key)}
                 activeOpacity={0.8}
-                onPress={() =>
-                  router.push({
-                    pathname: '/pages/request-details',
-                    params: { id: req.id },
-                  } as any)
-                }
               >
-                <Image
-                  source={{
-                    uri:
-                      req.areaPhotos[0] ||
-                      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop&q=80',
-                  }}
-                  style={styles.cardImage}
-                />
-                <View style={styles.cardContent}>
-                  <View style={styles.cardHeaderRow}>
-                    <Text style={styles.cardId}>{req.id}</Text>
-                    <View style={[styles.badgePill, { backgroundColor: badgeBg }]}>
-                      <Text style={[styles.badgePillText, { color: badgeColor }]}>
-                        {badgeLabel}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {req.title}
-                  </Text>
-
-                  <View style={styles.locationRow}>
-                    <Icon name="map-pin" size={14} color="#6B7280" />
-                    <Text style={styles.locationText} numberOfLines={1}>
-                      {req.location}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.dateText}>{req.createdAt}</Text>
-                </View>
+                <Text
+                  style={[styles.filterChipText, active && styles.filterChipTextActive]}
+                >
+                  {tab.label}
+                </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
 
-      {/* ─── Floating Action Button (+) ─── */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.85}
-        onPress={() => router.push('/pages/create-request' as any)}
-      >
-        <Icon name="plus" size={26} color="#FFFFFF" />
-      </TouchableOpacity>
+      <FlatList
+        data={filteredRequests}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCard}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyBox}>
+            <Icon name="plant" size={38} color="#8BA093" />
+            <Text style={styles.emptyTitle}>No requests found</Text>
+            <Text style={styles.emptySub}>
+              Tap the + button on the Home dashboard to submit a new plantation request.
+            </Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9F6',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
+    marginRight: 8,
   },
-  barTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.4,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0D4325',
   },
-  searchBtn: {
-    padding: 6,
+  filtersWrap: {
+    paddingVertical: 6,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    marginHorizontal: 16,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    height: 42,
-    gap: 8,
-    marginBottom: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#111827',
-  },
-  filtersScroll: {
-    flexDirection: 'row',
+  filtersContent: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
     gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#ECEFE9',
   },
   filterChipActive: {
-    backgroundColor: '#0B3B24',
+    backgroundColor: '#0D4E2B',
   },
   filterChipText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontWeight: '500',
+    color: '#4F5C54',
   },
   filterChipTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  scroll: {
-    flex: 1,
-    backgroundColor: '#F8FAF9',
-  },
-  scrollContent: {
+  listContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 90,
+    paddingTop: 8,
+    paddingBottom: 28,
+    gap: 12,
   },
-  titleSection: {
-    marginBottom: 16,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-    letterSpacing: -0.5,
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  cardsContainer: {
-    gap: 14,
-  },
-  requestCard: {
+  card: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#EAEEE7',
+    gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.03,
     shadowRadius: 6,
-    elevation: 2,
-    gap: 14,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  cardImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 14,
+  thumb: {
+    width: 76,
+    height: 76,
+    borderRadius: 10,
+    backgroundColor: '#E5EAE3',
   },
-  cardContent: {
+  cardBody: {
     flex: 1,
-    justifyContent: 'space-between',
-    paddingVertical: 2,
   },
-  cardHeaderRow: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 3,
   },
-  cardId: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
+  reqIdText: {
+    fontSize: 11.5,
+    color: '#7A867E',
+    fontWeight: '500',
   },
   badgePill: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 999,
   },
-  badgePillText: {
+  badgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   cardTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-    marginTop: 2,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0B3E22',
+    marginBottom: 2,
   },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  locationText: {
+  cardLocation: {
     fontSize: 12,
-    color: '#4B5563',
-    flex: 1,
+    color: '#5F6C64',
+    marginBottom: 3,
   },
-  dateText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 4,
+  cardDate: {
+    fontSize: 11.5,
+    color: '#7A867E',
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#0B3B24',
+  emptyBox: {
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    paddingVertical: 64,
+    paddingHorizontal: 28,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#163020',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: '#6C7870',
+    textAlign: 'center',
+    lineHeight: 19,
   },
 });
-
