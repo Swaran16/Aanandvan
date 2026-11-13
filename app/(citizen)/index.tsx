@@ -20,7 +20,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '@/components/common';
+import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
@@ -64,16 +64,7 @@ export default function CitizenHomeScreen() {
             </View>
 
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                style={styles.adminSwitchBtn}
-                activeOpacity={0.8}
-                onPress={() => {
-                  loginAs('admin');
-                  router.push('/(admin)' as any);
-                }}
-              >
-                <Text style={styles.adminSwitchText}>Admin</Text>
-              </TouchableOpacity>
+              <RoleSwitcher theme="dark" />
 
               <TouchableOpacity
                 style={styles.bellBtn}

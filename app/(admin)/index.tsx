@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Text } from '@/components/common';
+import { Text, RoleSwitcher } from '@/components/common';
 import { Icon, IconName } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
@@ -91,16 +91,7 @@ export default function AdminDashboardScreen() {
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.switchRoleBtn}
-              activeOpacity={0.8}
-              onPress={() => {
-                loginAs('volunteer');
-                router.replace('/(volunteer)' as any);
-              }}
-            >
-              <Text style={styles.switchRoleText}>Volunteer App</Text>
-            </TouchableOpacity>
+            <RoleSwitcher theme="light" />
 
             <TouchableOpacity
               style={styles.bellBtn}
