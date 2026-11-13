@@ -159,6 +159,8 @@ export interface MaintenanceItem {
   timeline: MaintenanceTimelineEvent[];
 }
 
+import type { IconName } from '@/components/common/Icon';
+
 export interface PlatformMetrics {
   totalVolunteers: number;
   totalRequests: number;
@@ -167,4 +169,27 @@ export interface PlatformMetrics {
   activeRequests: number;
   availableForVolunteers: number;
   maintenanceDue: number;
+}
+
+// ─── Notifications & Inbox ──────────────────────────────────────────────────
+export interface AppNotificationItem {
+  id: string;
+  section: 'Today' | 'Earlier';
+  title: string;
+  body: string;
+  time: string;
+  icon: IconName;
+  unread: boolean;
+  requestId?: string;
+}
+
+export interface AdminInboxItem {
+  id: string;
+  title: string;
+  body: string;
+  time: string;
+  icon: IconName;
+  unread: boolean;
+  route: string;
+  params?: Record<string, string>;
 }

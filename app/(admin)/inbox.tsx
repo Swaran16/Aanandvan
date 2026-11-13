@@ -9,78 +9,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon, IconName } from '@/components/common/Icon';
-
-interface AdminInboxItem {
-  id: string;
-  title: string;
-  body: string;
-  time: string;
-  icon: IconName;
-  unread: boolean;
-  route: string;
-  params?: Record<string, string>;
-}
-
-const INITIAL_INBOX: AdminInboxItem[] = [
-  {
-    id: 'inb-1',
-    title: 'New plantation request',
-    body: 'Rahul Sharma submitted a new plantation request for Sector 14, Gurugram awaiting verification.',
-    time: '2 hours ago',
-    icon: 'plant',
-    unread: true,
-    route: '/pages/admin-review-request',
-    params: { id: 'REQ-2024-0042' },
-  },
-  {
-    id: 'inb-2',
-    title: 'New volunteer applicant',
-    body: 'Priya Sharma has applied to join as a verified volunteer in Powai, Mumbai.',
-    time: '5 hours ago',
-    icon: 'profile',
-    unread: true,
-    route: '/pages/volunteer-details',
-  },
-  {
-    id: 'inb-3',
-    title: 'Request complete',
-    body: 'Amit Kumar marked Cedar Buffer Zone plantation drive complete with 5 saplings.',
-    time: '5 hours ago',
-    icon: 'check',
-    unread: true,
-    route: '/(admin)/requests',
-  },
-  {
-    id: 'inb-4',
-    title: 'Possible duplication',
-    body: 'Detected overlapping coordinates near #REQ-2024-0042 within 20 meters.',
-    time: '5 hours ago',
-    icon: 'document',
-    unread: false,
-    route: '/(admin)/requests',
-  },
-  {
-    id: 'inb-5',
-    title: 'Planting update submitted',
-    body: 'Before and after activity photos uploaded for review by verified volunteer.',
-    time: '5 hours ago',
-    icon: 'profile',
-    unread: false,
-    route: '/(admin)/requests',
-  },
-];
+import { useApp } from '@/context/AppContext';
 
 export default function AdminInboxScreen() {
-  const [items, setItems] = useState<AdminInboxItem[]>(INITIAL_INBOX);
+  const { adminInbox, markAdminInboxAsRead, markAllAdminInboxAsRead } = useApp();
 
   const handleMarkAllRead = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, unread: false })));
+    markAllAdminInboxAsRead();
   };
 
-  const handleOpenItem = (item: AdminInboxItem) => {
-    setItems((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n))
-    );
+  const handleOpenItem = (item: any) => {
+    markAdminInboxAsRead(item.id);
     if (item.params) {
       router.push({ pathname: item.route, params: item.params } as any);
     } else {
@@ -105,7 +44,7 @@ export default function AdminInboxScreen() {
         <Text style={styles.sectionTitle}>Today</Text>
 
         <View style={styles.cardsStack}>
-          {items.map((item) => (
+          {adminInbox.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={styles.card}

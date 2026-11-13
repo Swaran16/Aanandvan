@@ -1,13 +1,14 @@
 /**
  * Volunteer Upload Plantation Activity Screen
  * Matches Batch 2 — Image 4:
- * - Back button + Upload Plantation Activity title
- * - Before Plantation Photos (Orange section banner + 3 camera slots)
- * - After Plantation Photos (Green section banner + 3 camera slots)
+ * - Active selected request banner with ID, title, and "Change Request" button
+ * - Before Plantation Photos (Orange section banner + camera slots)
+ * - After Plantation Photos (Green section banner + camera slots)
  * - Number of Saplings Planted stepper counter [- 1 +]
  * - Date of Plantation calendar field
  * - Plantation Notes textarea
- * - Light green guidance banner
+ * - Synchronized Citizen & Admin notification dispatch
+ * - Automatic Tree Maintenance generation
  * - "Post Plantation Update" primary CTA button
  */
 
@@ -29,13 +30,17 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 export default function UploadActivityScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const { requests, volunteerUploadActivity } = useApp();
 
-  const req = requests.find(r => r.id === id) || requests[0];
+  // Find requested or first assigned request
+  const assignedList = requests.filter(
+    r => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+  );
+  const req = (id ? requests.find(r => r.id === id) : null) || assignedList[0] || requests[0];
 
   const [saplingsCount, setSaplingsCount] = useState(5);
-  const [date, setDate] = useState('07/16/2026');
+  const [date, setDate] = useState('Today (13 Nov 2026)');
   const [notes, setNotes] = useState('');
   const [beforePhotos, setBeforePhotos] = useState<string[]>([
     'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&auto=format&fit=crop&q=80',
@@ -44,13 +49,52 @@ export default function UploadActivityScreen() {
     'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
   ]);
 
+  const handleRemoveBeforePhoto = (index: number) => {
+    setBeforePhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddBeforePhoto = () => {
+    const samplePhotos = [
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1511497584788-876760111969?w=400&auto=format&fit=crop&q=80',
+    ];
+    setBeforePhotos(prev => [...prev, samplePhotos[prev.length % samplePhotos.length]]);
+  };
+
+  const handleRemoveAfterPhoto = (index: number) => {
+    setAfterPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddAfterPhoto = () => {
+    const samplePhotos = [
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&auto=format&fit=crop&q=80',
+    ];
+    setAfterPhotos(prev => [...prev, samplePhotos[prev.length % samplePhotos.length]]);
+  };
+
   const handlePost = () => {
+    if (!req) {
+      Alert.alert('No Request Selected', 'Please select a plantation request first.');
+      return;
+    }
+
+    if (beforePhotos.length === 0 || afterPhotos.length === 0) {
+      Alert.alert(
+        'Photos Required',
+        'Please add at least one before photo and one after photo to document the plantation.'
+      );
+      return;
+    }
+
     volunteerUploadActivity(req.id, {
       beforePhotos,
       afterPhotos,
       saplingsPlanted: saplingsCount,
       date,
-      notes,
+      notes: notes.trim() || 'Saplings successfully planted with protective guard and initial watering.',
     });
 
     router.replace({
@@ -61,7 +105,7 @@ export default function UploadActivityScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
-      <StatusBar barStyle="dark-content"  />
+      <StatusBar barStyle="dark-content" />
 
       {/* ─── Top Bar ─── */}
       <View style={styles.topBar}>
@@ -69,8 +113,11 @@ export default function UploadActivityScreen() {
           <Icon name="chevron-left" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.topTitle}>Upload Plantation Activity</Text>
-        <TouchableOpacity style={styles.menuBtn} onPress={() => alert('Options')}>
-          <Icon name="settings" size={20} color="#111827" />
+        <TouchableOpacity
+          style={styles.menuBtn}
+          onPress={() => router.push('/pages/select-update-request' as any)}
+        >
+          <Icon name="search" size={20} color="#111827" />
         </TouchableOpacity>
       </View>
 
@@ -79,6 +126,40 @@ export default function UploadActivityScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* ─── Active Request Selection Banner ─── */}
+        <View style={styles.activeReqCard}>
+          <View style={styles.activeReqLeft}>
+            <View style={styles.activeReqHeader}>
+              <Text style={styles.activeReqId}>#{req?.id?.toUpperCase()}</Text>
+              <View style={styles.statusPillSmall}>
+                <Text style={styles.statusPillSmallText}>
+                  {req?.status === 'in_progress'
+                    ? 'In Progress'
+                    : req?.status === 'scheduled'
+                    ? 'Scheduled'
+                    : 'Assigned'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.activeReqTitle} numberOfLines={1}>
+              {req?.title}
+            </Text>
+            <View style={styles.activeReqLocationRow}>
+              <Icon name="map-pin" size={12} color="#0D4E2B" />
+              <Text style={styles.activeReqLocation} numberOfLines={1}>
+                {req?.location}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.changeReqBtn}
+            onPress={() => router.push('/pages/select-update-request' as any)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.changeReqBtnText}>Change</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ─── Before Plantation Photos ─── */}
         <View style={styles.bannerOrange}>
           <Icon name="clock" size={16} color="#FFFFFF" />
@@ -87,24 +168,26 @@ export default function UploadActivityScreen() {
 
         <View style={styles.photoSlotsContainer}>
           {beforePhotos.map((uri, idx) => (
-            <Image key={idx} source={{ uri }} style={styles.photoPreview} />
-          ))}
-          {Array.from({ length: Math.max(0, 3 - beforePhotos.length) }).map(
-            (_, idx) => (
+            <View key={idx} style={styles.photoWrap}>
+              <Image source={{ uri }} style={styles.photoPreview} />
               <TouchableOpacity
-                key={idx}
-                style={styles.dashedSlot}
-                onPress={() =>
-                  setBeforePhotos(prev => [
-                    ...prev,
-                    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
-                  ])
-                }
+                style={styles.removePhotoBtn}
+                onPress={() => handleRemoveBeforePhoto(idx)}
               >
-                <Icon name="camera" size={22} color="#9CA3AF" />
+                <Icon name="close" size={12} color="#FFFFFF" />
               </TouchableOpacity>
-            )
-          )}
+            </View>
+          ))}
+          {Array.from({ length: Math.max(0, 3 - beforePhotos.length) }).map((_, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.dashedSlot}
+              onPress={handleAddBeforePhoto}
+            >
+              <Icon name="camera" size={22} color="#9CA3AF" />
+              <Text style={styles.dashedSlotLabel}>Add Photo</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* ─── After Plantation Photos ─── */}
@@ -115,89 +198,86 @@ export default function UploadActivityScreen() {
 
         <View style={styles.photoSlotsContainer}>
           {afterPhotos.map((uri, idx) => (
-            <Image key={idx} source={{ uri }} style={styles.photoPreview} />
-          ))}
-          {Array.from({ length: Math.max(0, 3 - afterPhotos.length) }).map(
-            (_, idx) => (
+            <View key={idx} style={styles.photoWrap}>
+              <Image source={{ uri }} style={styles.photoPreview} />
               <TouchableOpacity
-                key={idx}
-                style={styles.dashedSlot}
-                onPress={() =>
-                  setAfterPhotos(prev => [
-                    ...prev,
-                    'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&auto=format&fit=crop&q=80',
-                  ])
-                }
+                style={styles.removePhotoBtn}
+                onPress={() => handleRemoveAfterPhoto(idx)}
               >
-                <Icon name="camera" size={22} color="#9CA3AF" />
+                <Icon name="close" size={12} color="#FFFFFF" />
               </TouchableOpacity>
-            )
-          )}
+            </View>
+          ))}
+          {Array.from({ length: Math.max(0, 3 - afterPhotos.length) }).map((_, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.dashedSlot}
+              onPress={handleAddAfterPhoto}
+            >
+              <Icon name="camera" size={22} color="#9CA3AF" />
+              <Text style={styles.dashedSlotLabel}>Add Photo</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* ─── Form Card ─── */}
+        {/* ─── Form Fields Card ─── */}
         <View style={styles.formCard}>
-          {/* Saplings Counter Stepper */}
+          {/* Stepper Counter */}
           <Text style={styles.inputLabel}>Number of Saplings Planted</Text>
           <View style={styles.stepperPill}>
             <TouchableOpacity
               style={styles.stepBtn}
-              onPress={() => setSaplingsCount(Math.max(1, saplingsCount - 1))}
+              onPress={() => setSaplingsCount(c => Math.max(1, c - 1))}
             >
               <Text style={styles.stepBtnMinus}>−</Text>
             </TouchableOpacity>
-
             <Text style={styles.stepValue}>{saplingsCount}</Text>
-
             <TouchableOpacity
               style={[styles.stepBtn, styles.stepBtnPlus]}
-              onPress={() => setSaplingsCount(saplingsCount + 1)}
+              onPress={() => setSaplingsCount(c => c + 1)}
             >
               <Text style={styles.stepBtnPlusText}>+</Text>
             </TouchableOpacity>
           </View>
 
           {/* Date of Plantation */}
-          <Text style={[styles.inputLabel, { marginTop: 18 }]}>
-            Date of Plantation
-          </Text>
+          <Text style={[styles.inputLabel, { marginTop: 18 }]}>Date of Plantation</Text>
           <View style={styles.dateInputBox}>
             <TextInput
               style={styles.dateInput}
               value={date}
               onChangeText={setDate}
+              placeholder="e.g. 13 Nov 2026"
             />
             <Icon name="calendar" size={18} color="#6B7280" />
           </View>
 
           {/* Plantation Notes */}
-          <Text style={[styles.inputLabel, { marginTop: 18 }]}>
-            Plantation Notes
-          </Text>
+          <Text style={[styles.inputLabel, { marginTop: 18 }]}>Plantation Notes</Text>
           <TextInput
             style={styles.notesTextarea}
-            multiline
-            placeholder="Share any specific details about the soil quality, weather conditions, or volunteer highlights..."
+            placeholder="Add notes about soil condition, species planted, tree guard installed..."
             placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
             value={notes}
             onChangeText={setNotes}
           />
         </View>
 
-        {/* ─── Info Tips Banner ─── */}
+        {/* ─── Guidance Banner ─── */}
         <View style={styles.infoBanner}>
-          <Icon name="info" size={18} color="#059669" />
+          <Icon name="info" size={18} color="#0D4E2B" />
           <Text style={styles.infoBannerText}>
-            Ensure your photos are clear and well-lit. "Before" photos should
-            show the empty patch, while "After" photos should clearly show the
-            saplings in their new home.
+            Submitting this update will notify the Citizen and Admin immediately. A tree
+            watering & maintenance schedule will be created automatically.
           </Text>
         </View>
 
-        {/* ─── Primary CTA ─── */}
+        {/* ─── Primary Post CTA Button ─── */}
         <TouchableOpacity
           style={styles.primaryPostBtn}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
           onPress={handlePost}
         >
           <Icon name="upload" size={20} color="#FFFFFF" />
@@ -243,6 +323,71 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 40,
   },
+  activeReqCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+    marginBottom: 16,
+  },
+  activeReqLeft: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  activeReqHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  activeReqId: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0D4E2B',
+  },
+  statusPillSmall: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  statusPillSmallText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0D4E2B',
+  },
+  activeReqTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  activeReqLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  activeReqLocation: {
+    fontSize: 12,
+    color: '#4B5563',
+  },
+  changeReqBtn: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#A7D7B5',
+  },
+  changeReqBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0D4E2B',
+  },
   bannerOrange: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -283,10 +428,26 @@ const styles = StyleSheet.create({
     borderColor: '#EEF2F0',
     gap: 10,
   },
-  photoPreview: {
+  photoWrap: {
     flex: 1,
     height: 85,
+    position: 'relative',
+  },
+  photoPreview: {
+    width: '100%',
+    height: '100%',
     borderRadius: 12,
+  },
+  removePhotoBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dashedSlot: {
     flex: 1,
@@ -298,6 +459,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F9FAFB',
+    gap: 4,
+  },
+  dashedSlotLabel: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    fontWeight: '600',
   },
   formCard: {
     backgroundColor: '#FFFFFF',
@@ -411,4 +578,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

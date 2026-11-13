@@ -22,7 +22,7 @@ const CHART_BARS = [
 ];
 
 export default function AdminDashboardScreen() {
-  const { currentUser, requests, volunteers } = useApp();
+  const { currentUser, requests, volunteers, loginAs } = useApp();
 
   const pendingVolunteers = volunteers.filter((v) => v.status === 'pending').length || 5;
   const pendingRequests = requests.filter((r) => r.status === 'pending').length + 41;
@@ -44,11 +44,7 @@ export default function AdminDashboardScreen() {
       id: 'nurseries',
       label: 'Nurseries',
       icon: 'plant',
-      onPress: () => {
-        if (Platform.OS !== 'web') {
-          Alert.alert('Partner Nurseries', '12 verified nurseries active across zones.');
-        }
-      },
+      onPress: () => router.push('/(tabs)/nursery' as any),
     },
     {
       id: 'reports',
@@ -90,17 +86,30 @@ export default function AdminDashboardScreen() {
             />
             <View>
               <Text style={styles.greetingText}>Namaste,</Text>
-              <Text style={styles.userName}>{currentUser.name || 'Aanandvan Admin'}</Text>
+              <Text style={styles.userName}>{currentUser.name || 'Nitya M'}</Text>
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.bellBtn}
-            onPress={() => router.push('/pages/notifications' as any)}
-            activeOpacity={0.75}
-          >
-            <Icon name="bell" size={20} color="#163020" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.switchRoleBtn}
+              activeOpacity={0.8}
+              onPress={() => {
+                loginAs('volunteer');
+                router.replace('/(volunteer)' as any);
+              }}
+            >
+              <Text style={styles.switchRoleText}>Volunteer App</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => router.push('/(admin)/inbox' as any)}
+              activeOpacity={0.75}
+            >
+              <Icon name="bell" size={20} color="#163020" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Pending Actions */}
@@ -368,6 +377,26 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16.5,
+    fontWeight: '700',
+    color: '#0B3E22',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  switchRoleBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#EFF4A8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#D4DC88',
+  },
+  switchRoleText: {
+    fontSize: 12,
     fontWeight: '700',
     color: '#0B3E22',
   },

@@ -76,17 +76,14 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 ];
 
 export default function NotificationsScreen() {
-  const { requests } = useApp();
-  const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const { requests, notifications, markNotificationAsRead, markAllNotificationsAsRead } = useApp();
 
   const handleMarkAllRead = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, unread: false })));
+    markAllNotificationsAsRead();
   };
 
-  const handlePressItem = (item: NotificationItem) => {
-    setItems((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n))
-    );
+  const handlePressItem = (item: any) => {
+    markNotificationAsRead(item.id);
     const targetId = item.requestId ?? requests[0]?.id ?? 'REQ-2024-0042';
     router.push({
       pathname: '/pages/request-details',
@@ -95,7 +92,7 @@ export default function NotificationsScreen() {
   };
 
   const renderSection = (sectionName: 'Today' | 'Earlier') => {
-    const group = items.filter((n) => n.section === sectionName);
+    const group = notifications.filter((n) => n.section === sectionName);
     if (group.length === 0) return null;
 
     return (

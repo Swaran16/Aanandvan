@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { Tabs, router } from 'expo-router';
+import { Tabs, router, usePathname } from 'expo-router';
 import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/common';
@@ -22,24 +22,28 @@ const VISIBLE_TABS: Array<{ name: string; label: string; icon: IconName }> = [
   { name: 'profile', label: 'Profile', icon: 'profile' },
 ];
 
-function VolunteerTabBar({ state, navigation }: any) {
-  const activeRouteName = state.routes[state.index]?.name;
+function VolunteerTabBar(props: any) {
+  const pathname = usePathname();
+  const state = props?.state;
+  const activeRouteName =
+    state?.routes?.[state?.index]?.name ||
+    (pathname.includes('/available')
+      ? 'available'
+      : pathname.includes('/work')
+      ? 'work'
+      : pathname.includes('/profile')
+      ? 'profile'
+      : 'index');
 
   const renderTab = (tab: { name: string; label: string; icon: IconName }) => {
-    const route = state.routes.find((r: any) => r.name === tab.name);
-    if (!route) return null;
-
     const isFocused = activeRouteName === tab.name;
     const color = isFocused ? '#0A4D2E' : '#4B5563';
 
     const onPress = () => {
-      const event = navigation.emit({
-        type: 'tabPress',
-        target: route.key,
-        canPreventDefault: true,
-      });
-      if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name);
+      if (tab.name === 'index') {
+        router.replace('/(volunteer)' as any);
+      } else {
+        router.replace(`/(volunteer)/${tab.name}` as any);
       }
     };
 
@@ -69,7 +73,7 @@ function VolunteerTabBar({ state, navigation }: any) {
           <TouchableOpacity
             style={styles.centerFab}
             activeOpacity={0.85}
-            onPress={() => router.push('/pages/upload-activity' as any)}
+            onPress={() => router.push('/pages/select-update-request' as any)}
           >
             <Icon name="plus" size={26} color="#FFFFFF" />
           </TouchableOpacity>

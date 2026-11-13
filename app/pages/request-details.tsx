@@ -307,6 +307,25 @@ export default function RequestDetailsScreen() {
             <Text style={styles.primaryBtnText}>Open admin verification review</Text>
           </TouchableOpacity>
         )}
+
+        {!isVolunteer && !isAdmin && (
+          <View style={styles.completedBanner}>
+            <Icon
+              name={isCompleted ? 'check' : isAssigned || isInProgress ? 'plant' : 'clock'}
+              size={18}
+              color="#0D4E2B"
+            />
+            <Text style={styles.completedText}>
+              {isCompleted
+                ? `Plantation completed by ${req.assignedVolunteerName || 'Volunteer'}!`
+                : isAssigned || isInProgress
+                ? `${req.assignedVolunteerName || 'Volunteer'} is working on this drive.`
+                : isVerified
+                ? 'Request verified & open for volunteers.'
+                : 'Awaiting admin verification.'}
+            </Text>
+          </View>
+        )}
       </View>
 
       <AcceptRequestModal

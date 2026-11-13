@@ -12,7 +12,7 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  ImageBackground,
+  Image,
   StatusBar,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -138,11 +138,12 @@ export default function OnboardingScreen() {
         })}
         renderItem={({ item, index }) => (
           <View style={[styles.slide, { width, height, backgroundColor: item.fallbackColor }]}>
-            <ImageBackground
-              source={{ uri: item.imageUri }}
-              style={styles.bgImage}
-              resizeMode="cover"
-            >
+            <View style={styles.bgImage}>
+              <Image
+                source={{ uri: item.imageUri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
               {/* Atmospheric dark scrim for high text contrast */}
               <View style={styles.topScrim} />
               <View style={styles.bottomScrim} />
@@ -203,7 +204,7 @@ export default function OnboardingScreen() {
                   </TouchableOpacity>
                 </View>
               </SafeAreaView>
-            </ImageBackground>
+            </View>
           </View>
         )}
       />

@@ -27,7 +27,7 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 export default function VolunteerHomeScreen() {
-  const { currentUser, requests, maintenanceItems, waterTree } = useApp();
+  const { currentUser, requests, maintenanceItems, waterTree, loginAs } = useApp();
   const [completedAlerts, setCompletedAlerts] = useState<Record<string, boolean>>({});
 
   const assignedRequests = requests.filter(
@@ -35,8 +35,8 @@ export default function VolunteerHomeScreen() {
   );
   const requestsSubmittedCount = requests.filter(r => r.status === 'pending' || r.status === 'assigned').length || 3;
   const verifiedCount = requests.filter(r => r.status === 'verified').length || 7;
-  const treesPlantedCount = 23;
-  const activeCount = assignedRequests.length || 2;
+  const treesPlantedCount = currentUser?.treesCount ?? 23;
+  const activeCount = assignedRequests.length;
 
   const priorityAlerts =
     maintenanceItems.length > 0
@@ -103,13 +103,26 @@ export default function VolunteerHomeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.bellBtn}
-              activeOpacity={0.75}
-              onPress={() => router.push('/(volunteer)/work' as any)}
-            >
-              <Icon name="bell" size={20} color="#1F2937" />
-            </TouchableOpacity>
+            <View style={styles.topBarActions}>
+              <TouchableOpacity
+                style={styles.adminSwitchBtn}
+                activeOpacity={0.8}
+                onPress={() => {
+                  loginAs('admin');
+                  router.push('/(admin)' as any);
+                }}
+              >
+                <Text style={styles.adminSwitchText}>Admin</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.bellBtn}
+                activeOpacity={0.75}
+                onPress={() => router.push('/(volunteer)/work' as any)}
+              >
+                <Icon name="bell" size={20} color="#1F2937" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* ─── 2x2 Status Grid ─── */}
@@ -191,12 +204,7 @@ export default function VolunteerHomeScreen() {
             <TouchableOpacity
               style={styles.quickActionItem}
               activeOpacity={0.8}
-              onPress={() =>
-                Alert.alert(
-                  'Partnered Nurseries',
-                  'Green Roots Nursery (0.8 km) and EcoBloom Center (2.4 km) are available for sapling collection.'
-                )
-              }
+              onPress={() => router.push('/(tabs)/nursery' as any)}
             >
               <View style={styles.quickCircle}>
                 <Icon name="plant" size={19} color="#0A4D2E" />
@@ -207,7 +215,7 @@ export default function VolunteerHomeScreen() {
             <TouchableOpacity
               style={styles.quickActionItem}
               activeOpacity={0.8}
-              onPress={() => router.push('/pages/upload-activity' as any)}
+              onPress={() => router.push('/pages/select-update-request' as any)}
             >
               <View style={styles.quickCircle}>
                 <Icon name="upload" size={19} color="#0A4D2E" />
@@ -412,6 +420,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginTop: -1,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adminSwitchBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: '#0A4D2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminSwitchText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#E8F5E9',
   },
   bellBtn: {
     width: 36,

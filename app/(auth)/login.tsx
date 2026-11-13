@@ -150,17 +150,27 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Admin Quick Login Button */}
-            <TouchableOpacity
-              style={styles.adminBtn}
-              activeOpacity={0.85}
-              onPress={() => {
-                loginAs('admin');
-                router.replace('/(admin)' as any);
-              }}
-            >
-              <Text style={styles.adminBtnText}>Admin</Text>
-            </TouchableOpacity>
+            {/* Quick Demo Login Buttons */}
+            <View style={styles.quickRolesRow}>
+              <TouchableOpacity
+                style={styles.quickRoleBtn}
+                activeOpacity={0.85}
+                onPress={() => {
+                  loginAs('volunteer');
+                  router.replace('/(volunteer)' as any);
+                }}
+              >
+                <Text style={styles.quickRoleText}>Volunteer</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickRoleBtn}
+                activeOpacity={0.85}
+                onPress={() => router.push('/(auth)/admin-login' as any)}
+              >
+                <Text style={styles.quickRoleText}>Admin Login</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Privacy Footer */}
             <Text style={styles.privacyText}>
@@ -302,19 +312,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  adminBtn: {
+  quickRolesRow: {
+    flexDirection: 'row',
+    gap: 10,
     width: '100%',
-    height: 46,
-    borderRadius: 23,
+    marginBottom: 16,
+  },
+  quickRoleBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1.2,
     borderColor: '#0A4D2E',
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  adminBtnText: {
-    fontSize: 14.5,
+  quickRoleText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#0A4D2E',
   },

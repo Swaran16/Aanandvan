@@ -16,9 +16,6 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { MaintenanceItem } from '@/types';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 type AlertFilter = 'all' | 'needs_attention' | 'completed';
 

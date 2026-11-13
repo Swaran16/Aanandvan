@@ -16,7 +16,7 @@ import React from 'react';
 import {
   View,
   StyleSheet,
-  ImageBackground,
+  Image,
   TouchableOpacity,
   StatusBar,
   useWindowDimensions,
@@ -35,11 +35,12 @@ export default function WelcomeScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* ─── Forest Background Hero ─── */}
-      <ImageBackground
-        source={require('../../assets/images/welcome_bg.png')}
-        style={[styles.hero, { height: heroHeight }]}
-        resizeMode="cover"
-      >
+      <View style={[styles.hero, { height: heroHeight, overflow: 'hidden' }]}>
+        <Image
+          source={require('../../assets/images/welcome_bg.png')}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
         {/* Dark overlay for legibility */}
         <View style={styles.heroOverlay} />
 
@@ -51,7 +52,7 @@ export default function WelcomeScreen() {
 
         {/* Brand name on the dark overlay */}
         <Text style={styles.heroTitle}>Aanandvan</Text>
-      </ImageBackground>
+      </View>
 
       {/* ─── White Bottom Card ─── */}
       <SafeAreaView style={styles.card} edges={['bottom']}>

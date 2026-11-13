@@ -25,7 +25,7 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 export default function CitizenHomeScreen() {
-  const { currentUser, requests, maintenanceItems } = useApp();
+  const { currentUser, requests, maintenanceItems, loginAs } = useApp();
 
   // Dynamic metrics aligned with lifecycle stages
   const assignedCount =
@@ -63,13 +63,26 @@ export default function CitizenHomeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.bellBtn}
-              activeOpacity={0.8}
-              onPress={() => router.push('/pages/notifications' as any)}
-            >
-              <Icon name="bell" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.adminSwitchBtn}
+                activeOpacity={0.8}
+                onPress={() => {
+                  loginAs('admin');
+                  router.push('/(admin)' as any);
+                }}
+              >
+                <Text style={styles.adminSwitchText}>Admin</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.bellBtn}
+                activeOpacity={0.8}
+                onPress={() => router.push('/pages/notifications' as any)}
+              >
+                <Icon name="bell" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* 4 Status Cards (2x2 Grid) — Assigned, Available, Completed, Maintenance */}
@@ -124,6 +137,56 @@ export default function CitizenHomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* ─── Community Drive Highlight Card ─── */}
+        <TouchableOpacity
+          style={styles.driveBanner}
+          activeOpacity={0.88}
+          onPress={() => router.push('/pages/create-request' as any)}
+        >
+          <View style={styles.driveLeft}>
+            <View style={styles.driveBadge}>
+              <Text style={styles.driveBadgeText}>ACTIVE DRIVE</Text>
+            </View>
+            <Text style={styles.driveTitle}>Mega Monsoon Forest Drive</Text>
+            <Text style={styles.driveSubtitle}>
+              500 indigenous Neem & Peepal saplings • Sector 29 City Forest
+            </Text>
+          </View>
+          <View style={styles.driveActionPill}>
+            <Text style={styles.driveActionText}>Plant</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* ─── Quick Action Shortcuts ─── */}
+        <View style={styles.quickActionsBar}>
+          <TouchableOpacity
+            style={styles.quickActionPill}
+            activeOpacity={0.8}
+            onPress={() => router.push('/pages/create-request' as any)}
+          >
+            <Icon name="plus" size={14} color="#0B3B24" />
+            <Text style={styles.quickActionText}>New Request</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionPill}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(citizen)/requests' as any)}
+          >
+            <Icon name="search" size={14} color="#0B3B24" />
+            <Text style={styles.quickActionText}>Track Trees</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionPill}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(tabs)/nursery' as any)}
+          >
+            <Icon name="plant" size={14} color="#0B3B24" />
+            <Text style={styles.quickActionText}>Nurseries</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ─── Recent Requests Section ─── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Requests</Text>
@@ -257,6 +320,24 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.3,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adminSwitchBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#FFD600',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminSwitchText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
   bellBtn: {
     width: 42,
     height: 42,
@@ -388,5 +469,81 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 6,
+  },
+  driveBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0B3B24',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#0B3B24',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  driveLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  driveBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFD600',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  driveBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0B3B24',
+    letterSpacing: 0.4,
+  },
+  driveTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 3,
+  },
+  driveSubtitle: {
+    fontSize: 12,
+    color: '#A8D5BA',
+    lineHeight: 16,
+  },
+  driveActionPill: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  driveActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
+  quickActionsBar: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  quickActionPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#EBF5EE',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D1E8DA',
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0B3B24',
   },
 });

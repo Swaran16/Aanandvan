@@ -60,6 +60,10 @@ export default function RootLayout() {
             options={{ headerShown: false, animation: 'slide_from_right' }}
           />
           <Stack.Screen
+            name="pages/select-update-request"
+            options={{ headerShown: false, animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
             name="pages/upload-activity"
             options={{ headerShown: false, animation: 'slide_from_right' }}
           />

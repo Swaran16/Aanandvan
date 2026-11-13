@@ -27,7 +27,7 @@ const PARTNER_NURSERIES = [
 
 export default function CollectSaplingsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { requests } = useApp();
+  const { requests, volunteerAcceptRequest } = useApp();
 
   const req = useMemo(() => {
     if (!id) return requests[0];
@@ -47,6 +47,9 @@ export default function CollectSaplingsScreen() {
   };
 
   const handleMarkCollected = () => {
+    if (req) {
+      volunteerAcceptRequest(req.id);
+    }
     if (Platform.OS === 'web') {
       router.replace('/(volunteer)' as any);
       return;

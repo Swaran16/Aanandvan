@@ -28,12 +28,13 @@ import { UserRole } from '@/types';
 const OTP_LENGTH = 6;
 
 export default function OtpScreen() {
-  const { mobile, role, source } = useLocalSearchParams<{
+  const { mobile, role, source, name } = useLocalSearchParams<{
     mobile?: string;
     role?: string;
     source?: string;
+    name?: string;
   }>();
-  const { loginAs } = useApp();
+  const { loginAs, submitVolunteerApplication } = useApp();
 
   const resolvedRole: UserRole =
     role === 'admin' ? 'admin' : role === 'volunteer' ? 'volunteer' : 'citizen';
@@ -114,6 +115,10 @@ export default function OtpScreen() {
         router.replace('/(admin)' as any);
       } else if (resolvedRole === 'volunteer') {
         if (isRegisterFlow) {
+          submitVolunteerApplication({
+            name: name || 'New Volunteer',
+            phone: mobile || '+91 98123 45678',
+          });
           router.replace('/(auth)/volunteer-verification' as any);
         } else {
           router.replace('/(volunteer)' as any);

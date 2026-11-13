@@ -7,6 +7,8 @@ import {
   MaintenanceItem,
   ScheduleDetails,
   ActivityReport,
+  AppNotificationItem,
+  AdminInboxItem,
 } from '@/types';
 
 interface AppContextType {
@@ -15,6 +17,8 @@ interface AppContextType {
   requests: PlantationRequest[];
   volunteers: VolunteerApplication[];
   maintenanceItems: MaintenanceItem[];
+  notifications: AppNotificationItem[];
+  adminInbox: AdminInboxItem[];
   
   // Role & Auth Actions
   switchRole: (role: UserRole) => void;
@@ -30,7 +34,14 @@ interface AppContextType {
   adminApproveSchedule: (id: string) => void;
   volunteerUploadActivity: (id: string, activity: ActivityReport) => void;
   
+  // Notifications Actions
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  markAdminInboxAsRead: (id: string) => void;
+  markAllAdminInboxAsRead: () => void;
+  
   // Volunteer Management Actions
+  submitVolunteerApplication: (app: Partial<VolunteerApplication>) => VolunteerApplication;
   approveVolunteer: (id: string) => void;
   rejectVolunteer: (id: string) => void;
   saveVolunteerAdminNote: (id: string, note: string) => void;
@@ -347,6 +358,108 @@ const INITIAL_MAINTENANCE: MaintenanceItem[] = [
   },
 ];
 
+const INITIAL_NOTIFICATIONS: AppNotificationItem[] = [
+  {
+    id: 'n-1',
+    section: 'Today',
+    title: 'Volunteer assigned',
+    body: 'Amit Kumar has accepted Oak Valley Reforestation and will schedule a planting slot soon.',
+    time: '2 hours ago',
+    icon: 'profile',
+    unread: true,
+    requestId: 'REQ-2024-0042',
+  },
+  {
+    id: 'n-2',
+    section: 'Today',
+    title: 'Request verified',
+    body: 'Your plantation request for Mangrove Restoration has been verified and is open for volunteers.',
+    time: '5 hours ago',
+    icon: 'check',
+    unread: true,
+    requestId: 'REQ-8794',
+  },
+  {
+    id: 'n-3',
+    section: 'Earlier',
+    title: 'Planting completed',
+    body: '5 saplings have been planted at Cedar Buffer Zone. Tap to review site photos.',
+    time: '02 Nov',
+    icon: 'plant',
+    unread: true,
+    requestId: 'REQ-8652',
+  },
+  {
+    id: 'n-4',
+    section: 'Earlier',
+    title: 'More information needed',
+    body: 'Please add a clearer landmark photo so volunteers can locate the planting patch.',
+    time: '30 Oct',
+    icon: 'info',
+    unread: false,
+    requestId: 'REQ-2024-0042',
+  },
+  {
+    id: 'n-5',
+    section: 'Earlier',
+    title: 'Planting completed',
+    body: 'Maintenance hydration check recorded for Urban Fruit Orchard saplings.',
+    time: '22 Oct',
+    icon: 'camera',
+    unread: false,
+    requestId: 'REQ-8430',
+  },
+];
+
+const INITIAL_ADMIN_INBOX: AdminInboxItem[] = [
+  {
+    id: 'inb-1',
+    title: 'New plantation request',
+    body: 'Rahul Sharma submitted a new plantation request for Greenwood Apartments awaiting verification.',
+    time: '2 hours ago',
+    icon: 'plant',
+    unread: true,
+    route: '/pages/admin-review-request',
+    params: { id: 'REQ-2024-0045' },
+  },
+  {
+    id: 'inb-2',
+    title: 'New volunteer applicant',
+    body: 'Priya Sharma has applied to join as a verified volunteer in Powai, Mumbai.',
+    time: '5 hours ago',
+    icon: 'profile',
+    unread: true,
+    route: '/pages/volunteer-details',
+  },
+  {
+    id: 'inb-3',
+    title: 'Request complete',
+    body: 'James Wilson marked Urban Fruit Orchard plantation drive complete with 5 saplings.',
+    time: '5 hours ago',
+    icon: 'check',
+    unread: true,
+    route: '/(admin)/requests',
+  },
+  {
+    id: 'inb-4',
+    title: 'Possible duplication',
+    body: 'Detected overlapping coordinates near #REQ-2024-0042 within 20 meters.',
+    time: '5 hours ago',
+    icon: 'document',
+    unread: false,
+    route: '/(admin)/requests',
+  },
+  {
+    id: 'inb-5',
+    title: 'Planting update submitted',
+    body: 'Before and after activity photos uploaded for review by verified volunteer.',
+    time: '5 hours ago',
+    icon: 'profile',
+    unread: false,
+    route: '/(admin)/requests',
+  },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -355,6 +468,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [requests, setRequests] = useState<PlantationRequest[]>(INITIAL_REQUESTS);
   const [volunteers, setVolunteers] = useState<VolunteerApplication[]>(INITIAL_VOLUNTEERS);
   const [maintenanceItems, setMaintenanceItems] = useState<MaintenanceItem[]>(INITIAL_MAINTENANCE);
+  const [notifications, setNotifications] = useState<AppNotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [adminInbox, setAdminInbox] = useState<AdminInboxItem[]>(INITIAL_ADMIN_INBOX);
 
   const switchRole = (role: UserRole) => {
     setCurrentRole(role);
@@ -398,25 +513,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setRequests(prev => [newReq, ...prev]);
+
+    // Notify Admin Inbox of newly created request
+    const adminItem: AdminInboxItem = {
+      id: `inb-${Date.now()}`,
+      title: 'New plantation request',
+      body: `${currentUser.name} submitted a new request for ${newReq.location}.`,
+      time: 'Just now',
+      icon: 'plant',
+      unread: true,
+      route: '/pages/admin-review-request',
+      params: { id: newReq.id },
+    };
+    setAdminInbox(prev => [adminItem, ...prev]);
+
+    // Add confirmation notification for Citizen
+    const citizenItem: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Request submitted',
+      body: `Your request "${newReq.title}" has been submitted for verification.`,
+      time: 'Just now',
+      icon: 'plant',
+      unread: true,
+      requestId: newReq.id,
+    };
+    setNotifications(prev => [citizenItem, ...prev]);
+
     return newReq;
   };
 
   // ─── Admin Verifies Request ──────────────────────────────────────────────
   const verifyRequest = (id: string) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
     setRequests(prev =>
       prev.map(req => (req.id === id ? { ...req, status: 'verified' } : req))
     );
+
+    // Notify Citizen that their request was verified and posted
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Request verified',
+      body: `Your plantation request for "${title}" has been verified and posted to volunteers!`,
+      time: 'Just now',
+      icon: 'check',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
   };
 
   // ─── Admin Rejects Request ───────────────────────────────────────────────
   const rejectRequest = (id: string) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
     setRequests(prev =>
       prev.map(req => (req.id === id ? { ...req, status: 'rejected' } : req))
     );
+
+    // Notify Citizen that more info is needed
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'More information needed',
+      body: `Admin requested clearer landmark or location details for "${title}".`,
+      time: 'Just now',
+      icon: 'info',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
   };
 
   // ─── Volunteer Accepts Request ───────────────────────────────────────────
   const volunteerAcceptRequest = (id: string) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
     setRequests(prev =>
       prev.map(req =>
         req.id === id
@@ -430,6 +607,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : req
       )
     );
+
+    // Notify Citizen that volunteer accepted
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Volunteer assigned',
+      body: `${currentUser.name} has accepted "${title}" and scheduled planting!`,
+      time: 'Just now',
+      icon: 'profile',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
+
+    // Alert Admin Inbox
+    const adminItem: AdminInboxItem = {
+      id: `inb-${Date.now()}`,
+      title: 'Volunteer accepted drive',
+      body: `${currentUser.name} has taken responsibility for #${id} (${title}).`,
+      time: 'Just now',
+      icon: 'profile',
+      unread: true,
+      route: '/pages/request-details',
+      params: { id },
+    };
+    setAdminInbox(prev => [adminItem, ...prev]);
   };
 
   // ─── Volunteer Schedules Request ─────────────────────────────────────────
@@ -440,7 +643,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? {
               ...req,
               status: 'scheduled',
-              schedule: { ...schedule, isApprovedByAdmin: false },
+              schedule: { ...schedule, isApprovedByAdmin: true },
             }
           : req
       )
@@ -462,8 +665,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // ─── Volunteer Completes Plantation ──────────────────────────────────────
+  // ─── Volunteer Completes Plantation & Uploads Activity ───────────────────
   const volunteerUploadActivity = (id: string, activity: ActivityReport) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
     setRequests(prev =>
       prev.map(req =>
         req.id === id
@@ -475,9 +681,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : req
       )
     );
+
+    // 1. Notify Citizen with before & after completion alert
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Planting completed! 🎉',
+      body: `${currentUser.name} planted ${activity.saplingsPlanted} saplings at "${title}". Tap to view site photos!`,
+      time: 'Just now',
+      icon: 'plant',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
+
+    // 2. Notify Admin in Inbox
+    const adminItem: AdminInboxItem = {
+      id: `inb-${Date.now()}`,
+      title: 'Plantation activity completed',
+      body: `${currentUser.name} planted ${activity.saplingsPlanted} saplings and uploaded photos for #${id}.`,
+      time: 'Just now',
+      icon: 'check',
+      unread: true,
+      route: '/pages/request-details',
+      params: { id },
+    };
+    setAdminInbox(prev => [adminItem, ...prev]);
+
+    // 3. Automatically create Tree Maintenance Item for watering and tracking
+    const newMaint: MaintenanceItem = {
+      id: `maint-${Date.now()}`,
+      treeName: `${title} Trees`,
+      treeTag: `#${id.replace(/[^0-9]/g, '').slice(-3) || '101'}`,
+      location: target?.location || 'Plantation Site',
+      status: 'healthy',
+      isUrgent: false,
+      lastVisit: activity.date || 'Today',
+      planterName: currentUser.name,
+      imageUrl:
+        activity.afterPhotos[0] ||
+        target?.areaPhotos[0] ||
+        'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
+      timeline: [
+        {
+          date: activity.date || 'Today',
+          title: 'Initial Plantation Completed',
+          description: `${activity.saplingsPlanted} saplings planted with organic compost. Tree guard installed.`,
+        },
+      ],
+    };
+    setMaintenanceItems(prev => [newMaint, ...prev]);
+
+    // 4. Update current user tree count
+    setCurrentUser(prev => ({
+      ...prev,
+      treesCount: (prev.treesCount || 0) + activity.saplingsPlanted,
+    }));
   };
 
-  // ─── Admin Volunteer Management ──────────────────────────────────────────
+  // ─── Notification Actions ────────────────────────────────────────────────
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, unread: false } : n))
+    );
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  };
+
+  const markAdminInboxAsRead = (id: string) => {
+    setAdminInbox(prev =>
+      prev.map(i => (i.id === id ? { ...i, unread: false } : i))
+    );
+  };
+
+  const markAllAdminInboxAsRead = () => {
+    setAdminInbox(prev => prev.map(i => ({ ...i, unread: false })));
+  };
+
+  // ─── Volunteer Management Actions ──────────────────────────────────────────
+  const submitVolunteerApplication = (data: Partial<VolunteerApplication>): VolunteerApplication => {
+    const newApp: VolunteerApplication = {
+      id: `vol-app-${Date.now()}`,
+      name: data.name || 'New Volunteer',
+      email: data.email || 'volunteer@aanandvan.in',
+      phone: data.phone || '+91 98123 45678',
+      city: data.city || 'Mumbai',
+      pincode: data.pincode || '400076',
+      address: data.address || 'Powai, Mumbai',
+      coordinates: data.coordinates || '19.1176° N, 72.9060° E',
+      appliedDate: 'Today',
+      status: 'pending',
+      visionQuote: data.visionQuote || 'Passionate about urban forestry and native biodiversity.',
+      avatar: data.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    };
+
+    setVolunteers(prev => [newApp, ...prev]);
+    return newApp;
+  };
+
   const approveVolunteer = (id: string) => {
     setVolunteers(prev =>
       prev.map(vol => (vol.id === id ? { ...vol, status: 'verified' } : vol))
@@ -544,6 +847,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         requests,
         volunteers,
         maintenanceItems,
+        notifications,
+        adminInbox,
         switchRole,
         loginAs,
         logout,
@@ -554,6 +859,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         volunteerScheduleRequest,
         adminApproveSchedule,
         volunteerUploadActivity,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        markAdminInboxAsRead,
+        markAllAdminInboxAsRead,
+        submitVolunteerApplication,
         approveVolunteer,
         rejectVolunteer,
         saveVolunteerAdminNote,

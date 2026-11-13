@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
+import { RejectRequestModal } from '@/components/admin/RejectRequestModal';
 import { useApp } from '@/context/AppContext';
 
 const DEFAULT_AREA = [
@@ -38,6 +39,7 @@ function chunkIntoRows<T>(items: T[], size: number): T[][] {
 export default function AdminReviewRequestScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { requests, rejectRequest } = useApp();
+  const [rejectModalVisible, setRejectModalVisible] = useState(false);
 
   const req = useMemo(() => {
     if (!id) return requests[0];
@@ -98,22 +100,13 @@ export default function AdminReviewRequestScreen() {
   };
 
   const handleReject = () => {
-    if (Platform.OS === 'web') {
-      rejectRequest(req.id);
-      router.back();
-      return;
-    }
-    Alert.alert('Reject Request', `Are you sure you want to reject "${req.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Reject',
-        style: 'destructive',
-        onPress: () => {
-          rejectRequest(req.id);
-          router.back();
-        },
-      },
-    ]);
+    setRejectModalVisible(true);
+  };
+
+  const handleConfirmReject = (reason: string, message: string) => {
+    rejectRequest(req.id);
+    setRejectModalVisible(false);
+    router.back();
   };
 
   return (
@@ -254,6 +247,14 @@ export default function AdminReviewRequestScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <RejectRequestModal
+        visible={rejectModalVisible}
+        requestTitle={req.title}
+        citizenName={req.citizenName}
+        onConfirmReject={handleConfirmReject}
+        onClose={() => setRejectModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
