@@ -37,7 +37,7 @@ export default function WelcomeScreen() {
       {/* ─── Forest Background Hero ─── */}
       <View style={[styles.hero, { height: heroHeight, overflow: 'hidden' }]}>
         <Image
-          source={require('../../assets/images/welcome_bg.png')}
+          source={require('../../assets/images/welcome_bg.jpg')}
           style={StyleSheet.absoluteFill}
           resizeMode="cover"
         />
