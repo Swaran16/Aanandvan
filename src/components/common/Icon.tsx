@@ -28,6 +28,7 @@ export type IconName =
   | 'chevron-down'
   | 'chevron-up'
   | 'arrow-right'
+  | 'arrow-up-right'
   | 'tree'
   | 'map-pin'
   | 'calendar'
@@ -87,6 +88,7 @@ const FEATHER_MAP: Record<IconName, keyof typeof Feather.glyphMap> = {
   'chevron-down': 'chevron-down',
   'chevron-up': 'chevron-up',
   'arrow-right': 'arrow-right',
+  'arrow-up-right': 'arrow-up-right',
   tree: 'feather',
   'map-pin': 'map-pin',
   calendar: 'calendar',

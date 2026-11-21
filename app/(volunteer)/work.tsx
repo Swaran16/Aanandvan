@@ -193,7 +193,7 @@ export default function VolunteerAlertsScreen() {
               onPress={() => openDetails(item)}
               activeOpacity={0.75}
             >
-              <Text style={styles.threadBtnText}>View thread</Text>
+              <Text style={styles.threadBtnText}>View Care Thread 💬</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

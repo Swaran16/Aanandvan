@@ -54,7 +54,9 @@ function VolunteerTabBar(props: any) {
         activeOpacity={0.75}
         onPress={onPress}
       >
-        <Icon name={tab.icon} size={20} color={color} />
+        <View style={[styles.iconWrapper, isFocused ? styles.activePill : undefined]}>
+          <Icon name={tab.icon} size={20} color={color} />
+        </View>
         <Text style={[styles.tabLabel, { color, fontWeight: isFocused ? '700' : '500' }]}>
           {tab.label}
         </Text>
@@ -109,6 +111,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 3,
     paddingVertical: 4,
+  },
+  iconWrapper: {
+    width: 44,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activePill: {
+    backgroundColor: '#C7EED8',
   },
   tabLabel: {
     fontSize: 11,

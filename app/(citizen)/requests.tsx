@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -12,6 +13,8 @@ import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest, PlantationStatus } from '@/types';
+
+type FilterTab = 'all' | 'pending' | 'verified' | 'active' | 'completed';
 
 const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: string }> = {
   pending: { label: 'Pending Review', bg: '#FEF3C7', fg: '#92400E' },
@@ -26,9 +29,29 @@ const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: st
 
 export default function CitizenRequestsScreen() {
   const { requests } = useApp();
+  const [filter, setFilter] = useState<FilterTab>('all');
 
-  // Prioritize pending & active requests at the top
-  const sortedRequests = useMemo(() => {
+  const pendingCount = requests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length;
+  const verifiedCount = requests.filter((r) => r.status === 'verified').length;
+  const activeCount = requests.filter(
+    (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+  ).length;
+  const completedCount = requests.filter((r) => r.status === 'completed').length;
+
+  const filteredRequests = useMemo(() => {
+    let list = requests;
+    if (filter === 'pending') {
+      list = requests.filter((r) => r.status === 'pending' || r.status === 'needs_info');
+    } else if (filter === 'verified') {
+      list = requests.filter((r) => r.status === 'verified');
+    } else if (filter === 'active') {
+      list = requests.filter(
+        (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+      );
+    } else if (filter === 'completed') {
+      list = requests.filter((r) => r.status === 'completed');
+    }
+
     const priority: Record<string, number> = {
       pending: 0,
       needs_info: 1,
@@ -38,10 +61,10 @@ export default function CitizenRequestsScreen() {
       in_progress: 5,
       completed: 6,
     };
-    return [...requests].sort(
+    return [...list].sort(
       (a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9)
     );
-  }, [requests]);
+  }, [requests, filter]);
 
   const renderCard = ({ item }: { item: PlantationRequest }) => {
     const badge = STATUS_STYLE[item.status] ?? {
@@ -88,6 +111,7 @@ export default function CitizenRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
@@ -100,7 +124,7 @@ export default function CitizenRequestsScreen() {
           <View>
             <Text style={styles.headerTitle}>My requests</Text>
             <Text style={styles.headerSubtitle}>
-              {sortedRequests.length} Community Submissions
+              {requests.length} Community Submissions
             </Text>
           </View>
         </View>
@@ -108,8 +132,67 @@ export default function CitizenRequestsScreen() {
         <RoleSwitcher theme="light" />
       </View>
 
+      {/* Filter Tabs */}
+      <View style={styles.filtersWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'all' && styles.filterPillActive]}
+            onPress={() => setFilter('all')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
+              All ({requests.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'pending' && styles.filterPillActive]}
+            onPress={() => setFilter('pending')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'pending' && styles.filterTextActive]}>
+              Pending ({pendingCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'verified' && styles.filterPillActive]}
+            onPress={() => setFilter('verified')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'verified' && styles.filterTextActive]}>
+              Verified ({verifiedCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'active' && styles.filterPillActive]}
+            onPress={() => setFilter('active')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>
+              Active Req ({activeCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'completed' && styles.filterPillActive]}
+            onPress={() => setFilter('completed')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'completed' && styles.filterTextActive]}>
+              Completed ({completedCount})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       <FlatList
-        data={sortedRequests}
+        data={filteredRequests}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         contentContainerStyle={styles.listContent}
@@ -141,8 +224,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 12,
     backgroundColor: '#FAFBF9',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -162,6 +243,37 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     color: '#6B7280',
     marginTop: 1,
+  },
+  filtersWrap: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FAFBF9',
+    paddingVertical: 6,
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  filterPillActive: {
+    backgroundColor: '#163E2B',
+    borderColor: '#163E2B',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#4B5563',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   listContent: {
     paddingHorizontal: 16,

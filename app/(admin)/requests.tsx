@@ -2,15 +2,17 @@
  * Admin Plantation Requests Screen — Aanandvan
  *
  * Dedicated pipeline for admin triage:
- * - Direct listing of all plantation requests prioritized by status (Pending Review first)
- * - "Admin Takeover" button on unassigned drives (>3 days unaccepted by volunteers)
+ * - Sleek filter tabs (All, Pending, Verified & Open, Active, Completed)
+ * - Prioritized request listing
+ * - "Admin Takeover" button on unassigned requests
  * - Citizen details, area photos strip, and direct review navigation
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -23,6 +25,8 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest } from '@/types';
 
+type FilterKey = 'all' | 'pending' | 'verified' | 'active' | 'completed';
+
 const FALLBACK_PHOTOS = [
   'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=300&auto=format&fit=crop',
@@ -32,9 +36,29 @@ const FALLBACK_PHOTOS = [
 
 export default function AdminRequestsScreen() {
   const { requests, adminTakeoverRequest } = useApp();
+  const [filter, setFilter] = useState<FilterKey>('all');
 
-  // Prioritize requests needing admin attention: Pending first, then Needs Info, Verified, etc.
-  const sortedRequests = useMemo(() => {
+  const pendingCount = requests.filter((r) => r.status === 'pending').length;
+  const verifiedCount = requests.filter((r) => r.status === 'verified').length;
+  const activeCount = requests.filter(
+    (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+  ).length;
+  const completedCount = requests.filter((r) => r.status === 'completed').length;
+
+  const filteredRequests = useMemo(() => {
+    let list = requests;
+    if (filter === 'pending') {
+      list = requests.filter((r) => r.status === 'pending');
+    } else if (filter === 'verified') {
+      list = requests.filter((r) => r.status === 'verified');
+    } else if (filter === 'active') {
+      list = requests.filter(
+        (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+      );
+    } else if (filter === 'completed') {
+      list = requests.filter((r) => r.status === 'completed');
+    }
+
     const priority: Record<string, number> = {
       pending: 0,
       needs_info: 1,
@@ -44,17 +68,15 @@ export default function AdminRequestsScreen() {
       in_progress: 5,
       completed: 6,
     };
-    return [...requests].sort(
+    return [...list].sort(
       (a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9)
     );
-  }, [requests]);
-
-  const pendingCount = requests.filter((r) => r.status === 'pending').length;
+  }, [requests, filter]);
 
   const handleTakeover = (reqId: string, title: string) => {
     Alert.alert(
       'Admin Squad Takeover',
-      `Take over "${title}"? This assigns the drive directly to the internal Aanandvan squad for immediate execution.`,
+      `Take over "${title}"? This assigns the request directly to the internal Aanandvan squad for immediate execution.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -181,7 +203,7 @@ export default function AdminRequestsScreen() {
               activeOpacity={0.85}
             >
               <Icon name="plant" size={14} color="#FFFFFF" />
-              <Text style={styles.takeoverBtnText}>Take Over Drive</Text>
+              <Text style={styles.takeoverBtnText}>Take Over Request</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -205,15 +227,74 @@ export default function AdminRequestsScreen() {
         </View>
       </View>
 
+      {/* Filter Tabs */}
+      <View style={styles.filtersWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'all' && styles.filterPillActive]}
+            onPress={() => setFilter('all')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>
+              All ({requests.length})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'pending' && styles.filterPillActive]}
+            onPress={() => setFilter('pending')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'pending' && styles.filterTextActive]}>
+              Pending ({pendingCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'verified' && styles.filterPillActive]}
+            onPress={() => setFilter('verified')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'verified' && styles.filterTextActive]}>
+              Verified ({verifiedCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'active' && styles.filterPillActive]}
+            onPress={() => setFilter('active')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>
+              Active Req ({activeCount})
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'completed' && styles.filterPillActive]}
+            onPress={() => setFilter('completed')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.filterText, filter === 'completed' && styles.filterTextActive]}>
+              Completed ({completedCount})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       <FlatList
-        data={sortedRequests}
+        data={filteredRequests}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No plantation requests submitted yet.</Text>
+            <Text style={styles.emptyText}>No requests match this filter.</Text>
           </View>
         }
       />
@@ -234,8 +315,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
     backgroundColor: '#FAFBF9',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
   headerLeft: {
     flex: 1,
@@ -255,6 +334,37 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  filtersWrap: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FAFBF9',
+    paddingVertical: 6,
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  filterPillActive: {
+    backgroundColor: '#163E2B',
+    borderColor: '#163E2B',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#4B5563',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   listContent: {
     paddingHorizontal: 16,

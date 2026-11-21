@@ -160,7 +160,46 @@ const INITIAL_REQUESTS: PlantationRequest[] = [
     assignedVolunteerId: 'user-vol-1',
     assignedVolunteerName: 'Vaibhav Shirke',
     assignedVolunteerLevel: 'Level 4 • 25+ Plantations',
-    nurturingUpdates: [],
+    schedule: {
+      date: 'Sat, 26 Oct',
+      timeSlot: 'Morning (8:00 AM - 11:00 AM)',
+      isApprovedByAdmin: true,
+      notes: 'Initial plantation scheduled with 4 Neem saplings and organic fertilizer.',
+    },
+    activityUpdate: {
+      photos: [
+        'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
+      ],
+      saplingsPlanted: 4,
+      species: 'Native Neem (Azadirachta indica)',
+      date: '26 Oct 2026',
+      notes: '4 native Neem saplings grounded with 20L initial watering, protective bamboo guard, and organic compost.',
+    },
+    nurturingUpdates: [
+      {
+        id: 'nurt-shivaji-1',
+        date: '28 Oct 2026',
+        photos: [
+          'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
+        ],
+        notes: 'Alternate day check: 15L water added per sapling. Soil loosened around the root basin.',
+        volunteerName: 'Vaibhav Shirke',
+        volunteerId: 'user-vol-1',
+        actionsTaken: ['Watered (15L)', 'Soil Aerated', 'Guard Checked'],
+      },
+      {
+        id: 'nurt-shivaji-2',
+        date: '31 Oct 2026',
+        photos: [
+          'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop&q=80',
+        ],
+        notes: 'Organic vermicompost topped up. Healthy leaf sprouting observed on all 4 saplings!',
+        volunteerName: 'Vaibhav Shirke',
+        volunteerId: 'user-vol-1',
+        actionsTaken: ['Mulched', 'Nutrient Feed', 'Weeded'],
+      },
+    ],
   },
   {
     id: 'REQ-8794',
@@ -230,6 +269,15 @@ const INITIAL_REQUESTS: PlantationRequest[] = [
     assignedVolunteerName: 'Vaibhav Shirke',
     assignedVolunteerLevel: 'Level 4 • 25+ Plantations',
     activityReport: {
+      photos: [
+        'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
+      ],
+      saplingsPlanted: 6,
+      species: 'Badam & Karanj',
+      date: '02 Oct 2026',
+      notes: '6 native saplings securely planted with organic mulch and bamboo protective guards.',
+    },
+    activityUpdate: {
       photos: [
         'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
       ],

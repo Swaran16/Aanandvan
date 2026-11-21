@@ -29,9 +29,9 @@ interface AcceptRequestModalProps {
 }
 
 const STEPS = [
-  'Pick a date and time to plant.',
-  'Collect a sample from partnered nursery.',
-  'Plant, upload photos and then look after them.',
+  'Pick a date & slot for planting.',
+  'Saplings & tree guards will be pre-allocated.',
+  'Plant, upload photos and log alternate-day nurturing.',
 ];
 
 export const AcceptRequestModal: React.FC<AcceptRequestModalProps> = ({

@@ -93,7 +93,7 @@ export default function AdminSettingsScreen() {
 
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={styles.switchTitle}>Unassigned Drive Takeover Alerts</Text>
+              <Text style={styles.switchTitle}>Unassigned Request Takeover Alerts</Text>
               <Text style={styles.switchSub}>Highlights verified requests unaccepted by volunteers for &gt; 3 days</Text>
             </View>
             <Switch

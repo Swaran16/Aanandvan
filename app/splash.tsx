@@ -5,12 +5,10 @@
  * Automatically navigates to the Onboarding flow after the delay.
  *
  * Design:
- *  - Deep forest green full-screen background (#163421)
- *  - Circular tree logo badge centered
- *  - "Aanandvan" brand name in bold white
- *  - "ESTD. 2024" uppercase letter-spaced subtitle
- *  - Decorative leaf elements (top-left, bottom-right)
- *  - Tagline in italic at bottom
+ *  - Deep organic forest green full-screen background (#163E2B)
+ *  - Circular tree emblem seal centered with crisp contrast
+ *  - "Aanandvan" brand name with comfortable line height and no text clipping
+ *  - Urban forestry subtitle & community tagline
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -19,35 +17,30 @@ import {
   StyleSheet,
   Animated,
   StatusBar,
-  useWindowDimensions,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, FontSize, FontWeight, Spacing } from '@/constants';
 import { Text } from '@/components/common';
 
 export default function SplashScreen() {
-  const { height } = useWindowDimensions();
-
   // ─── Animations ────────────────────────────────────────────────────────────
-  const logoScale   = useRef(new Animated.Value(0.6)).current;
+  const logoScale = useRef(new Animated.Value(0.75)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Sequence: logo pops in → text fades → tagline fades → navigate
     Animated.sequence([
       // 1. Logo scale + fade in
       Animated.parallel([
         Animated.spring(logoScale, {
           toValue: 1,
-          tension: 60,
+          tension: 65,
           friction: 8,
           useNativeDriver: true,
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 600,
+          duration: 650,
           useNativeDriver: true,
         }),
       ]),
@@ -65,10 +58,10 @@ export default function SplashScreen() {
       }),
     ]).start();
 
-    // Navigate after 2.8 seconds
+    // Navigate after 2.6 seconds
     const timer = setTimeout(() => {
       router.replace('/onboarding');
-    }, 2800);
+    }, 2600);
 
     return () => clearTimeout(timer);
   }, []);
@@ -77,45 +70,40 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* ─── Decorative leaf — top left ─── */}
+      {/* Decorative leaf motifs */}
       <View style={[styles.leafDecor, styles.leafTopLeft]}>
-        <LeafIcon size={48} opacity={0.25} />
+        <LeafIcon size={52} opacity={0.15} />
       </View>
-
-      {/* ─── Decorative leaf — bottom right ─── */}
       <View style={[styles.leafDecor, styles.leafBottomRight]}>
-        <LeafIcon size={56} opacity={0.2} />
+        <LeafIcon size={64} opacity={0.12} />
       </View>
 
-      {/* ─── Logo Badge ─── */}
-      <Animated.View
-        style={[
-          styles.logoArea,
-          { opacity: logoOpacity, transform: [{ scale: logoScale }] },
-        ]}
-      >
-        <View style={styles.logoBadge}>
-          <View style={styles.logoInner}>
-            {/* Tree SVG-like icon using nested views */}
-            <TreeIcon size={72} color={Colors.white} />
+      {/* ─── Center Emblem & Brand Name ─── */}
+      <View style={styles.centerContainer}>
+        {/* Emblem Seal */}
+        <Animated.View
+          style={[
+            styles.logoWrap,
+            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+          ]}
+        >
+          <View style={styles.sealCircle}>
+            <TreeIcon size={68} color="#FFFFFF" />
           </View>
-          <View style={styles.logoLabelWrap}>
-            <Text style={styles.logoLabel}>Aanandvan</Text>
-          </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
 
-      {/* ─── Brand Text ─── */}
-      <Animated.View style={[styles.brandArea, { opacity: textOpacity }]}>
-        <Text style={styles.brandName}>Aanandvan</Text>
-        <Text style={styles.estd}>ESTD. 2024</Text>
-      </Animated.View>
+        {/* Brand Text */}
+        <Animated.View style={[styles.brandWrap, { opacity: textOpacity }]}>
+          <Text style={styles.brandTitle}>Aanandvan</Text>
+          <Text style={styles.brandSubtitle}>MUMBAI URBAN FORESTRY INITIATIVE</Text>
+        </Animated.View>
+      </View>
 
-      {/* ─── Tagline ─── */}
-      <Animated.View style={[styles.taglineArea, { opacity: taglineOpacity }]}>
+      {/* ─── Bottom Tagline ─── */}
+      <Animated.View style={[styles.taglineWrap, { opacity: taglineOpacity }]}>
         <View style={styles.divider} />
         <Text style={styles.tagline}>
-          Nurturing nature, one sapling at a time.
+          Restoring native green canopies, one sapling at a time.
         </Text>
       </Animated.View>
     </View>
@@ -132,62 +120,45 @@ const TreeIcon: React.FC<{ size: number; color: string }> = ({ size, color }) =>
         position: 'absolute',
         bottom: 0,
         width: size * 0.12,
-        height: size * 0.35,
+        height: size * 0.38,
         backgroundColor: color,
         borderRadius: 4,
-        opacity: 0.9,
+        opacity: 0.95,
       }}
     />
-    {/* Roots left */}
-    <View
-      style={{
-        position: 'absolute',
-        bottom: 2,
-        left: size * 0.2,
-        width: size * 0.18,
-        height: size * 0.12,
-        borderBottomLeftRadius: 20,
-        borderLeftWidth: 2.5,
-        borderBottomWidth: 2.5,
-        borderColor: color,
-        opacity: 0.7,
-      }}
-    />
-    {/* Roots right */}
-    <View
-      style={{
-        position: 'absolute',
-        bottom: 2,
-        right: size * 0.2,
-        width: size * 0.18,
-        height: size * 0.12,
-        borderBottomRightRadius: 20,
-        borderRightWidth: 2.5,
-        borderBottomWidth: 2.5,
-        borderColor: color,
-        opacity: 0.7,
-      }}
-    />
-    {/* Canopy bottom */}
-    <View
-      style={{
-        position: 'absolute',
-        bottom: size * 0.28,
-        width: size * 0.82,
-        height: size * 0.42,
-        borderRadius: size * 0.5,
-        backgroundColor: color,
-        opacity: 0.85,
-      }}
-    />
-    {/* Canopy top */}
+    {/* Foliage main central dome */}
     <View
       style={{
         position: 'absolute',
         top: 0,
-        width: size * 0.6,
-        height: size * 0.52,
-        borderRadius: size * 0.5,
+        width: size * 0.72,
+        height: size * 0.58,
+        borderRadius: size * 0.36,
+        backgroundColor: color,
+      }}
+    />
+    {/* Foliage left cloud */}
+    <View
+      style={{
+        position: 'absolute',
+        top: size * 0.16,
+        left: 0,
+        width: size * 0.46,
+        height: size * 0.46,
+        borderRadius: size * 0.23,
+        backgroundColor: color,
+        opacity: 0.9,
+      }}
+    />
+    {/* Foliage right cloud */}
+    <View
+      style={{
+        position: 'absolute',
+        top: size * 0.16,
+        right: 0,
+        width: size * 0.46,
+        height: size * 0.46,
+        borderRadius: size * 0.23,
         backgroundColor: color,
         opacity: 0.9,
       }}
@@ -195,7 +166,7 @@ const TreeIcon: React.FC<{ size: number; color: string }> = ({ size, color }) =>
   </View>
 );
 
-// ─── Inline Leaf Icon ─────────────────────────────────────────────────────────
+// ─── Inline Leaf Motif ────────────────────────────────────────────────────────
 
 const LeafIcon: React.FC<{ size: number; opacity: number }> = ({ size, opacity }) => (
   <View
@@ -204,7 +175,7 @@ const LeafIcon: React.FC<{ size: number; opacity: number }> = ({ size, opacity }
       height: size,
       borderTopRightRadius: size,
       borderBottomLeftRadius: size * 0.3,
-      backgroundColor: Colors.white,
+      backgroundColor: '#FFFFFF',
       opacity,
       transform: [{ rotate: '-30deg' }],
     }}
@@ -216,94 +187,84 @@ const LeafIcon: React.FC<{ size: number; opacity: number }> = ({ size, opacity }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.brandDark,
+    backgroundColor: '#163E2B',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
   },
-
-  // Decorative leaves
   leafDecor: {
     position: 'absolute',
   },
   leafTopLeft: {
-    top: '10%',
-    left: Spacing[5],
+    top: '8%',
+    left: 20,
   },
   leafBottomRight: {
-    bottom: '22%',
-    right: Spacing[5],
+    bottom: '12%',
+    right: 20,
   },
-
-  // Logo badge (circular octagon border)
-  logoArea: {
-    marginBottom: Spacing[10],
-  },
-  logoBadge: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 3,
-    borderColor: Colors.white,
-    backgroundColor: Colors.brandPrimary,
+  centerContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    width: '100%',
   },
-  logoInner: {
+  logoWrap: {
+    marginBottom: 20,
+  },
+  sealCircle: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    borderWidth: 2.5,
+    borderColor: '#C7EED8',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
-    marginBottom: Spacing[2],
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  logoLabelWrap: {
-    marginTop: Spacing[1],
+  brandWrap: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  logoLabel: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.white,
+  brandTitle: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#FAFBF9',
     letterSpacing: 0.5,
+    textAlign: 'center',
+    lineHeight: 42,
   },
-
-  // Brand name
-  brandArea: {
+  brandSubtitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#A7D4B6',
+    letterSpacing: 1.5,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  taglineWrap: {
+    width: '100%',
     alignItems: 'center',
-    gap: Spacing[2],
-  },
-  brandName: {
-    fontSize: 48,
-    fontWeight: FontWeight.extraBold,
-    color: Colors.white,
-    letterSpacing: -0.5,
-  },
-  estd: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.brandCream,
-    letterSpacing: 4,
-  },
-
-  // Tagline
-  taglineArea: {
-    position: 'absolute',
-    bottom: '10%',
-    alignItems: 'center',
-    paddingHorizontal: Spacing[10],
-    gap: Spacing[4],
+    paddingHorizontal: 20,
   },
   divider: {
-    width: 80,
-    height: 1,
-    backgroundColor: Colors.brandMuted,
+    width: 44,
+    height: 2,
+    backgroundColor: 'rgba(199, 238, 216, 0.35)',
+    borderRadius: 1,
+    marginBottom: 12,
   },
   tagline: {
-    fontSize: FontSize.base,
+    fontSize: 13,
+    color: '#D1EAE0',
     fontStyle: 'italic',
-    color: Colors.brandCream,
     textAlign: 'center',
-    lineHeight: FontSize.base * 1.6,
-    opacity: 0.85,
+    lineHeight: 18,
   },
 });

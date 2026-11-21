@@ -1,12 +1,13 @@
 /**
  * Volunteer Dashboard / Home Screen — Aanandvan
  *
- * Tailored specifically for volunteers (Vaibhav Shirke):
- * - Namaste Vaibhav Shirke greeting with single bell icon
- * - Meaningful 2x2 KPIs: Assigned Drives, Available to Plant, Nurturing Due, Completed Drives
- * - Streamlined Quick Actions (Available Drives, Assigned Drives, Log Care) — no nurseries, no duplicates
- * - Priority Nurturing Alerts with direct "Log Care & Photos" CTA (no hollow "mark as done")
- * - Blocked volunteer suspension banner if disabled by admin
+ * Implements the new visual spec matching the design system:
+ * - Header: Avatar, Namaste, Vaibhav Shirke, RoleSwitcher pill, Bell icon
+ * - Pending actions: 3 soft pastel cards (Available to plant, Active assigned, Nurturing due)
+ * - Quick actions: Circular lime buttons (Available Requests, Active Requests, Log Care, Schedule)
+ * - Field overview: 2x2 grid with diagonal arrow indicator
+ * - Priority Nurturing Tasks with "View Care Thread" button & mock timeline
+ * - Active Requests in Dadar feed
  */
 
 import React from 'react';
@@ -16,12 +17,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, RoleSwitcher } from '@/components/common';
-import { Icon } from '@/components/common/Icon';
+import { Icon, IconName } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 export default function VolunteerHomeScreen() {
@@ -31,297 +31,323 @@ export default function VolunteerHomeScreen() {
   const isBlocked = !!currentUser.isBlocked;
 
   const assignedRequests = requests.filter(
-    r =>
+    (r) =>
       (r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress') &&
-      (!r.assignedVolunteerName || r.assignedVolunteerName.includes('Vaibhav') || r.assignedVolunteerName.includes('Shirke'))
+      (!r.assignedVolunteerName ||
+        r.assignedVolunteerName.includes('Vaibhav') ||
+        r.assignedVolunteerName.includes('Shirke'))
   );
 
-  const availableRequests = requests.filter(r => r.status === 'verified');
+  const availableRequests = requests.filter((r) => r.status === 'verified');
   const nurturingDueCount = maintenanceItems.length || 2;
-  const completedDrivesCount = requests.filter(r => r.status === 'completed').length || 12;
+  const completedRequestsCount = requests.filter((r) => r.status === 'completed').length || 12;
 
-  const priorityAlerts =
-    maintenanceItems.length > 0
-      ? maintenanceItems.slice(0, 2).map((m) => ({
-          id: m.id,
-          title: m.treeName || 'Nurturing & Watering Due',
-          location: m.location || 'Prabhadevi Beachside Garden',
-          time: m.lastVisit || 'Today',
-          desc:
-            m.timeline?.[0]?.description ||
-            'Alternate-day deep watering and tree guard stability check required for recently planted neem saplings.',
-        }))
-      : [
-          {
-            id: 'MAINT-1',
-            title: 'Watering & Guard Inspection Due',
-            location: 'Prabhadevi Beachside Garden, Dadar',
-            time: 'Due Today',
-            desc: 'Alternate-day cycle: 15L watering required. Check bamboo tree guard.',
-          },
-        ];
+  const quickActions: Array<{
+    id: string;
+    label: string;
+    icon: IconName;
+    onPress: () => void;
+  }> = [
+    {
+      id: 'available',
+      label: 'Available Req',
+      icon: 'plant',
+      onPress: () => router.push('/(volunteer)/available' as any),
+    },
+    {
+      id: 'assigned',
+      label: 'Active Req',
+      icon: 'work',
+      onPress: () => router.push('/pages/my-assigned-work' as any),
+    },
+    {
+      id: 'log',
+      label: 'Log Care',
+      icon: 'camera',
+      onPress: () => router.push('/pages/select-update-request' as any),
+    },
+    {
+      id: 'schedule',
+      label: 'Schedule',
+      icon: 'calendar',
+      onPress: () => router.push('/pages/my-schedule' as any),
+    },
+  ];
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ─── Top Header ─── */}
+        <View style={styles.headerRow}>
+          <View style={styles.userGroup}>
+            <Image
+              source={{
+                uri:
+                  currentUser.avatar ||
+                  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+              }}
+              style={styles.avatar}
+            />
+            <View style={styles.userTextCol}>
+              <Text style={styles.greetingText}>Namaste,</Text>
+              <Text style={styles.userName} numberOfLines={1}>
+                {volunteerName}
+              </Text>
+            </View>
+          </View>
 
-      <SafeAreaView edges={['top']} style={styles.safe}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ─── Top Greeting Bar with Single Notification Bell ─── */}
-          <View style={styles.topBar}>
-            <View style={styles.userRow}>
+          <View style={styles.headerActions}>
+            <RoleSwitcher theme="light" />
+
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => router.push('/pages/notifications' as any)}
+              activeOpacity={0.75}
+            >
+              <Icon name="bell" size={20} color="#D97706" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ─── Volunteer Account Suspended Banner (if blocked) ─── */}
+        {isBlocked && (
+          <View style={styles.blockedBanner}>
+            <Icon name="alert-triangle" size={18} color="#991B1B" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.blockedTitle}>Volunteer Account Suspended</Text>
+              <Text style={styles.blockedDesc}>
+                Reason: {currentUser.blockReason || 'Under administrative review'}. Contact administration to reactivate your profile.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
+        <Text style={styles.sectionHeading}>Pending actions</Text>
+        <View style={styles.pendingRow}>
+          {/* Card 1: Available Requests (Soft Blue) */}
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: '#EBF2FA' }]}
+            activeOpacity={0.85}
+            onPress={() => router.push('/(volunteer)/available' as any)}
+          >
+            <Text style={styles.pendingNumber}>{availableRequests.length || 5}</Text>
+            <Text style={styles.pendingLabel}>Available to{'\n'}plant</Text>
+          </TouchableOpacity>
+
+          {/* Card 2: Active Assigned Requests (Soft Sage Green) */}
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: '#E2EFE5' }]}
+            activeOpacity={0.85}
+            onPress={() => router.push('/pages/my-assigned-work' as any)}
+          >
+            <Text style={styles.pendingNumber}>{assignedRequests.length || 2}</Text>
+            <Text style={styles.pendingLabel}>Active assigned{'\n'}requests</Text>
+          </TouchableOpacity>
+
+          {/* Card 3: Nurturing Due (Soft Yellow / Lime) */}
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: '#F4F8D3' }]}
+            activeOpacity={0.85}
+            onPress={() => router.push('/(volunteer)/work' as any)}
+          >
+            <Text style={[styles.pendingNumber, { color: '#92400E' }]}>{nurturingDueCount}</Text>
+            <Text style={styles.pendingLabel}>Nurturing due{'\n'}today</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ─── Section 2: Quick Actions (Circular Buttons) ─── */}
+        <Text style={styles.sectionHeading}>Quick actions</Text>
+        <View style={styles.quickRow}>
+          {quickActions.map((act) => (
+            <TouchableOpacity
+              key={act.id}
+              style={styles.quickItem}
+              onPress={act.onPress}
+              activeOpacity={0.8}
+            >
+              <View style={styles.quickCircle}>
+                <Icon name={act.icon} size={22} color="#163E2B" />
+              </View>
+              <Text style={styles.quickLabel}>{act.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* ─── Section 3: Field Overview (2x2 Grid) ─── */}
+        <Text style={styles.sectionHeading}>Field overview</Text>
+        <View style={styles.overviewGrid}>
+          {/* Row 1 */}
+          <View style={styles.overviewRow}>
+            {/* Available Requests Card (Soft Blue) */}
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#EBF2FA' }]}
+              activeOpacity={0.85}
+              onPress={() => router.push('/(volunteer)/available' as any)}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNumber}>{availableRequests.length || 5}</Text>
+                <Icon name="arrow-up-right" size={16} color="#1E40AF" />
+              </View>
+              <Text style={styles.overviewTitle}>Available Requests</Text>
+              <Text style={styles.overviewSub}>Open in Dadar</Text>
+            </TouchableOpacity>
+
+            {/* Active Requests Card (Soft Sage) */}
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}
+              activeOpacity={0.85}
+              onPress={() => router.push('/pages/my-assigned-work' as any)}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNumber}>{assignedRequests.length || 2}</Text>
+                <Icon name="arrow-up-right" size={16} color="#166534" />
+              </View>
+              <Text style={styles.overviewTitle}>Active Requests</Text>
+              <Text style={styles.overviewSub}>Assigned to me</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 2 */}
+          <View style={styles.overviewRow}>
+            {/* Completed Requests Card (Soft Sage) */}
+            <View style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}>
+              <View style={styles.overviewTopRow}>
+                <Text style={styles.overviewNumber}>{completedRequestsCount}</Text>
+                <Icon name="arrow-up-right" size={16} color="#166534" />
+              </View>
+              <Text style={styles.overviewTitle}>Trees Planted</Text>
+              <Text style={styles.overviewSub}>+8 this month</Text>
+            </View>
+
+            {/* Nurturing Due Card (Soft Yellow / Lime) */}
+            <TouchableOpacity
+              style={[styles.overviewCard, { backgroundColor: '#F4F8D3' }]}
+              activeOpacity={0.85}
+              onPress={() => router.push('/(volunteer)/work' as any)}
+            >
+              <View style={styles.overviewTopRow}>
+                <Text style={[styles.overviewNumber, { color: '#92400E' }]}>{nurturingDueCount}</Text>
+                <Icon name="arrow-up-right" size={16} color="#92400E" />
+              </View>
+              <Text style={styles.overviewTitle}>Nurturing Due</Text>
+              <Text style={[styles.overviewSub, { color: '#92400E', fontWeight: '700' }]}>
+                Alternate-day alert
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ─── Section 4: Priority Nurturing Task with View Thread CTA ─── */}
+        <Text style={styles.sectionHeading}>Priority Nurturing Alerts</Text>
+        <View style={styles.alertCard}>
+          <View style={styles.alertHeaderRow}>
+            <View style={styles.alertBadge}>
+              <Text style={styles.alertBadgeText}>WATERING &amp; CARE DUE</Text>
+            </View>
+            <Text style={styles.alertTimeText}>Today</Text>
+          </View>
+
+          <Text style={styles.alertTitle}>Shivaji Park Perimeter Greening</Text>
+          <Text style={styles.alertLocation}>📍 Gate 3, Shivaji Park Outer Ring, Dadar West</Text>
+          <Text style={styles.alertDesc}>
+            Alternate-day watering cycle due: 15L root hydration per sapling. Inspect bamboo protective cages.
+          </Text>
+
+          <View style={styles.taskActionsRow}>
+            <TouchableOpacity
+              style={styles.logNurturingBtn}
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/pages/log-nurturing',
+                  params: { id: 'REQ-2024-0042' },
+                } as any)
+              }
+            >
+              <Icon name="camera" size={15} color="#FFFFFF" />
+              <Text style={styles.logNurturingText}>Log Nurturing</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.viewThreadBtn}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: '/pages/request-details',
+                  params: { id: 'REQ-2024-0042' },
+                } as any)
+              }
+            >
+              <Icon name="document" size={14} color="#163E2B" />
+              <Text style={styles.viewThreadText}>View Care Thread 💬</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ─── Section 5: Active Requests in Dadar ─── */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionHeadingNoMargin}>Active Requests in Dadar</Text>
+          <TouchableOpacity onPress={() => router.push('/pages/my-assigned-work' as any)}>
+            <Text style={styles.viewAllText}>View all →</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.cardsStack}>
+          {assignedRequests.slice(0, 2).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.activeDriveCard}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: '/pages/request-details',
+                  params: { id: item.id },
+                } as any)
+              }
+            >
               <Image
                 source={{
                   uri:
-                    currentUser.avatar ||
-                    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+                    item.areaPhotos[0] ||
+                    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop&q=80',
                 }}
-                style={styles.avatar}
+                style={styles.activeDriveThumb}
               />
-              <View>
-                <Text style={styles.greetingLabel}>Namaste,</Text>
-                <Text style={styles.userName}>{volunteerName}</Text>
-              </View>
-            </View>
-
-            <View style={styles.topBarActions}>
-              <RoleSwitcher theme="light" />
-
-              <TouchableOpacity
-                style={styles.bellBtn}
-                activeOpacity={0.75}
-                onPress={() => router.push('/pages/notifications' as any)}
-              >
-                <Icon name="bell" size={18} color="#111827" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ─── Volunteer Account Suspended Banner (if blocked) ─── */}
-          {isBlocked && (
-            <View style={styles.blockedBanner}>
-              <Icon name="alert-triangle" size={18} color="#991B1B" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.blockedTitle}>Volunteer Account Suspended</Text>
-                <Text style={styles.blockedDesc}>
-                  Reason: {currentUser.blockReason || 'Under administrative review'}. Contact administration to reactivate your profile.
+                <Text style={styles.activeDriveTitle} numberOfLines={1}>
+                  {item.title}
                 </Text>
-              </View>
-            </View>
-          )}
-
-          {/* ─── Meaningful 2x2 Status Grid ─── */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statsRow}>
-              <TouchableOpacity
-                style={styles.statCard}
-                activeOpacity={0.88}
-                onPress={() => router.push('/pages/my-assigned-work' as any)}
-              >
-                <Text style={styles.statNumber}>
-                  {String(assignedRequests.length || 2).padStart(2, '0')}
+                <Text style={styles.activeDriveLocation} numberOfLines={1}>
+                  📍 {item.manualAddress || item.location}
                 </Text>
-                <Text style={styles.statLabel}>Assigned Drives</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.statCard}
-                activeOpacity={0.88}
-                onPress={() => router.push('/(volunteer)/available' as any)}
-              >
-                <Text style={styles.statNumber}>
-                  {String(availableRequests.length || 5).padStart(2, '0')}
-                </Text>
-                <Text style={styles.statLabel}>Available to Plant</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.statsRow}>
-              <TouchableOpacity
-                style={styles.statCard}
-                activeOpacity={0.88}
-                onPress={() => router.push('/(volunteer)/work' as any)}
-              >
-                <Text style={[styles.statNumber, { color: '#DC2626' }]}>
-                  {String(nurturingDueCount).padStart(2, '0')}
-                </Text>
-                <Text style={styles.statLabel}>Nurturing Due</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.statCard}
-                activeOpacity={0.88}
-                onPress={() => router.push('/pages/my-assigned-work' as any)}
-              >
-                <Text style={styles.statNumber}>
-                  {String(completedDrivesCount).padStart(2, '0')}
-                </Text>
-                <Text style={styles.statLabel}>Completed Drives</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ─── Streamlined Quick Actions (3 clear buttons) ─── */}
-          <Text style={styles.sectionTitle}>Volunteer Actions</Text>
-          <View style={styles.quickActionsRow}>
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              activeOpacity={0.8}
-              onPress={() => router.push('/(volunteer)/available' as any)}
-            >
-              <View style={styles.quickCircle}>
-                <Icon name="search" size={20} color="#0B3B24" />
-              </View>
-              <Text style={styles.quickLabel}>Available{'\n'}Drives</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              activeOpacity={0.8}
-              onPress={() => router.push('/pages/my-assigned-work' as any)}
-            >
-              <View style={styles.quickCircle}>
-                <Icon name="requests" size={20} color="#0B3B24" />
-              </View>
-              <Text style={styles.quickLabel}>My Assigned{'\n'}Drives</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionItem}
-              activeOpacity={0.8}
-              onPress={() => router.push('/pages/log-nurturing' as any)}
-            >
-              <View style={[styles.quickCircle, { backgroundColor: '#C7EED8' }]}>
-                <Icon name="plant" size={20} color="#0B3B24" />
-              </View>
-              <Text style={styles.quickLabel}>Log Care &{'\n'}Nurturing</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* ─── Priority Nurturing Alerts ─── */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitleNoMargin}>Priority Nurturing Alerts</Text>
-            <TouchableOpacity onPress={() => router.push('/(volunteer)/work' as any)}>
-              <Text style={styles.viewAllText}>View all</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.cardsStack}>
-            {priorityAlerts.map((item) => (
-              <View key={item.id} style={styles.taskCard}>
-                <View style={styles.taskTopRow}>
-                  <Text style={styles.taskTitle} numberOfLines={1}>
-                    {item.title}
+                <View style={styles.activeDriveBadge}>
+                  <Text style={styles.activeDriveBadgeText}>
+                    {item.status === 'scheduled'
+                      ? 'Scheduled'
+                      : item.status === 'in_progress'
+                      ? 'In Progress'
+                      : 'Assigned'}
                   </Text>
-                  <Text style={styles.taskTime}>{item.time}</Text>
-                </View>
-
-                <Text style={styles.taskLocation} numberOfLines={1}>
-                  {item.location}
-                </Text>
-                <Text style={styles.taskDesc} numberOfLines={2}>
-                  {item.desc}
-                </Text>
-
-                <View style={styles.taskActionsRow}>
-                  <TouchableOpacity
-                    style={styles.logNurturingBtn}
-                    activeOpacity={0.85}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/pages/log-nurturing',
-                        params: { id: item.id },
-                      } as any)
-                    }
-                  >
-                    <Icon name="camera" size={15} color="#FFFFFF" />
-                    <Text style={styles.logNurturingText}>Log Nurturing & Photos</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.viewDriveBtn}
-                    activeOpacity={0.8}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/pages/request-details',
-                        params: { id: 'REQ-DAD-01' },
-                      } as any)
-                    }
-                  >
-                    <Text style={styles.viewDriveText}>View Thread</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
-            ))}
-          </View>
-
-          {/* ─── Assigned Active Drives ─── */}
-          <View style={[styles.sectionHeaderRow, { marginTop: 22 }]}>
-            <Text style={styles.sectionTitleNoMargin}>Active Drives in Dadar</Text>
-            <TouchableOpacity onPress={() => router.push('/pages/my-assigned-work' as any)}>
-              <Text style={styles.viewAllText}>View all</Text>
+              <Icon name="chevron-right" size={18} color="#9CA3AF" />
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.cardsStack}>
-            {assignedRequests.slice(0, 2).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.activeDriveCard}
-                activeOpacity={0.8}
-                onPress={() =>
-                  router.push({
-                    pathname: '/pages/request-details',
-                    params: { id: item.id },
-                  } as any)
-                }
-              >
-                <Image
-                  source={{
-                    uri:
-                      item.areaPhotos[0] ||
-                      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop&q=80',
-                  }}
-                  style={styles.activeDriveThumb}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.activeDriveTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.activeDriveLocation} numberOfLines={1}>
-                    {item.location}
-                  </Text>
-                  <View style={styles.activeDriveBadge}>
-                    <Text style={styles.activeDriveBadgeText}>
-                      {item.status === 'scheduled'
-                        ? 'Scheduled Plantation'
-                        : item.status === 'in_progress'
-                        ? 'Planting in Progress'
-                        : 'Assigned Drive'}
-                    </Text>
-                  </View>
-                </View>
-                <Icon name="chevron-right" size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  safe: {
-    flex: 1,
+    backgroundColor: '#FAFBF9',
   },
   scroll: {
     flex: 1,
@@ -331,44 +357,50 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 40,
   },
-  topBar: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 20,
+    minHeight: 44,
   },
-  userRow: {
+  userGroup: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginRight: 8,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: '#C7EED8',
   },
-  greetingLabel: {
+  userTextCol: {
+    flex: 1,
+  },
+  greetingText: {
     fontSize: 12,
     color: '#6B7280',
-    fontWeight: '400',
+    fontWeight: '500',
   },
   userName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    letterSpacing: -0.2,
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#163E2B',
+    letterSpacing: -0.3,
   },
-  topBarActions: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   bellBtn: {
     width: 38,
     height: 38,
-    borderRadius: 8,
+    borderRadius: 19,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -382,8 +414,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     marginBottom: 16,
   },
   blockedTitle: {
@@ -397,191 +429,242 @@ const styles = StyleSheet.create({
     color: '#7F1D1D',
     lineHeight: 16,
   },
-  statsContainer: {
-    gap: 8,
-    marginBottom: 20,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    justifyContent: 'center',
-  },
-  statNumber: {
-    fontSize: 20,
+  sectionHeading: {
+    fontSize: 16,
     fontWeight: '700',
     color: '#163E2B',
-    letterSpacing: -0.4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
     marginBottom: 12,
-  },
-  sectionTitleNoMargin: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  quickActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  quickActionItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  quickCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  quickLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#374151',
-    textAlign: 'center',
-    lineHeight: 15,
+    marginTop: 4,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
+    marginTop: 8,
   },
-  viewAllText: {
-    fontSize: 13,
-    fontWeight: '600',
+  sectionHeadingNoMargin: {
+    fontSize: 16,
+    fontWeight: '700',
     color: '#163E2B',
   },
-  cardsStack: {
-    gap: 8,
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#163E2B',
   },
-  taskCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+  /* Pending Actions 3 Pastel Cards */
+  pendingRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 22,
+  },
+  pendingCard: {
+    flex: 1,
+    borderRadius: 14,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    minHeight: 96,
+    justifyContent: 'space-between',
   },
-  taskTopRow: {
+  pendingNumber: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#111827',
+    letterSpacing: -0.4,
+  },
+  pendingLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    lineHeight: 16,
+  },
+  /* Quick Actions Circular Buttons */
+  quickRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 22,
+    paddingHorizontal: 4,
+  },
+  quickItem: {
+    alignItems: 'center',
+    width: 68,
+  },
+  quickCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#EBF6DE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  quickLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  /* Field Overview 2x2 Grid */
+  overviewGrid: {
+    gap: 12,
+    marginBottom: 22,
+  },
+  overviewRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  overviewCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 96,
+    justifyContent: 'space-between',
+  },
+  overviewTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
   },
-  taskTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+  overviewNumber: {
+    fontSize: 22,
+    fontWeight: '800',
     color: '#111827',
-    flex: 1,
+    letterSpacing: -0.4,
   },
-  taskTime: {
-    fontSize: 12,
-    color: '#DC2626',
+  overviewTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+    marginTop: 6,
+  },
+  overviewSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  /* Priority Nurturing Alert Card */
+  alertCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 20,
+  },
+  alertHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  alertBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  alertBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#92400E',
+    letterSpacing: 0.5,
+  },
+  alertTimeText: {
+    fontSize: 11,
+    color: '#6B7280',
     fontWeight: '500',
   },
-  taskLocation: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 4,
+  alertTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 3,
   },
-  taskDesc: {
+  alertLocation: {
     fontSize: 12,
     color: '#4B5563',
+    marginBottom: 6,
+  },
+  alertDesc: {
+    fontSize: 12,
+    color: '#6B7280',
     lineHeight: 16,
-    marginBottom: 10,
+    marginBottom: 14,
   },
   taskActionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   logNurturingBtn: {
-    flex: 1,
+    flex: 1.2,
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: '#163E2B',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#163E2B',
-    borderRadius: 8,
-    height: 38,
   },
   logNurturingText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
-  viewDriveBtn: {
-    paddingHorizontal: 12,
+  viewThreadBtn: {
+    flex: 1.4,
     height: 38,
     borderRadius: 8,
     backgroundColor: '#F3F4F6',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
-  viewDriveText: {
+  viewThreadText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#163E2B',
+  },
+  /* Active Requests Stack */
+  cardsStack: {
+    gap: 10,
+    marginBottom: 20,
   },
   activeDriveCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    gap: 12,
   },
   activeDriveThumb: {
     width: 56,
     height: 56,
     borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: '#F3F4F6',
   },
   activeDriveTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#111827',
     marginBottom: 2,
   },
   activeDriveLocation: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: '#6B7280',
     marginBottom: 4,
   },
   activeDriveBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 7,
+    backgroundColor: '#E8EFEA',
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
   },
   activeDriveBadgeText: {
     fontSize: 10,

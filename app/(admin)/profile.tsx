@@ -1,5 +1,11 @@
 /**
- * Admin Profile & Platform Settings Screen (Tab 4)
+ * Admin Profile & Platform Settings Screen (Settings Tab)
+ *
+ * Clean layout adhering to Aanandvan design system:
+ * - Proper safe area layout with zero overlapping boxes
+ * - Header with RoleSwitcher
+ * - Admin profile badge & jurisdiction details
+ * - Platform totals and management controls
  */
 
 import React from 'react';
@@ -13,7 +19,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '@/components/common';
+import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
@@ -34,26 +40,23 @@ export default function AdminProfileScreen() {
     ]);
   };
 
+  const totalTrees = requests.reduce(
+    (acc, r) => acc + (r.activityUpdate?.saplingsPlanted || (r.status === 'completed' ? 5 : 0)),
+    1280
+  );
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content"  />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* ─── Hero Header ─── */}
-      <View style={styles.heroHeader}>
-        <SafeAreaView edges={['top']} style={styles.safeHero}>
-          <View style={styles.userSection}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>AD</Text>
-            </View>
+      {/* ─── Top Header Bar ─── */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Admin Settings</Text>
+          <Text style={styles.headerSubtitle}>Platform Governance &amp; Controls</Text>
+        </View>
 
-            <View style={styles.nameBlock}>
-              <Text style={styles.userName}>Aanandvan Administrator</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleBadgeText}>Super Admin • Level 5</Text>
-              </View>
-            </View>
-          </View>
-        </SafeAreaView>
+        <RoleSwitcher theme="light" />
       </View>
 
       <ScrollView
@@ -61,57 +64,79 @@ export default function AdminProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Platform Totals ─── */}
-        <View style={styles.floatingStatsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>REQUESTS</Text>
-            <Text style={styles.statValue}>{requests.length + 116}</Text>
+        {/* ─── Administrator Identity Card ─── */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarText}>AD</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>VOLUNTEERS</Text>
-            <Text style={styles.statValue}>{volunteers.length + 44}</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>TREES</Text>
-            <Text style={[styles.statValue, { color: '#10B981' }]}>312</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.userName}>Aanandvan Administrator</Text>
+            <Text style={styles.userEmail}>admin@aanandvan.in</Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>Super Admin • Level 5</Text>
+            </View>
           </View>
         </View>
 
-        {/* ─── Administrator Information ─── */}
+        {/* ─── Platform Totals (Clean Soft Pastel Cards) ─── */}
+        <Text style={styles.sectionTitle}>Platform Totals</Text>
+        <View style={styles.statsRow}>
+          <View style={[styles.statBox, { backgroundColor: '#EBF2FA' }]}>
+            <Text style={styles.statNum}>{requests.length + 116}</Text>
+            <Text style={styles.statLabel}>Total Requests</Text>
+          </View>
+
+          <View style={[styles.statBox, { backgroundColor: '#E2EFE5' }]}>
+            <Text style={styles.statNum}>{volunteers.length + 42}</Text>
+            <Text style={styles.statLabel}>Volunteers</Text>
+          </View>
+
+          <View style={[styles.statBox, { backgroundColor: '#F4F8D3' }]}>
+            <Text style={styles.statNum}>{totalTrees.toLocaleString()}</Text>
+            <Text style={styles.statLabel}>Trees Planted</Text>
+          </View>
+        </View>
+
+        {/* ─── Administrator Credentials ─── */}
         <View style={styles.sectionCard}>
-          <Text style={styles.cardHeaderTitle}>Administrator Account</Text>
+          <Text style={styles.cardHeaderTitle}>Account &amp; Jurisdiction</Text>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Admin ID</Text>
-            <Text style={styles.infoValue}>ADM-HQ-001</Text>
+            <Text style={styles.infoValue}>ADM-MUM-001</Text>
           </View>
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Official Email</Text>
-            <Text style={styles.infoValue}>admin@aanandvan.in</Text>
+            <Text style={styles.infoLabel}>Operational Zone</Text>
+            <Text style={styles.infoValue}>Dadar, Matunga &amp; Prabhadevi</Text>
           </View>
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Jurisdiction</Text>
-            <Text style={styles.infoValue}>National Green Mission</Text>
+            <Text style={styles.infoLabel}>Role Permissions</Text>
+            <Text style={styles.infoValue}>Full Verification &amp; Squad Dispatch</Text>
           </View>
         </View>
 
-        {/* ─── Platform Controls ─── */}
+        {/* ─── Administrative Management Controls ─── */}
         <View style={styles.sectionCard}>
           <Text style={styles.cardHeaderTitle}>Management Controls</Text>
 
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/pages/admin-reports' as any)}
+            activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <Icon name="overview" size={18} color="#4B5563" />
-              <Text style={styles.menuItemText}>Reports & Analytics</Text>
+              <View style={[styles.iconCircle, { backgroundColor: '#EBF2FA' }]}>
+                <Icon name="overview" size={17} color="#1E40AF" />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Impact Reports &amp; Analytics</Text>
+                <Text style={styles.menuItemSub}>Export canopy growth and monthly audits</Text>
+              </View>
             </View>
             <Icon name="chevron-right" size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -120,10 +145,16 @@ export default function AdminProfileScreen() {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/pages/admin-events' as any)}
+            activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <Icon name="calendar" size={18} color="#4B5563" />
-              <Text style={styles.menuItemText}>Plantation Events</Text>
+              <View style={[styles.iconCircle, { backgroundColor: '#E2EFE5' }]}>
+                <Icon name="calendar" size={17} color="#166534" />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Community Drives &amp; Events</Text>
+                <Text style={styles.menuItemSub}>Organize public volunteer drives</Text>
+              </View>
             </View>
             <Icon name="chevron-right" size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -132,10 +163,16 @@ export default function AdminProfileScreen() {
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/pages/admin-settings' as any)}
+            activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
-              <Icon name="settings" size={18} color="#4B5563" />
-              <Text style={styles.menuItemText}>Platform Settings</Text>
+              <View style={[styles.iconCircle, { backgroundColor: '#F4F8D3' }]}>
+                <Icon name="settings" size={17} color="#854D0E" />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Dadar Zone Configuration</Text>
+                <Text style={styles.menuItemSub}>Ward boundaries &amp; dispatch preferences</Text>
+              </View>
             </View>
             <Icon name="chevron-right" size={18} color="#9CA3AF" />
           </TouchableOpacity>
@@ -148,173 +185,215 @@ export default function AdminProfileScreen() {
           onPress={handleLogout}
         >
           <Icon name="logout" size={18} color="#DC2626" />
-          <Text style={styles.logoutText}>Logout Admin Session</Text>
+          <Text style={styles.logoutText}>Logout Administrator Session</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
+    backgroundColor: '#FAFBF9',
   },
-  heroHeader: {
-    backgroundColor: '#0B3B24',
-    paddingBottom: 40,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  safeHero: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
-  userSection: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+    backgroundColor: '#FAFBF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+  headerLeft: {
+    flex: 1,
+    marginRight: 8,
   },
-  avatarText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  nameBlock: {
-    gap: 4,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  roleBadge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  roleBadgeText: {
-    fontSize: 11,
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#0B3B24',
+    color: '#163E2B',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 1,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 40,
   },
-  floatingStatsRow: {
+  profileCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -28,
-    marginBottom: 20,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#E5E7EB',
+    marginBottom: 20,
+    gap: 14,
   },
-  statLabel: {
-    fontSize: 10,
+  avatarCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#163E2B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#6B7280',
-    letterSpacing: 0.5,
+    color: '#111827',
   },
-  statValue: {
-    fontSize: 22,
+  userEmail: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  roleBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  roleBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#166534',
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#163E2B',
+    marginBottom: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  statBox: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 74,
+  },
+  statNum: {
+    fontSize: 20,
     fontWeight: '800',
     color: '#111827',
-    marginTop: 6,
+    letterSpacing: -0.4,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 3,
+    textAlign: 'center',
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#E5E7EB',
   },
   cardHeaderTitle: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: '#0B3B24',
-    marginBottom: 14,
+    color: '#163E2B',
+    marginBottom: 12,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 12.5,
     color: '#6B7280',
+    fontWeight: '500',
   },
   infoValue: {
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: '600',
     color: '#111827',
   },
+  divider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginVertical: 4,
+  },
   menuItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuItemText: {
-    fontSize: 15,
+    fontSize: 13.5,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#111827',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
+  menuItemSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 1,
   },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
-    borderRadius: 16,
-    height: 52,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    height: 44,
     marginTop: 8,
+    marginBottom: 20,
   },
   logoutText: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 13.5,
+    fontWeight: '600',
     color: '#DC2626',
   },
 });
-

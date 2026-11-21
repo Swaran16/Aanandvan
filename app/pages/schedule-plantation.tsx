@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -93,7 +95,21 @@ export default function SchedulePlantationScreen() {
       isApprovedByAdmin: true,
     });
 
-    router.push({ pathname: '/pages/collect-saplings', params: { id: req.id } } as any);
+    if (Platform.OS === 'web') {
+      router.replace('/pages/my-assigned-work' as any);
+      return;
+    }
+
+    Alert.alert(
+      'Request Scheduled & Assigned! 🌱',
+      `You have accepted and scheduled "${req.title}" for ${pickedDate} (${pickedSlot}). Tools and saplings are allocated. This is now under your Active Requests.`,
+      [
+        {
+          text: 'View Assigned Requests',
+          onPress: () => router.replace('/pages/my-assigned-work' as any),
+        },
+      ]
+    );
   };
 
   return (

@@ -192,15 +192,18 @@ export default function RequestDetailsScreen() {
           </View>
         )}
 
-        {/* ─── Continuous WhatsApp-Style Thread: Plantation & Nurturing ─── */}
-        {(isCompleted || (req.nurturingUpdates && req.nurturingUpdates.length > 0)) && (
+        {/* ─── Continuous Thread: Plantation & Nurturing Progress ─── */}
+        {(isCompleted ||
+          req.status === 'in_progress' ||
+          !!req.activityUpdate ||
+          (req.nurturingUpdates && req.nurturingUpdates.length > 0)) && (
           <View style={styles.threadSection}>
             <View style={styles.threadHeaderRow}>
               <Icon name="plant" size={18} color="#0B3B24" />
               <Text style={styles.threadHeaderTitle}>Plantation & Care Timeline</Text>
             </View>
             <Text style={styles.threadHeaderSub}>
-              One-way transparent progress thread visible to citizen, volunteer, and admin.
+              Transparent field updates log showing sapling planting &amp; recurring nurturing care for this spot.
             </Text>
 
             {/* Phase 1: Initial Plantation Card */}
@@ -223,11 +226,14 @@ export default function RequestDetailsScreen() {
               </Text>
 
               {/* Photos */}
-              {req.activityUpdate?.afterPhotos && req.activityUpdate.afterPhotos.length > 0 && (
+              {((req.activityUpdate?.photos && req.activityUpdate.photos.length > 0) ||
+                (req.activityUpdate?.afterPhotos && req.activityUpdate.afterPhotos.length > 0)) && (
                 <View style={styles.threadPhotosRow}>
-                  {req.activityUpdate.afterPhotos.map((uri: string, idx: number) => (
-                    <Image key={idx} source={{ uri }} style={styles.threadPhotoThumb} />
-                  ))}
+                  {(req.activityUpdate.photos || req.activityUpdate.afterPhotos || []).map(
+                    (uri: string, idx: number) => (
+                      <Image key={idx} source={{ uri }} style={styles.threadPhotoThumb} />
+                    )
+                  )}
                 </View>
               )}
 

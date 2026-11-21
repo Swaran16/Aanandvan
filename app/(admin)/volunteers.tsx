@@ -2,9 +2,9 @@
  * Admin Volunteer Management Screen — Aanandvan
  *
  * Full volunteer lifecycle oversight:
- * - Direct Volunteer Verification for newly registered applicants
+ * - Dedicated Volunteer Verification section for pending applicants
  * - Unique Volunteer IDs (e.g. VOL-DAD-0104)
- * - Drive metrics per volunteer: Accepted, Ongoing, Completed
+ * - Request metrics per volunteer: Accepted, Ongoing, Completed
  * - Inactive flag for volunteers inactive > 30 days
  * - Blocked / Suspended status management
  */
@@ -32,7 +32,8 @@ export default function AdminVolunteersScreen() {
   const { volunteers, approveVolunteer } = useApp();
   const [filter, setFilter] = useState<FilterKey>('all');
 
-  const pendingCount = volunteers.filter((v) => v.status === 'pending').length;
+  const pendingVolunteers = volunteers.filter((v) => v.status === 'pending');
+  const pendingCount = pendingVolunteers.length;
   const verifiedCount = volunteers.filter((v) => v.status === 'verified' && !v.isBlocked).length;
   const blockedCount = volunteers.filter((v) => v.isBlocked).length;
 
@@ -54,7 +55,7 @@ export default function AdminVolunteersScreen() {
     approveVolunteer(vol.id);
     Alert.alert(
       'Volunteer Verified',
-      `${vol.name} has been approved as an active volunteer (${vol.volunteerCode || 'VOL-DAD-0105'}). They can now view and accept drives.`,
+      `${vol.name} has been approved as an active volunteer (${vol.volunteerCode || 'VOL-DAD-0105'}). They can now view and accept active requests.`,
       [{ text: 'OK' }]
     );
   };
@@ -127,7 +128,7 @@ export default function AdminVolunteersScreen() {
           </Text>
         )}
 
-        {/* Drive Metrics Row (for verified volunteers) */}
+        {/* Request Metrics Row (for verified volunteers) */}
         {!isPending && (
           <View style={styles.metricsRow}>
             <View style={styles.metricBox}>
@@ -137,7 +138,7 @@ export default function AdminVolunteersScreen() {
             <View style={styles.metricDivider} />
             <View style={styles.metricBox}>
               <Text style={[styles.metricNum, { color: '#0369A1' }]}>{ongoingCount}</Text>
-              <Text style={styles.metricLabel}>Ongoing</Text>
+              <Text style={styles.metricLabel}>Active Req</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricBox}>
@@ -177,7 +178,7 @@ export default function AdminVolunteersScreen() {
               activeOpacity={0.88}
             >
               <Icon name="check" size={14} color="#FFFFFF" />
-              <Text style={styles.approveBtnText}>Verify & Approve</Text>
+              <Text style={styles.approveBtnText}>Verify &amp; Approve</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -187,7 +188,7 @@ export default function AdminVolunteersScreen() {
             activeOpacity={0.85}
           >
             <Text style={styles.actionBtnText}>
-              {isBlocked ? 'Manage Suspension & History' : 'Manage Volunteer & Drives'}
+              {isBlocked ? 'Manage Suspension & History' : 'Manage Volunteer & Active Requests'}
             </Text>
           </TouchableOpacity>
         )}
@@ -201,7 +202,7 @@ export default function AdminVolunteersScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Volunteer Directory</Text>
-          <Text style={styles.headerSubtitle}>Dadar & Mumbai Zone Roster</Text>
+          <Text style={styles.headerSubtitle}>Dadar &amp; Mumbai Zone Roster</Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -296,6 +297,30 @@ export default function AdminVolunteersScreen() {
           </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {/* Prominent Verification Callout (Transferred from Home Page per user request) */}
+      {pendingCount > 0 && filter !== 'pending' && (
+        <View style={styles.calloutWrap}>
+          <TouchableOpacity
+            style={styles.verificationCallout}
+            activeOpacity={0.85}
+            onPress={() => setFilter('pending')}
+          >
+            <View style={styles.calloutLeft}>
+              <Icon name="alert-triangle" size={18} color="#92400E" />
+              <View>
+                <Text style={styles.calloutTitle}>
+                  {pendingCount} Volunteer Verification{pendingCount > 1 ? 's' : ''} Awaiting Review
+                </Text>
+                <Text style={styles.calloutSub}>
+                  Tap to view applicant details and issue volunteer IDs
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.calloutAction}>Review →</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* List */}
       <FlatList
@@ -410,6 +435,42 @@ const styles = StyleSheet.create({
   filterTextActive: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  calloutWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  verificationCallout: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 10,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  calloutLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  calloutTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400E',
+  },
+  calloutSub: {
+    fontSize: 11,
+    color: '#78350F',
+    marginTop: 1,
+  },
+  calloutAction: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#92400E',
+    marginLeft: 8,
   },
   listContent: {
     paddingHorizontal: 16,
