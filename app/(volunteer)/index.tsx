@@ -129,34 +129,34 @@ export default function VolunteerHomeScreen() {
         {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
         <Text style={styles.sectionHeading}>Pending actions</Text>
         <View style={styles.pendingRow}>
-          {/* Card 1: Available Requests (Soft Blue) */}
+          {/* Card 1: Available Requests (Bright Sky Blue) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#EBF2FA' }]}
+            style={[styles.pendingCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(volunteer)/available' as any)}
           >
-            <Text style={styles.pendingNumber}>{availableRequests.length || 5}</Text>
-            <Text style={styles.pendingLabel}>Available to{'\n'}plant</Text>
+            <Text style={[styles.pendingNumber, { color: '#0F172A' }]}>{availableRequests.length || 5}</Text>
+            <Text style={[styles.pendingLabel, { color: '#1E3A8A' }]}>Available to{'\n'}plant</Text>
           </TouchableOpacity>
 
-          {/* Card 2: Active Assigned Requests (Soft Sage Green) */}
+          {/* Card 2: Active Assigned Requests (Bright Fresh Mint Green) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#E2EFE5' }]}
+            style={[styles.pendingCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/pages/my-assigned-work' as any)}
           >
-            <Text style={styles.pendingNumber}>{assignedRequests.length || 2}</Text>
-            <Text style={styles.pendingLabel}>Active assigned{'\n'}requests</Text>
+            <Text style={[styles.pendingNumber, { color: '#064E3B' }]}>{assignedRequests.length || 2}</Text>
+            <Text style={[styles.pendingLabel, { color: '#065F46' }]}>Active assigned{'\n'}requests</Text>
           </TouchableOpacity>
 
-          {/* Card 3: Nurturing Due (Soft Yellow / Lime) */}
+          {/* Card 3: Nurturing Due (Bright Sunny Lemon Lime) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#F4F8D3' }]}
+            style={[styles.pendingCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(volunteer)/work' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#92400E' }]}>{nurturingDueCount}</Text>
-            <Text style={styles.pendingLabel}>Nurturing due{'\n'}today</Text>
+            <Text style={[styles.pendingNumber, { color: '#78350F' }]}>{nurturingDueCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#854D0E' }]}>Nurturing due{'\n'}today</Text>
           </TouchableOpacity>
         </View>
 
@@ -183,59 +183,59 @@ export default function VolunteerHomeScreen() {
         <View style={styles.overviewGrid}>
           {/* Row 1 */}
           <View style={styles.overviewRow}>
-            {/* Available Requests Card (Soft Blue) */}
+            {/* Available Requests Card (Bright Sky Blue) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#EBF2FA' }]}
+              style={[styles.overviewCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(volunteer)/available' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{availableRequests.length || 5}</Text>
-                <Icon name="arrow-up-right" size={16} color="#1E40AF" />
+                <Text style={[styles.overviewNumber, { color: '#0F172A' }]}>{availableRequests.length || 5}</Text>
+                <Icon name="arrow-up-right" size={16} color="#0284C7" />
               </View>
-              <Text style={styles.overviewTitle}>Available Requests</Text>
-              <Text style={styles.overviewSub}>Open in Dadar</Text>
+              <Text style={[styles.overviewTitle, { color: '#0F172A' }]}>Available Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#0369A1' }]}>Open in Dadar</Text>
             </TouchableOpacity>
 
-            {/* Active Requests Card (Soft Sage) */}
+            {/* Active Requests Card (Bright Fresh Mint Green) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}
+              style={[styles.overviewCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/pages/my-assigned-work' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{assignedRequests.length || 2}</Text>
-                <Icon name="arrow-up-right" size={16} color="#166534" />
+                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{assignedRequests.length || 2}</Text>
+                <Icon name="arrow-up-right" size={16} color="#16A34A" />
               </View>
-              <Text style={styles.overviewTitle}>Active Requests</Text>
-              <Text style={styles.overviewSub}>Assigned to me</Text>
+              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Active Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#15803D' }]}>Assigned to me</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 2 */}
           <View style={styles.overviewRow}>
-            {/* Completed Requests Card (Soft Sage) */}
-            <View style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}>
+            {/* Completed Requests Card (Bright Emerald Green) */}
+            <View style={[styles.overviewCard, { backgroundColor: '#C4F2D6', borderColor: '#9CEAB8', borderWidth: 1 }]}>
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{completedRequestsCount}</Text>
-                <Icon name="arrow-up-right" size={16} color="#166534" />
+                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{completedRequestsCount}</Text>
+                <Icon name="arrow-up-right" size={16} color="#059669" />
               </View>
-              <Text style={styles.overviewTitle}>Trees Planted</Text>
-              <Text style={styles.overviewSub}>+8 this month</Text>
+              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Trees Planted</Text>
+              <Text style={[styles.overviewSub, { color: '#047857' }]}>+8 this month</Text>
             </View>
 
-            {/* Nurturing Due Card (Soft Yellow / Lime) */}
+            {/* Nurturing Due Card (Bright Sunny Yellow) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#F4F8D3' }]}
+              style={[styles.overviewCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(volunteer)/work' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#92400E' }]}>{nurturingDueCount}</Text>
-                <Icon name="arrow-up-right" size={16} color="#92400E" />
+                <Text style={[styles.overviewNumber, { color: '#78350F' }]}>{nurturingDueCount}</Text>
+                <Icon name="arrow-up-right" size={16} color="#D97706" />
               </View>
-              <Text style={styles.overviewTitle}>Nurturing Due</Text>
-              <Text style={[styles.overviewSub, { color: '#92400E', fontWeight: '700' }]}>
+              <Text style={[styles.overviewTitle, { color: '#78350F' }]}>Nurturing Due</Text>
+              <Text style={[styles.overviewSub, { color: '#B45309', fontWeight: '700' }]}>
                 Alternate-day alert
               </Text>
             </TouchableOpacity>
@@ -493,7 +493,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#EBF6DE',
+    backgroundColor: '#D9F99D',
+    borderWidth: 1,
+    borderColor: '#BEF264',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,

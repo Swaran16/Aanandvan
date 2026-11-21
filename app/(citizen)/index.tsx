@@ -111,34 +111,34 @@ export default function CitizenHomeScreen() {
         {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
         <Text style={styles.sectionHeading}>Pending actions</Text>
         <View style={styles.pendingRow}>
-          {/* Card 1: My Pending Requests (Soft Blue) */}
+          {/* Card 1: My Pending Requests (Bright Sky Blue) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#EBF2FA' }]}
+            style={[styles.pendingCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(citizen)/requests' as any)}
           >
-            <Text style={styles.pendingNumber}>{myPendingCount}</Text>
-            <Text style={styles.pendingLabel}>Pending{'\n'}review</Text>
+            <Text style={[styles.pendingNumber, { color: '#0F172A' }]}>{myPendingCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#1E3A8A' }]}>Pending{'\n'}review</Text>
           </TouchableOpacity>
 
-          {/* Card 2: Verified & In Progress (Soft Sage Green) */}
+          {/* Card 2: Verified & In Progress (Bright Fresh Mint Green) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#E2EFE5' }]}
+            style={[styles.pendingCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(citizen)/requests' as any)}
           >
-            <Text style={styles.pendingNumber}>{myVerifiedCount}</Text>
-            <Text style={styles.pendingLabel}>Verified{'\n'}requests</Text>
+            <Text style={[styles.pendingNumber, { color: '#064E3B' }]}>{myVerifiedCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#065F46' }]}>Verified{'\n'}requests</Text>
           </TouchableOpacity>
 
-          {/* Card 3: Planted & Cared (Soft Yellow / Lime) */}
+          {/* Card 3: Planted & Cared (Bright Sunny Lemon Lime) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#F4F8D3' }]}
+            style={[styles.pendingCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(citizen)/requests' as any)}
           >
-            <Text style={styles.pendingNumber}>{myCompletedCount}</Text>
-            <Text style={styles.pendingLabel}>Planted &amp;{'\n'}nurtured</Text>
+            <Text style={[styles.pendingNumber, { color: '#78350F' }]}>{myCompletedCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#854D0E' }]}>Planted &amp;{'\n'}nurtured</Text>
           </TouchableOpacity>
         </View>
 
@@ -165,57 +165,57 @@ export default function CitizenHomeScreen() {
         <View style={styles.overviewGrid}>
           {/* Row 1 */}
           <View style={styles.overviewRow}>
-            {/* Active Volunteers Card (Soft Blue) */}
-            <View style={[styles.overviewCard, { backgroundColor: '#EBF2FA' }]}>
+            {/* Active Volunteers Card (Bright Sky Blue) */}
+            <View style={[styles.overviewCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}>
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>140+</Text>
-                <Icon name="arrow-up-right" size={16} color="#1E40AF" />
+                <Text style={[styles.overviewNumber, { color: '#0F172A' }]}>140+</Text>
+                <Icon name="arrow-up-right" size={16} color="#0284C7" />
               </View>
-              <Text style={styles.overviewTitle}>Active Volunteers</Text>
-              <Text style={styles.overviewSub}>+12% in Dadar</Text>
+              <Text style={[styles.overviewTitle, { color: '#0F172A' }]}>Active Volunteers</Text>
+              <Text style={[styles.overviewSub, { color: '#0369A1' }]}>+12% in Dadar</Text>
             </View>
 
-            {/* Total Requests Card (Soft Sage) */}
+            {/* Total Requests Card (Bright Fresh Mint Green) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}
+              style={[styles.overviewCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(citizen)/requests' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{requests.length + 35}</Text>
-                <Icon name="arrow-up-right" size={16} color="#166534" />
+                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{requests.length + 35}</Text>
+                <Icon name="arrow-up-right" size={16} color="#16A34A" />
               </View>
-              <Text style={styles.overviewTitle}>Total Requests</Text>
-              <Text style={styles.overviewSub}>+18% in Mumbai</Text>
+              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Total Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#15803D' }]}>+18% in Mumbai</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 2 */}
           <View style={styles.overviewRow}>
-            {/* Trees Planted Card (Soft Sage) */}
-            <View style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}>
+            {/* Trees Planted Card (Bright Emerald Green) */}
+            <View style={[styles.overviewCard, { backgroundColor: '#C4F2D6', borderColor: '#9CEAB8', borderWidth: 1 }]}>
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>1,280+</Text>
-                <Icon name="arrow-up-right" size={16} color="#166534" />
+                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>1,280+</Text>
+                <Icon name="arrow-up-right" size={16} color="#059669" />
               </View>
-              <Text style={styles.overviewTitle}>Trees Planted</Text>
-              <Text style={styles.overviewSub}>Canopy Growing</Text>
+              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Trees Planted</Text>
+              <Text style={[styles.overviewSub, { color: '#047857' }]}>Canopy Growing</Text>
             </View>
 
-            {/* Active Requests Card (Soft Yellow / Lime) */}
+            {/* Active Requests Card (Bright Sunny Yellow) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#F4F8D3' }]}
+              style={[styles.overviewCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(citizen)/requests' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#92400E' }]}>
+                <Text style={[styles.overviewNumber, { color: '#78350F' }]}>
                   {requests.filter((r) => r.status === 'assigned' || r.status === 'in_progress').length + 8}
                 </Text>
-                <Icon name="arrow-up-right" size={16} color="#92400E" />
+                <Icon name="arrow-up-right" size={16} color="#D97706" />
               </View>
-              <Text style={styles.overviewTitle}>Active Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#92400E', fontWeight: '700' }]}>
+              <Text style={[styles.overviewTitle, { color: '#78350F' }]}>Active Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#B45309', fontWeight: '700' }]}>
                 In Progress
               </Text>
             </TouchableOpacity>
@@ -366,7 +366,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#EBF6DE',
+    backgroundColor: '#D9F99D',
+    borderWidth: 1,
+    borderColor: '#BEF264',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,

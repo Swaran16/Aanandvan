@@ -119,34 +119,34 @@ export default function AdminDashboardScreen() {
         {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
         <Text style={styles.sectionHeading}>Pending actions</Text>
         <View style={styles.pendingRow}>
-          {/* Card 1: Volunteer Requests (Soft Blue) */}
+          {/* Card 1: Volunteer Requests (Bright Sky Blue) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#EBF2FA' }]}
+            style={[styles.pendingCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(admin)/volunteers' as any)}
           >
-            <Text style={styles.pendingNumber}>{pendingVolunteersCount || 2}</Text>
-            <Text style={styles.pendingLabel}>Volunteers{'\n'}requests</Text>
+            <Text style={[styles.pendingNumber, { color: '#0F172A' }]}>{pendingVolunteersCount || 2}</Text>
+            <Text style={[styles.pendingLabel, { color: '#1E3A8A' }]}>Volunteers{'\n'}requests</Text>
           </TouchableOpacity>
 
-          {/* Card 2: Plantation Requests (Soft Sage Green) */}
+          {/* Card 2: Plantation Requests (Bright Fresh Mint Green) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#E2EFE5' }]}
+            style={[styles.pendingCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(admin)/requests' as any)}
           >
-            <Text style={styles.pendingNumber}>{pendingRequestsCount || 43}</Text>
-            <Text style={styles.pendingLabel}>Plantation{'\n'}requests</Text>
+            <Text style={[styles.pendingNumber, { color: '#064E3B' }]}>{pendingRequestsCount || 43}</Text>
+            <Text style={[styles.pendingLabel, { color: '#065F46' }]}>Plantation{'\n'}requests</Text>
           </TouchableOpacity>
 
-          {/* Card 3: Planting Updates (Soft Yellow / Lime) */}
+          {/* Card 3: Planting Updates (Bright Sunny Lemon Lime) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#F4F8D3' }]}
+            style={[styles.pendingCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(admin)/requests' as any)}
           >
-            <Text style={styles.pendingNumber}>{activeRequestsCount || 13}</Text>
-            <Text style={styles.pendingLabel}>Planting{'\n'}updates</Text>
+            <Text style={[styles.pendingNumber, { color: '#78350F' }]}>{activeRequestsCount || 13}</Text>
+            <Text style={[styles.pendingLabel, { color: '#854D0E' }]}>Planting{'\n'}updates</Text>
           </TouchableOpacity>
         </View>
 
@@ -173,65 +173,65 @@ export default function AdminDashboardScreen() {
         <View style={styles.overviewGrid}>
           {/* Row 1 */}
           <View style={styles.overviewRow}>
-            {/* Volunteers Card (Soft Blue) */}
+            {/* Volunteers Card (Bright Sky Blue) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#EBF2FA' }]}
+              style={[styles.overviewCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(admin)/volunteers' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{totalVolunteersCount}</Text>
-                <Icon name="arrow-up-right" size={16} color="#4B5563" />
+                <Text style={[styles.overviewNumber, { color: '#0F172A' }]}>{totalVolunteersCount}</Text>
+                <Icon name="arrow-up-right" size={16} color="#0284C7" />
               </View>
-              <Text style={styles.overviewTitle}>Volunteers</Text>
-              <Text style={styles.overviewSub}>+12% in a month</Text>
+              <Text style={[styles.overviewTitle, { color: '#0F172A' }]}>Volunteers</Text>
+              <Text style={[styles.overviewSub, { color: '#0369A1' }]}>+12% in a month</Text>
             </TouchableOpacity>
 
-            {/* Requests Card (Soft Sage) */}
+            {/* Requests Card (Bright Fresh Mint Green) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}
+              style={[styles.overviewCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(admin)/requests' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{totalRequestsCount}</Text>
-                <Icon name="arrow-up-right" size={16} color="#4B5563" />
+                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{totalRequestsCount}</Text>
+                <Icon name="arrow-up-right" size={16} color="#16A34A" />
               </View>
-              <Text style={styles.overviewTitle}>Requests</Text>
-              <Text style={styles.overviewSub}>+18% in a month</Text>
+              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#15803D' }]}>+18% in a month</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 2 */}
           <View style={styles.overviewRow}>
-            {/* Trees Planted Card (Soft Sage) */}
+            {/* Trees Planted Card (Bright Emerald Green) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#E2EFE5' }]}
+              style={[styles.overviewCard, { backgroundColor: '#C4F2D6', borderColor: '#9CEAB8', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(admin)/requests' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={styles.overviewNumber}>{totalTreesPlanted}</Text>
-                <Icon name="arrow-up-right" size={16} color="#4B5563" />
+                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{totalTreesPlanted}</Text>
+                <Icon name="arrow-up-right" size={16} color="#059669" />
               </View>
-              <Text style={styles.overviewTitle}>Trees planted</Text>
-              <Text style={styles.overviewSub}>+12% in a month</Text>
+              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Trees planted</Text>
+              <Text style={[styles.overviewSub, { color: '#047857' }]}>+12% in a month</Text>
             </TouchableOpacity>
 
-            {/* Pending Verifications Card (Soft Lime / Yellow) */}
+            {/* Pending Verifications Card (Bright Sunny Yellow) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#F4F8D3' }]}
+              style={[styles.overviewCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(admin)/volunteers' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#92400E' }]}>
+                <Text style={[styles.overviewNumber, { color: '#78350F' }]}>
                   {pendingVolunteersCount || 47}
                 </Text>
-                <Icon name="arrow-up-right" size={16} color="#92400E" />
+                <Icon name="arrow-up-right" size={16} color="#D97706" />
               </View>
-              <Text style={styles.overviewTitle}>Pending verifications</Text>
-              <Text style={[styles.overviewSub, { color: '#92400E', fontWeight: '700' }]}>
+              <Text style={[styles.overviewTitle, { color: '#78350F' }]}>Pending verifications</Text>
+              <Text style={[styles.overviewSub, { color: '#B45309', fontWeight: '700' }]}>
                 {pendingVolunteersCount > 0 ? `${pendingVolunteersCount} Awaiting Review` : 'Alert'}
               </Text>
             </TouchableOpacity>
@@ -250,11 +250,11 @@ export default function AdminDashboardScreen() {
 
           <View style={styles.legendWrap}>
             <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#163E2B' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
               <Text style={styles.legendText}>Completed</Text>
             </View>
             <View style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
+              <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
               <Text style={styles.legendText}>In progress</Text>
             </View>
           </View>
@@ -427,7 +427,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#EBF6DE',
+    backgroundColor: '#D9F99D',
+    borderWidth: 1,
+    borderColor: '#BEF264',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -575,13 +577,13 @@ const styles = StyleSheet.create({
   },
   barCompleted: {
     width: 12,
-    backgroundColor: '#163E2B',
+    backgroundColor: '#10B981',
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
   },
   barInProgress: {
     width: 12,
-    backgroundColor: '#D97706',
+    backgroundColor: '#F59E0B',
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
   },
