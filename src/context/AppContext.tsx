@@ -388,6 +388,27 @@ const INITIAL_VOLUNTEERS: VolunteerApplication[] = [
     visionQuote: 'Urban greening advocate.',
     bio: 'Independent volunteer.',
   },
+  {
+    id: 'vol-app-5',
+    volunteerCode: 'VOL-DAD-0105',
+    name: 'Amol Jadhav',
+    email: 'amol.jadhav@outlook.com',
+    phone: '+91 98334 55667',
+    city: 'Dadar West, Mumbai',
+    pincode: '400028',
+    address: '22 Ranade Road, Opp. Shivaji Park, Dadar West, Mumbai',
+    coordinates: '19.0260° N, 72.8385° E',
+    appliedDate: 'Yesterday',
+    status: 'pending',
+    visionQuote: 'Eager to plant and nurture indigenous trees along Dadar streets and school perimeters.',
+    bio: 'Local Dadar resident and botany enthusiast. Available on weekend mornings for soil preparation, sapling planting, and alternate-day watering drives.',
+    plantationsCount: 0,
+    acceptedDrivesCount: 0,
+    completedDrivesCount: 0,
+    ongoingDrivesCount: 0,
+    lastActiveDate: 'Awaiting Verification',
+    lastActive: '1d ago',
+  },
 ];
 
 const INITIAL_MAINTENANCE: MaintenanceItem[] = [
@@ -483,11 +504,12 @@ const INITIAL_ADMIN_INBOX: AdminInboxItem[] = [
   {
     id: 'inb-2',
     title: 'New Volunteer Application',
-    body: 'Tanvi Sawant applied to volunteer from Matunga East, Mumbai.',
-    time: '5 hours ago',
+    body: 'Amol Jadhav applied to volunteer from Dadar West, Mumbai. Awaiting verification.',
+    time: 'Yesterday',
     icon: 'profile',
     unread: true,
     route: '/pages/volunteer-details',
+    params: { id: 'vol-app-5' },
   },
   {
     id: 'inb-3',
@@ -1098,6 +1120,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setVolunteers(prev => [newApp, ...prev]);
+
+    setAdminInbox(prev => [
+      {
+        id: `inb-${Date.now()}`,
+        title: 'New Volunteer Application',
+        body: `${newApp.name} applied to volunteer from ${newApp.city}. Tap to review and verify.`,
+        time: 'Just now',
+        icon: 'profile',
+        unread: true,
+        route: '/pages/volunteer-details',
+        params: { id: newApp.id },
+      },
+      ...prev,
+    ]);
+
     return newApp;
   };
 

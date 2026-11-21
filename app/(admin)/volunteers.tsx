@@ -2,10 +2,11 @@
  * Admin Volunteer Management Screen — Aanandvan
  *
  * Full volunteer lifecycle oversight:
+ * - Direct Volunteer Verification for newly registered applicants
  * - Unique Volunteer IDs (e.g. VOL-DAD-0104)
  * - Drive metrics per volunteer: Accepted, Ongoing, Completed
  * - Inactive flag for volunteers inactive > 30 days
- * - Blocked status indicator with quick review
+ * - Blocked / Suspended status management
  */
 
 import React, { useMemo, useState } from 'react';
@@ -16,10 +17,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Text } from '@/components/common';
+import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { VolunteerApplication } from '@/types';
@@ -27,7 +29,7 @@ import { VolunteerApplication } from '@/types';
 type FilterKey = 'all' | 'pending' | 'verified' | 'blocked';
 
 export default function AdminVolunteersScreen() {
-  const { volunteers } = useApp();
+  const { volunteers, approveVolunteer } = useApp();
   const [filter, setFilter] = useState<FilterKey>('all');
 
   const pendingCount = volunteers.filter((v) => v.status === 'pending').length;
@@ -48,6 +50,15 @@ export default function AdminVolunteersScreen() {
     } as any);
   };
 
+  const handleQuickApprove = (vol: VolunteerApplication) => {
+    approveVolunteer(vol.id);
+    Alert.alert(
+      'Volunteer Verified',
+      `${vol.name} has been approved as an active volunteer (${vol.volunteerCode || 'VOL-DAD-0105'}). They can now view and accept drives.`,
+      [{ text: 'OK' }]
+    );
+  };
+
   const isInactiveOver30Days = (lastActiveDate?: string): boolean => {
     if (!lastActiveDate) return false;
     const lower = lastActiveDate.toLowerCase();
@@ -61,19 +72,25 @@ export default function AdminVolunteersScreen() {
     const isInactive = isInactiveOver30Days(item.lastActiveDate);
 
     const badge = isBlocked
-      ? { label: 'Suspended / Blocked', bg: '#FEE2E2', fg: '#991B1B' }
+      ? { label: 'Suspended', bg: '#FEE2E2', fg: '#991B1B' }
       : isPending
-      ? { label: 'Verification Pending', bg: '#FEF3C7', fg: '#92400E' }
+      ? { label: 'Verification Required', bg: '#FEF3C7', fg: '#92400E' }
       : { label: 'Active Volunteer', bg: '#DCFCE7', fg: '#166534' };
 
-    const acceptedCount = item.acceptedDrivesCount ?? 4;
-    const ongoingCount = item.ongoingDrivesCount ?? 1;
-    const completedCount = item.completedDrivesCount ?? 3;
-    const lastActive = item.lastActiveDate || '3 days ago';
+    const acceptedCount = item.acceptedDrivesCount ?? 0;
+    const ongoingCount = item.ongoingDrivesCount ?? 0;
+    const completedCount = item.completedDrivesCount ?? 0;
+    const lastActive = item.lastActiveDate || 'Just applied';
     const volCode = item.volunteerCode || `VOL-DAD-${item.id.slice(-4).toUpperCase()}`;
 
     return (
-      <View style={[styles.card, isBlocked && styles.cardBlocked]}>
+      <View
+        style={[
+          styles.card,
+          isPending && styles.cardPending,
+          isBlocked && styles.cardBlocked,
+        ]}
+      >
         <View style={styles.cardTopRow}>
           <Image
             source={{
@@ -89,9 +106,13 @@ export default function AdminVolunteersScreen() {
               <Text style={styles.cardName} numberOfLines={1}>
                 {item.name}
               </Text>
-              <Text style={styles.volCodeBadge}>{volCode}</Text>
+              <View style={styles.volCodeBadge}>
+                <Text style={styles.volCodeText}>{volCode}</Text>
+              </View>
             </View>
-            <Text style={styles.cardApplied}>Joined: {item.appliedDate}</Text>
+            <Text style={styles.cardApplied}>
+              {isPending ? `Applied: ${item.appliedDate}` : `Joined: ${item.appliedDate}`} • {item.city || 'Dadar, Mumbai'}
+            </Text>
           </View>
 
           <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
@@ -102,23 +123,25 @@ export default function AdminVolunteersScreen() {
         {/* Bio / Motivation Preview */}
         {item.bio && (
           <Text style={styles.bioText} numberOfLines={2}>
-            {`"${item.bio}"`}
+            &ldquo;{item.bio}&rdquo;
           </Text>
         )}
 
-        {/* Drive Metrics Row */}
+        {/* Drive Metrics Row (for verified volunteers) */}
         {!isPending && (
           <View style={styles.metricsRow}>
             <View style={styles.metricBox}>
               <Text style={styles.metricNum}>{acceptedCount}</Text>
               <Text style={styles.metricLabel}>Accepted</Text>
             </View>
+            <View style={styles.metricDivider} />
             <View style={styles.metricBox}>
               <Text style={[styles.metricNum, { color: '#0369A1' }]}>{ongoingCount}</Text>
               <Text style={styles.metricLabel}>Ongoing</Text>
             </View>
+            <View style={styles.metricDivider} />
             <View style={styles.metricBox}>
-              <Text style={[styles.metricNum, { color: '#15803D' }]}>{completedCount}</Text>
+              <Text style={[styles.metricNum, { color: '#166534' }]}>{completedCount}</Text>
               <Text style={styles.metricLabel}>Completed</Text>
             </View>
           </View>
@@ -126,7 +149,9 @@ export default function AdminVolunteersScreen() {
 
         {/* Last Active Date & 30-Day Inactive Flag */}
         <View style={styles.activityFooterRow}>
-          <Text style={styles.lastActiveText}>Last active: {lastActive}</Text>
+          <Text style={styles.lastActiveText}>
+            {isPending ? 'Status: Pending administrative review' : `Last active: ${lastActive}`}
+          </Text>
           {isInactive && !isBlocked && (
             <View style={styles.inactivePill}>
               <Icon name="alert-triangle" size={11} color="#B45309" />
@@ -135,48 +160,92 @@ export default function AdminVolunteersScreen() {
           )}
         </View>
 
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => openVolunteer(item)}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.actionBtnText}>
-            {isPending ? 'Review & Approve Application' : 'Manage Volunteer & Drives'}
-          </Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        {isPending ? (
+          <View style={styles.pendingActionRow}>
+            <TouchableOpacity
+              style={styles.inspectBtn}
+              onPress={() => openVolunteer(item)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.inspectBtnText}>Review Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.approveBtn}
+              onPress={() => handleQuickApprove(item)}
+              activeOpacity={0.88}
+            >
+              <Icon name="check" size={14} color="#FFFFFF" />
+              <Text style={styles.approveBtnText}>Verify & Approve</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => openVolunteer(item)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.actionBtnText}>
+              {isBlocked ? 'Manage Suspension & History' : 'Manage Volunteer & Drives'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Top Header Bar */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="chevron-left" size={22} color="#0B3B24" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Volunteer Management</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Volunteer Directory</Text>
+          <Text style={styles.headerSubtitle}>Dadar & Mumbai Zone Roster</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <RoleSwitcher theme="light" />
+        </View>
       </View>
 
-      {/* Summary Chips */}
+      {/* Summary KPI Cards (Interactive Filters) */}
       <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { backgroundColor: '#E0F2FE' }]}>
-          <Text style={styles.summaryNum}>{pendingCount}</Text>
+        <TouchableOpacity
+          style={[
+            styles.summaryCard,
+            { backgroundColor: '#FEF3C7', borderColor: filter === 'pending' ? '#D97706' : '#FDE68A' },
+          ]}
+          onPress={() => setFilter(filter === 'pending' ? 'all' : 'pending')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.summaryNum, { color: '#92400E' }]}>{pendingCount}</Text>
           <Text style={styles.summaryLabel}>Pending Review</Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={[styles.summaryCard, { backgroundColor: '#DCFCE7' }]}>
-          <Text style={styles.summaryNum}>{verifiedCount}</Text>
-          <Text style={styles.summaryLabel}>Active in Mumbai</Text>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.summaryCard,
+            { backgroundColor: '#DCFCE7', borderColor: filter === 'verified' ? '#166534' : '#BBF7D0' },
+          ]}
+          onPress={() => setFilter(filter === 'verified' ? 'all' : 'verified')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.summaryNum, { color: '#166534' }]}>{verifiedCount}</Text>
+          <Text style={styles.summaryLabel}>Active Volunteers</Text>
+        </TouchableOpacity>
 
-        <View style={[styles.summaryCard, { backgroundColor: '#FEE2E2' }]}>
-          <Text style={styles.summaryNum}>{blockedCount}</Text>
+        <TouchableOpacity
+          style={[
+            styles.summaryCard,
+            { backgroundColor: '#FEE2E2', borderColor: filter === 'blocked' ? '#991B1B' : '#FECACA' },
+          ]}
+          onPress={() => setFilter(filter === 'blocked' ? 'all' : 'blocked')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.summaryNum, { color: '#991B1B' }]}>{blockedCount}</Text>
           <Text style={styles.summaryLabel}>Suspended</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Filter Tabs */}
@@ -228,12 +297,24 @@ export default function AdminVolunteersScreen() {
         </ScrollView>
       </View>
 
+      {/* List */}
       <FlatList
         data={filteredVolunteers}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Icon name="volunteers" size={36} color="#9CA3AF" />
+            <Text style={styles.emptyTitle}>No volunteers found</Text>
+            <Text style={styles.emptySub}>
+              {filter === 'pending'
+                ? 'All volunteer registration applications have been reviewed.'
+                : 'No volunteer profiles match this filter.'}
+            </Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -247,19 +328,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 12,
+    paddingBottom: 12,
     backgroundColor: '#FAFBF9',
   },
-  backBtn: {
-    padding: 4,
+  headerLeft: {
+    flex: 1,
     marginRight: 8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0B3B24',
+    fontWeight: '700',
+    color: '#163E2B',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -269,21 +361,24 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 8,
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    minHeight: 64,
   },
   summaryNum: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   summaryLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: '#4B5563',
     marginTop: 2,
+    textAlign: 'center',
   },
   filtersWrap: {
     borderBottomWidth: 1,
@@ -329,6 +424,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  cardPending: {
+    borderColor: '#FDE68A',
+  },
   cardBlocked: {
     borderColor: '#FECACA',
     backgroundColor: '#FFFBFB',
@@ -338,13 +436,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   cardInfo: {
     flex: 1,
+    marginRight: 8,
   },
   nameCodeRow: {
     flexDirection: 'row',
@@ -352,18 +453,22 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardName: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14.5,
+    fontWeight: '700',
     color: '#111827',
+    flexShrink: 1,
   },
   volCodeBadge: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#163E2B',
     backgroundColor: '#E8EFEA',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+    flexShrink: 0,
+  },
+  volCodeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#163E2B',
   },
   cardApplied: {
     fontSize: 11.5,
@@ -374,6 +479,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
+    flexShrink: 0,
   },
   statusText: {
     fontSize: 10.5,
@@ -388,7 +494,7 @@ const styles = StyleSheet.create({
   },
   metricsRow: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
     marginTop: 10,
     paddingVertical: 8,
     borderTopWidth: 1,
@@ -399,15 +505,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  metricDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: '#E5E7EB',
+  },
   metricNum: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#111827',
   },
   metricLabel: {
     fontSize: 10.5,
     color: '#6B7280',
     fontWeight: '500',
+    marginTop: 1,
   },
   activityFooterRow: {
     flexDirection: 'row',
@@ -434,10 +546,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#92400E',
   },
+  pendingActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  inspectBtn: {
+    flex: 1,
+    height: 38,
+    borderRadius: 6,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inspectBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#163E2B',
+  },
+  approveBtn: {
+    flex: 1.3,
+    height: 38,
+    borderRadius: 6,
+    backgroundColor: '#163E2B',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  approveBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   actionBtn: {
     height: 38,
     backgroundColor: '#163E2B',
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -445,5 +591,24 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 20,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#374151',
+    marginTop: 10,
+  },
+  emptySub: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
   },
 });

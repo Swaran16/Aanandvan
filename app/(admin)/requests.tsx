@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Text } from '@/components/common';
+import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest } from '@/types';
@@ -193,14 +193,14 @@ export default function AdminRequestsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="chevron-left" size={22} color="#0B3B24" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Plantation Requests</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Plantation Requests</Text>
+          <Text style={styles.headerSubtitle}>Dadar Ward Triage &amp; Approvals</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <RoleSwitcher theme="light" />
+        </View>
       </View>
 
       {/* Filter Tabs */}
@@ -284,19 +284,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 12,
     paddingBottom: 12,
     backgroundColor: '#FAFBF9',
   },
-  backBtn: {
-    padding: 4,
+  headerLeft: {
+    flex: 1,
     marginRight: 8,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#0B3B24',
+    fontWeight: '700',
+    color: '#163E2B',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   filtersWrap: {
     borderBottomWidth: 1,

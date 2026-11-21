@@ -232,7 +232,7 @@ export default function RequestDetailsScreen() {
               )}
 
               <Text style={styles.threadNotes}>
-                "{req.activityUpdate?.notes || 'Saplings planted with 20L initial watering, tree guard, and organic compost.'}"
+                &ldquo;{req.activityUpdate?.notes || 'Saplings planted with 20L initial watering, tree guard, and organic compost.'}&rdquo;
               </Text>
             </View>
 
@@ -270,7 +270,7 @@ export default function RequestDetailsScreen() {
                   </View>
                 )}
 
-                <Text style={styles.threadNotes}>"{update.notes}"</Text>
+                <Text style={styles.threadNotes}>&ldquo;{update.notes}&rdquo;</Text>
               </View>
             ))}
 

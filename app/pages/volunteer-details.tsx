@@ -183,35 +183,50 @@ export default function VolunteerDetailsScreen() {
           </View>
         )}
 
-        {/* Drive Performance Metrics */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.cardHeading}>Drive Performance & Activity</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statNum}>{vol.acceptedDrivesCount ?? 4}</Text>
-              <Text style={styles.statLabel}>Accepted</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statNum, { color: '#0369A1' }]}>
-                {vol.ongoingDrivesCount ?? (isBlocked ? 0 : 1)}
+        {/* Verification Required Banner (if pending) */}
+        {isPending && (
+          <View style={styles.pendingAlert}>
+            <Icon name="info" size={18} color="#92400E" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.pendingAlertTitle}>Volunteer Verification Required</Text>
+              <Text style={styles.pendingAlertText}>
+                This applicant registered on {vol.appliedDate}. Review their contact details, address, and motivation below. Once verified, they will receive active status and access to Dadar &amp; Mumbai plantation drives.
               </Text>
-              <Text style={styles.statLabel}>Ongoing</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statNum, { color: '#15803D' }]}>
-                {vol.completedDrivesCount ?? 3}
-              </Text>
-              <Text style={styles.statLabel}>Completed</Text>
             </View>
           </View>
-          <Text style={styles.lastActiveText}>Last active: {vol.lastActiveDate || '3 days ago'}</Text>
-        </View>
+        )}
+
+        {/* Drive Performance Metrics (for active volunteers) */}
+        {!isPending && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.cardHeading}>Drive Performance &amp; Activity</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNum}>{vol.acceptedDrivesCount ?? 0}</Text>
+                <Text style={styles.statLabel}>Accepted</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statNum, { color: '#0369A1' }]}>
+                  {vol.ongoingDrivesCount ?? 0}
+                </Text>
+                <Text style={styles.statLabel}>Ongoing</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statNum, { color: '#166534' }]}>
+                  {vol.completedDrivesCount ?? 0}
+                </Text>
+                <Text style={styles.statLabel}>Completed</Text>
+              </View>
+            </View>
+            <Text style={styles.lastActiveText}>Last active: {vol.lastActiveDate || '3 days ago'}</Text>
+          </View>
+        )}
 
         {/* Volunteer Bio / Description Submitted at Registration */}
         <View style={styles.sectionCard}>
-          <Text style={styles.cardHeading}>About & Volunteer Description</Text>
+          <Text style={styles.cardHeading}>About &amp; Volunteer Motivation</Text>
           <Text style={styles.bioText}>
-            "{vol.bio || vol.visionQuote || 'Passionate about native urban afforestation and community tree nurturing across Dadar & Mumbai.'}"
+            &ldquo;{vol.bio || vol.visionQuote || 'Passionate about native urban afforestation and community tree nurturing across Dadar & Mumbai.'}&rdquo;
           </Text>
         </View>
 
@@ -268,7 +283,8 @@ export default function VolunteerDetailsScreen() {
             onPress={handleApprove}
             activeOpacity={0.88}
           >
-            <Text style={styles.approveBtnText}>Approve & Issue Volunteer ID</Text>
+            <Icon name="check" size={16} color="#FFFFFF" />
+            <Text style={styles.approveBtnText}>Verify & Approve Volunteer</Text>
           </TouchableOpacity>
         ) : isBlocked ? (
           // Blocked: Provide Unblock action
@@ -443,6 +459,27 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontStyle: 'italic',
   },
+  pendingAlert: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 10,
+    padding: 14,
+  },
+  pendingAlertTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 2,
+  },
+  pendingAlertText: {
+    fontSize: 12,
+    color: '#78350F',
+    lineHeight: 17,
+  },
   sectionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -553,8 +590,10 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 8,
     backgroundColor: '#163E2B',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   approveBtnText: {
     fontSize: 14,

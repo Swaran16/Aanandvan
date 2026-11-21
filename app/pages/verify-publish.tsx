@@ -105,7 +105,7 @@ export default function VerifyPublishScreen() {
             <Text style={styles.infoTitle}>Verification Outcome</Text>
           </View>
           <Text style={styles.infoDesc}>
-            Publishing marks this spot as verified by Aanandvan Administration. It will immediately appear on the "Available Drives" feed for all registered volunteers across Dadar and Mumbai to accept and schedule.
+            Publishing marks this spot as verified by Aanandvan Administration. It will immediately appear on the &ldquo;Available Drives&rdquo; feed for all registered volunteers across Dadar and Mumbai to accept and schedule.
           </Text>
         </View>
 

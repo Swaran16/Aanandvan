@@ -245,7 +245,7 @@ export default function SelectUpdateRequestScreen() {
             </View>
             <Text style={styles.emptyTitle}>No Active Plantations Assigned</Text>
             <Text style={styles.emptySubtitle}>
-              You don't have any requests assigned to you yet. Accept a verified request
+              You don&apos;t have any requests assigned to you yet. Accept a verified request
               from the open pool to begin planting and logging updates.
             </Text>
             <TouchableOpacity
