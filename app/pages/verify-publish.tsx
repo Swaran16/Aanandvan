@@ -1,12 +1,19 @@
-import React, { useMemo, useState } from 'react';
+/**
+ * Admin Verify & Publish Screen — Aanandvan
+ *
+ * Clean verification confirmation:
+ * - Direct confirmation without fake radius or direct assign clutter
+ * - Marks request as verified and publishes to the volunteer pool
+ */
+
+import React, { useMemo } from 'react';
 import {
-  Alert,
-  Platform,
   ScrollView,
   StyleSheet,
-  Switch,
   TouchableOpacity,
   View,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,43 +21,27 @@ import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
-const RADIUS_OPTIONS = [
-  { id: '2km', label: '2 kms', volunteerCount: 5 },
-  { id: '5km', label: '5 kms', volunteerCount: 12 },
-  { id: '10km', label: '10 kms', volunteerCount: 24 },
-];
-
 export default function VerifyPublishScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { requests, volunteers, verifyRequest, adminApproveSchedule } = useApp();
+  const { requests, verifyRequest, adminApproveSchedule } = useApp();
 
   const req = useMemo(() => {
     if (!id) return requests[0];
     return requests.find((r) => r.id === id) ?? requests[0];
   }, [id, requests]);
 
-  const [visibilityMode, setVisibilityMode] = useState<'nearby' | 'direct'>('nearby');
-  const [selectedRadius, setSelectedRadius] = useState('5km');
-  const [selectedVolunteerId, setSelectedVolunteerId] = useState(
-    volunteers.find((v) => v.status === 'verified')?.id ?? volunteers[0]?.id ?? ''
-  );
-  const [notifyCitizen, setNotifyCitizen] = useState(true);
-
   if (!req) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Icon name="chevron-left" size={22} color="#163020" />
+            <Icon name="chevron-left" size={22} color="#0B3B24" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Verify and publish</Text>
         </View>
       </SafeAreaView>
     );
   }
-
-  const activeRadiusObj =
-    RADIUS_OPTIONS.find((r) => r.id === selectedRadius) ?? RADIUS_OPTIONS[1];
 
   const handlePublish = () => {
     if (req.status === 'scheduled') {
@@ -66,9 +57,7 @@ export default function VerifyPublishScreen() {
 
     Alert.alert(
       'Verified & Published',
-      visibilityMode === 'nearby'
-        ? `${activeRadiusObj.volunteerCount} nearby volunteers have been notified for "${req.title}".`
-        : `"${req.title}" has been verified and published.`,
+      `"${req.title}" has been verified and published to the active volunteer pool.`,
       [
         {
           text: 'Done',
@@ -86,9 +75,9 @@ export default function VerifyPublishScreen() {
           style={styles.backBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="chevron-left" size={22} color="#163020" />
+          <Icon name="chevron-left" size={22} color="#0B3B24" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Verify and publish</Text>
+        <Text style={styles.headerTitle}>Verify & Publish Request</Text>
       </View>
 
       <ScrollView
@@ -104,122 +93,27 @@ export default function VerifyPublishScreen() {
             <Text style={styles.summaryId}>#{req.id.toUpperCase()}</Text>
           </View>
           <View style={styles.locationRow}>
-            <Icon name="map-pin" size={14} color="#5F6C64" />
-            <Text style={styles.locationText}>{req.location}</Text>
+            <Icon name="map-pin" size={14} color="#0B3B24" />
+            <Text style={styles.locationText}>{req.manualAddress || req.location}</Text>
           </View>
+          <Text style={styles.citizenMeta}>Submitted by: {req.citizenName || 'Kartik Vichare'}</Text>
         </View>
 
-        <Text style={styles.sectionLabel}>Who should see this request?</Text>
-        <View style={styles.pillsRow}>
-          <TouchableOpacity
-            style={[
-              styles.togglePill,
-              visibilityMode === 'nearby' && styles.togglePillActive,
-            ]}
-            onPress={() => setVisibilityMode('nearby')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.togglePillText,
-                visibilityMode === 'nearby' && styles.togglePillTextActive,
-              ]}
-            >
-              Nearby volunteers
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.togglePill,
-              visibilityMode === 'direct' && styles.togglePillActive,
-            ]}
-            onPress={() => setVisibilityMode('direct')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.togglePillText,
-                visibilityMode === 'direct' && styles.togglePillTextActive,
-              ]}
-            >
-              Assign directly
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.infoCard}>
+          <View style={styles.infoHead}>
+            <Icon name="check-circle" size={18} color="#0B3B24" />
+            <Text style={styles.infoTitle}>Verification Outcome</Text>
+          </View>
+          <Text style={styles.infoDesc}>
+            Publishing marks this spot as verified by Aanandvan Administration. It will immediately appear on the "Available Drives" feed for all registered volunteers across Dadar and Mumbai to accept and schedule.
+          </Text>
         </View>
 
-        {visibilityMode === 'nearby' ? (
-          <>
-            <Text style={styles.sectionLabel}>Notify volunteers within</Text>
-            <View style={styles.radiusRow}>
-              {RADIUS_OPTIONS.map((opt) => {
-                const active = selectedRadius === opt.id;
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    style={[styles.radiusPill, active && styles.radiusPillActive]}
-                    onPress={() => setSelectedRadius(opt.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[styles.radiusText, active && styles.radiusTextActive]}
-                    >
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={styles.infoCard}>
-              <View style={styles.checkIconWrap}>
-                <Icon name="check" size={13} color="#0D4E2B" />
-              </View>
-              <Text style={styles.infoText}>
-                <Text style={styles.infoBold}>
-                  {activeRadiusObj.volunteerCount} volunteers
-                </Text>{' '}
-                will be notified. The first to accept gets the request.
-              </Text>
-            </View>
-          </>
-        ) : (
-          <>
-            <Text style={styles.sectionLabel}>Select volunteer</Text>
-            <View style={styles.volunteersList}>
-              {volunteers.slice(0, 3).map((v) => {
-                const selected = selectedVolunteerId === v.id;
-                return (
-                  <TouchableOpacity
-                    key={v.id}
-                    style={[styles.volOption, selected && styles.volOptionActive]}
-                    onPress={() => setSelectedVolunteerId(v.id)}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={[
-                        styles.volOptionName,
-                        selected && styles.volOptionNameActive,
-                      ]}
-                    >
-                      {v.name} • {v.city}
-                    </Text>
-                    {selected && <Icon name="check" size={14} color="#FFFFFF" />}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-        )}
-
-        <View style={styles.switchCard}>
-          <Text style={styles.switchLabel}>Tell the citizen it is verified.</Text>
-          <Switch
-            value={notifyCitizen}
-            onValueChange={setNotifyCitizen}
-            trackColor={{ false: '#D1D5DB', true: '#0D4E2B' }}
-            thumbColor="#FFFFFF"
-          />
+        <View style={styles.guidelinesCard}>
+          <Text style={styles.guidelinesTitle}>Verification Checklist Verified:</Text>
+          <Text style={styles.checklistText}>✓ Public space or municipal permission confirmed</Text>
+          <Text style={styles.checklistText}>✓ Area photographs verified for plantation feasibility</Text>
+          <Text style={styles.checklistText}>✓ Soil & street accessibility checked</Text>
         </View>
       </ScrollView>
 
@@ -227,17 +121,9 @@ export default function VerifyPublishScreen() {
         <TouchableOpacity
           style={styles.publishBtn}
           onPress={handlePublish}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
         >
-          <Text style={styles.publishBtnText}>Verify & publish</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cancelBtn}
-          onPress={() => router.back()}
-          activeOpacity={0.75}
-        >
-          <Text style={styles.cancelBtnText}>Cancel</Text>
+          <Text style={styles.publishBtnText}>Confirm Verification & Publish</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -255,6 +141,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,
+    backgroundColor: '#FAFBF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   backBtn: {
     padding: 4,
@@ -262,211 +151,122 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0D4325',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 6,
-    paddingBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#EAEEE7',
-    padding: 14,
-    marginBottom: 22,
+    borderColor: '#E5E7EB',
+    marginBottom: 16,
   },
   summaryTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
     marginBottom: 6,
   },
   summaryTitle: {
-    flex: 1,
-    fontSize: 15.5,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#0B3E22',
+    color: '#111827',
+    flex: 1,
   },
   summaryId: {
-    fontSize: 11.5,
-    color: '#7A867E',
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginLeft: 8,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
+    marginBottom: 8,
   },
   locationText: {
     fontSize: 13,
-    color: '#5F6C64',
-    flex: 1,
+    color: '#4B5563',
   },
-  sectionLabel: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#0B3E22',
-    marginBottom: 10,
-  },
-  pillsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 22,
-  },
-  togglePill: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D6DDD4',
-  },
-  togglePillActive: {
-    backgroundColor: '#0D4E2B',
-    borderColor: '#0D4E2B',
-  },
-  togglePillText: {
-    fontSize: 13.5,
-    fontWeight: '500',
-    color: '#4F5C54',
-  },
-  togglePillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  radiusRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 18,
-  },
-  radiusPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#0D4E2B',
-    backgroundColor: '#FFFFFF',
-  },
-  radiusPillActive: {
-    backgroundColor: '#0D4E2B',
-  },
-  radiusText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#0D4E2B',
-  },
-  radiusTextActive: {
-    color: '#FFFFFF',
+  citizenMeta: {
+    fontSize: 12,
+    color: '#6B7280',
   },
   infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: '#F0FDF4',
     borderWidth: 1,
-    borderColor: '#EAEEE7',
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
+    borderColor: '#BBF7D0',
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 16,
   },
-  checkIconWrap: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#CCF2DB',
+  infoHead: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#4F5C54',
-  },
-  infoBold: {
-    fontWeight: '700',
-    color: '#163020',
-  },
-  volunteersList: {
     gap: 8,
-    marginBottom: 18,
+    marginBottom: 6,
   },
-  volOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
+  infoDesc: {
+    fontSize: 13,
+    color: '#166534',
+    lineHeight: 18,
+  },
+  guidelinesCard: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D6DDD4',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    padding: 16,
   },
-  volOptionActive: {
-    backgroundColor: '#0D4E2B',
-    borderColor: '#0D4E2B',
+  guidelinesTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0B3B24',
+    marginBottom: 10,
   },
-  volOptionName: {
-    fontSize: 13.5,
-    fontWeight: '500',
-    color: '#163020',
-  },
-  volOptionNameActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  switchCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EAEEE7',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  switchLabel: {
-    fontSize: 13.5,
-    color: '#4F5C54',
-    flex: 1,
-    paddingRight: 10,
+  checklistText: {
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 22,
   },
   footer: {
     paddingHorizontal: 18,
     paddingTop: 10,
-    paddingBottom: 18,
-    gap: 10,
+    paddingBottom: 16,
+    backgroundColor: '#FAFBF9',
+    borderTopWidth: 1,
+    borderTopColor: '#EDF0EA',
   },
   publishBtn: {
     height: 48,
-    borderRadius: 999,
-    backgroundColor: '#0D4E2B',
+    borderRadius: 12,
+    backgroundColor: '#0B3B24',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#0B3B24',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   publishBtnText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
-  cancelBtn: {
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0D4E2B',
-  },
 });
-

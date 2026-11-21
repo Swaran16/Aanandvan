@@ -65,22 +65,7 @@ function VolunteerTabBar(props: any) {
   return (
     <SafeAreaView edges={['bottom']} style={styles.tabBarSafe}>
       <View style={styles.tabBarRow}>
-        {renderTab(VISIBLE_TABS[0])}
-        {renderTab(VISIBLE_TABS[1])}
-
-        {/* Center Floating + Action Button */}
-        <View style={styles.centerSlot}>
-          <TouchableOpacity
-            style={styles.centerFab}
-            activeOpacity={0.85}
-            onPress={() => router.push('/pages/select-update-request' as any)}
-          >
-            <Icon name="plus" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        {renderTab(VISIBLE_TABS[2])}
-        {renderTab(VISIBLE_TABS[3])}
+        {VISIBLE_TABS.map((tab) => renderTab(tab))}
       </View>
     </SafeAreaView>
   );

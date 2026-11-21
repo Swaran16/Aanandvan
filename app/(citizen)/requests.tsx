@@ -26,6 +26,7 @@ const FILTERS: Array<{ key: FilterTab; label: string }> = [
 
 const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: string }> = {
   pending: { label: 'Pending', bg: '#FEF3C7', fg: '#92580A' },
+  needs_info: { label: 'Clarification Needed', bg: '#FEE2E2', fg: '#B91C1C' },
   verified: { label: 'Verified', bg: '#CCF2DB', fg: '#0D4E2B' },
   assigned: { label: 'In-progress', bg: '#E0E7FF', fg: '#3730A3' },
   scheduled: { label: 'In-progress', bg: '#E0E7FF', fg: '#3730A3' },

@@ -53,7 +53,7 @@ export default function CitizenLayout() {
       <Tabs.Screen
         name="requests"
         options={{
-          title: 'Requests',
+          title: 'My Requests',
           tabBarIcon: ({ color, focused }) => {
             const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
             return (

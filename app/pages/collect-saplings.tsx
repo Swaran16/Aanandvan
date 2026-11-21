@@ -15,14 +15,14 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 const PICKUP_SLOTS = [
-  { id: 'morning', label: 'Morning', time: '8:00 AM - 11:00 AM' },
-  { id: 'afternoon', label: 'Afternoon', time: '3:00 PM - 6:00 PM' },
+  { id: 'morning', label: 'Morning Slot', time: '8:00 AM - 11:00 AM' },
+  { id: 'afternoon', label: 'Afternoon Slot', time: '3:00 PM - 6:00 PM' },
 ];
 
-const PARTNER_NURSERIES = [
-  { id: 'hariyali', name: 'Hariyali plant nursery', meta: '1.1 kms | Dadar West' },
-  { id: 'green-earth', name: 'Green earth nursery', meta: '2.3 kms | Matunga East' },
-  { id: 'prakriti', name: 'Prakriti tree nursery', meta: '3.4 kms | Sion Circle' },
+const DISTRIBUTION_HUBS = [
+  { id: 'dadar-hub', name: 'Aanandvan Shivaji Park Hub', meta: '0.8 kms • Ranade Road, Dadar West' },
+  { id: 'matunga-hub', name: 'Aanandvan Five Gardens Hub', meta: '2.1 kms • Mancherji Joshi Rd, Matunga' },
+  { id: 'worli-hub', name: 'Aanandvan Prabhadevi Center', meta: '2.6 kms • Near Siddhivinayak, Prabhadevi' },
 ];
 
 export default function CollectSaplingsScreen() {
@@ -35,14 +35,14 @@ export default function CollectSaplingsScreen() {
   }, [id, requests]);
 
   const [selectedSlotId, setSelectedSlotId] = useState('morning');
-  const [selectedNurseryId, setSelectedNurseryId] = useState('hariyali');
+  const [selectedHubId, setSelectedHubId] = useState('dadar-hub');
   const [saplingCount, setSaplingCount] = useState(5);
 
-  const selectedNursery =
-    PARTNER_NURSERIES.find((n) => n.id === selectedNurseryId) ?? PARTNER_NURSERIES[0];
+  const selectedHub =
+    DISTRIBUTION_HUBS.find((n) => n.id === selectedHubId) ?? DISTRIBUTION_HUBS[0];
 
   const handleGetDirections = () => {
-    const query = encodeURIComponent(`${selectedNursery.name} ${selectedNursery.meta.split('|')[1] ?? ''}`);
+    const query = encodeURIComponent(`${selectedHub.name}, Dadar, Mumbai`);
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
@@ -55,8 +55,8 @@ export default function CollectSaplingsScreen() {
       return;
     }
     Alert.alert(
-      'Saplings Collected',
-      `${saplingCount} saplings confirmed from ${selectedNursery.name}. This plantation request is now assigned to you.`,
+      'Saplings & Tools Collected',
+      `${saplingCount} saplings, tree guards, and digging tools confirmed from ${selectedHub.name}. This drive is now in progress in your assigned work.`,
       [
         {
           text: 'Done',
@@ -68,8 +68,8 @@ export default function CollectSaplingsScreen() {
 
   const formattedId = req
     ? `#${req.id.toUpperCase()}`
-    : '#REQ-2024-0042';
-  const reqTitle = req?.title ?? 'Oak valley reforestation';
+    : '#REQ-DAD-01';
+  const reqTitle = req?.title ?? 'Shivaji Park Corner Drive';
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
@@ -79,9 +79,9 @@ export default function CollectSaplingsScreen() {
           style={styles.backBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="chevron-left" size={22} color="#163020" />
+          <Icon name="chevron-left" size={22} color="#0B3B24" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Collect saplings</Text>
+        <Text style={styles.headerTitle}>Collect Saplings & Tools</Text>
       </View>
 
       <ScrollView
@@ -93,49 +93,27 @@ export default function CollectSaplingsScreen() {
           <Text style={styles.summaryTitle}>{reqTitle}</Text>
           <View style={styles.summaryBottomRow}>
             <Text style={styles.summaryId}>{formattedId}</Text>
-            <Text style={styles.summaryNeed}>{saplingCount} saplings needed</Text>
+            <Text style={styles.summaryNeed}>{saplingCount} saplings allocated</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Choose a partner nursery</Text>
-        <View style={styles.slotsRow}>
-          {PICKUP_SLOTS.map((slot) => {
-            const active = selectedSlotId === slot.id;
+        <Text style={styles.sectionLabel}>Select Aanandvan Distribution Hub</Text>
+        <View style={styles.hubList}>
+          {DISTRIBUTION_HUBS.map((hub) => {
+            const selected = selectedHubId === hub.id;
             return (
               <TouchableOpacity
-                key={slot.id}
-                style={[styles.slotCard, active && styles.slotCardActive]}
-                onPress={() => setSelectedSlotId(slot.id)}
+                key={hub.id}
+                style={[styles.hubCard, selected && styles.hubCardSelected]}
+                onPress={() => setSelectedHubId(hub.id)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.slotTitle, active && styles.slotTitleActive]}>
-                  {slot.label}
-                </Text>
-                <Text style={[styles.slotTime, active && styles.slotTimeActive]}>
-                  {slot.time}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <Text style={styles.sectionLabel}>Checklist of materials</Text>
-        <View style={styles.nurseryList}>
-          {PARTNER_NURSERIES.map((nursery) => {
-            const selected = selectedNurseryId === nursery.id;
-            return (
-              <TouchableOpacity
-                key={nursery.id}
-                style={[styles.nurseryCard, selected && styles.nurseryCardSelected]}
-                onPress={() => setSelectedNurseryId(nursery.id)}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+                <View style={styles.radioOuter}>
                   {selected && <View style={styles.radioInner} />}
                 </View>
-                <View style={styles.nurseryInfo}>
-                  <Text style={styles.nurseryName}>{nursery.name}</Text>
-                  <Text style={styles.nurseryMeta}>{nursery.meta}</Text>
+                <View style={styles.hubInfo}>
+                  <Text style={styles.hubName}>{hub.name}</Text>
+                  <Text style={styles.hubMeta}>{hub.meta}</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -147,35 +125,38 @@ export default function CollectSaplingsScreen() {
           onPress={handleGetDirections}
           activeOpacity={0.8}
         >
-          <Icon name="navigation" size={16} color="#0D4E2B" />
-          <Text style={styles.directionsBtnText}>Get directions</Text>
+          <Icon name="navigation" size={16} color="#0B3B24" />
+          <Text style={styles.directionsBtnText}>Get Directions to Hub</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.sectionLabel, { marginTop: 22 }]}>
-          No. of saplings required
-        </Text>
-        <View style={styles.stepperRow}>
-          <TouchableOpacity
-            style={styles.stepperBtn}
-            onPress={() => setSaplingCount((c) => Math.max(1, c - 1))}
-            activeOpacity={0.75}
-          >
-            <Icon name="minus" size={18} color="#163020" />
-          </TouchableOpacity>
+        <Text style={styles.sectionLabel}>Pickup Timing Slot</Text>
+        <View style={styles.slotsRow}>
+          {PICKUP_SLOTS.map((slot) => {
+            const active = selectedSlotId === slot.id;
+            return (
+              <TouchableOpacity
+                key={slot.id}
+                style={[styles.slotCard, active && styles.slotCardActive]}
+                onPress={() => setSelectedSlotId(slot.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.slotTitle, active && styles.slotTextActive]}>
+                  {slot.label}
+                </Text>
+                <Text style={[styles.slotTime, active && styles.slotSubActive]}>
+                  {slot.time}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-          <View style={styles.stepperValueBox}>
-            <Text style={styles.stepperValue}>
-              {String(saplingCount).padStart(2, '0')}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.stepperBtn}
-            onPress={() => setSaplingCount((c) => Math.min(99, c + 1))}
-            activeOpacity={0.75}
-          >
-            <Icon name="plus" size={18} color="#163020" />
-          </TouchableOpacity>
+        <View style={styles.includedCard}>
+          <Text style={styles.includedTitle}>Bundle Provided at Hub:</Text>
+          <Text style={styles.includedItem}>✓ Native saplings (Neem / Karanj / Peepal)</Text>
+          <Text style={styles.includedItem}>✓ Bamboo protective guards & zip-ties</Text>
+          <Text style={styles.includedItem}>✓ Digging spade & soil aeration trowel</Text>
+          <Text style={styles.includedItem}>✓ 5kg organic vermicompost packet</Text>
         </View>
       </ScrollView>
 
@@ -185,7 +166,7 @@ export default function CollectSaplingsScreen() {
           onPress={handleMarkCollected}
           activeOpacity={0.85}
         >
-          <Text style={styles.collectBtnText}>Mark as collected</Text>
+          <Text style={styles.collectBtnText}>Confirm Pickup & Start Drive</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -195,7 +176,7 @@ export default function CollectSaplingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F9F6',
+    backgroundColor: '#FAFBF9',
   },
   header: {
     flexDirection: 'row',
@@ -203,6 +184,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,
+    backgroundColor: '#FAFBF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   backBtn: {
     padding: 4,
@@ -210,30 +194,30 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0D4325',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 4,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   summaryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5EAE2',
     padding: 16,
-    marginBottom: 22,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 20,
   },
   summaryTitle: {
-    fontSize: 16.5,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#0B3E22',
-    marginBottom: 8,
+    color: '#111827',
+    marginBottom: 6,
   },
   summaryBottomRow: {
     flexDirection: 'row',
@@ -242,172 +226,151 @@ const styles = StyleSheet.create({
   },
   summaryId: {
     fontSize: 12,
-    color: '#7A867E',
-    fontWeight: '500',
+    fontWeight: '700',
+    color: '#6B7280',
   },
   summaryNeed: {
     fontSize: 12.5,
-    color: '#0D4E2B',
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   sectionLabel: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#0D4E2B',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0B3B24',
     marginBottom: 10,
   },
-  slotsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 22,
-  },
-  slotCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D6DDD4',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slotCardActive: {
-    backgroundColor: '#0D4E2B',
-    borderColor: '#0D4E2B',
-  },
-  slotTitle: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#163020',
-    marginBottom: 4,
-  },
-  slotTime: {
-    fontSize: 11.5,
-    color: '#5F6C64',
-    textAlign: 'center',
-  },
-  slotTitleActive: {
-    color: '#FFFFFF',
-  },
-  slotTimeActive: {
-    color: '#D5EBD9',
-  },
-  nurseryList: {
+  hubList: {
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  nurseryCard: {
+  hubCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D6DDD4',
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
   },
-  nurseryCardSelected: {
-    borderColor: '#0D4E2B',
+  hubCardSelected: {
+    borderColor: '#0B3B24',
+    backgroundColor: '#F0FDF4',
   },
   radioOuter: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    borderWidth: 1.8,
-    borderColor: '#8B968F',
+    borderWidth: 2,
+    borderColor: '#0B3B24',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: '#0D4E2B',
+    marginRight: 12,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#0D4E2B',
+    backgroundColor: '#0B3B24',
   },
-  nurseryInfo: {
+  hubInfo: {
     flex: 1,
   },
-  nurseryName: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#163020',
-    marginBottom: 2,
+  hubName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
   },
-  nurseryMeta: {
-    fontSize: 12.5,
-    color: '#6E7B73',
+  hubMeta: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
   },
   directionsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    borderRadius: 999,
-    borderWidth: 1.2,
-    borderColor: '#0D4E2B',
-    backgroundColor: '#FFFFFF',
-    gap: 8,
+    gap: 6,
+    backgroundColor: '#E8F5E9',
+    height: 40,
+    borderRadius: 10,
+    marginBottom: 20,
   },
   directionsBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0D4E2B',
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  stepperBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D6DDD4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperValueBox: {
-    minWidth: 68,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D6DDD4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  stepperValue: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#0B3E22',
+    color: '#0B3B24',
+  },
+  slotsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  slotCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  slotCardActive: {
+    backgroundColor: '#0B3B24',
+    borderColor: '#0B3B24',
+  },
+  slotTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  slotTime: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  slotTextActive: {
+    color: '#FFFFFF',
+  },
+  slotSubActive: {
+    color: '#D1E7DD',
+  },
+  includedCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  includedTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0B3B24',
+    marginBottom: 8,
+  },
+  includedItem: {
+    fontSize: 12.5,
+    color: '#374151',
+    lineHeight: 20,
   },
   footer: {
     paddingHorizontal: 18,
     paddingTop: 10,
     paddingBottom: 16,
-    backgroundColor: '#F8F9F6',
+    backgroundColor: '#FAFBF9',
     borderTopWidth: 1,
-    borderTopColor: '#E5EAE2',
+    borderTopColor: '#EDF0EA',
   },
   collectBtn: {
     height: 48,
-    borderRadius: 999,
-    backgroundColor: '#0D4E2B',
+    borderRadius: 12,
+    backgroundColor: '#0B3B24',
     alignItems: 'center',
     justifyContent: 'center',
   },
   collectBtnText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
 });
-

@@ -64,7 +64,7 @@ export default function VolunteerAlertsScreen() {
 
   const openUploadUpdate = (item: MaintenanceItem) => {
     router.push({
-      pathname: '/pages/upload-activity',
+      pathname: '/pages/log-nurturing',
       params: { id: resolveRequestId(item) },
     } as any);
   };
@@ -201,7 +201,7 @@ export default function VolunteerAlertsScreen() {
               onPress={() => openUploadUpdate(item)}
               activeOpacity={0.85}
             >
-              <Text style={styles.uploadBtnText}>Upload update</Text>
+              <Text style={styles.uploadBtnText}>Log Nurturing</Text>
             </TouchableOpacity>
           </View>
         ) : (

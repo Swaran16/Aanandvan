@@ -1,15 +1,13 @@
 /**
- * Volunteer Upload Plantation Activity Screen
- * Matches Batch 2 — Image 4:
- * - Active selected request banner with ID, title, and "Change Request" button
- * - Before Plantation Photos (Orange section banner + camera slots)
- * - After Plantation Photos (Green section banner + camera slots)
- * - Number of Saplings Planted stepper counter [- 1 +]
- * - Date of Plantation calendar field
+ * Volunteer Upload Plantation Activity Screen — Aanandvan
+ *
+ * Streamlined initial plantation reporting:
+ * - Active selected request banner with ID and title
+ * - Single "Plantation Site Photos" section (no confusing before/after split)
+ * - Auto-filled plantation date (Today)
+ * - Number of Saplings Planted counter
  * - Plantation Notes textarea
  * - Synchronized Citizen & Admin notification dispatch
- * - Automatic Tree Maintenance generation
- * - "Post Plantation Update" primary CTA button
  */
 
 import React, { useState } from 'react';
@@ -39,40 +37,31 @@ export default function UploadActivityScreen() {
   );
   const req = (id ? requests.find(r => r.id === id) : null) || assignedList[0] || requests[0];
 
+  const todayStr = new Date().toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
   const [saplingsCount, setSaplingsCount] = useState(5);
-  const [date, setDate] = useState('Today (13 Nov 2026)');
+  const [date, setDate] = useState(`Today (${todayStr})`);
   const [notes, setNotes] = useState('');
-  const [beforePhotos, setBeforePhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&auto=format&fit=crop&q=80',
-  ]);
-  const [afterPhotos, setAfterPhotos] = useState<string[]>([
-    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
+  const [photos, setPhotos] = useState<string[]>([
+    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
   ]);
 
-  const handleRemoveBeforePhoto = (index: number) => {
-    setBeforePhotos(prev => prev.filter((_, i) => i !== index));
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddBeforePhoto = () => {
+  const handleAddPhoto = () => {
     const samplePhotos = [
-      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1511497584788-876760111969?w=400&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1511497584788-876760111969?w=600&auto=format&fit=crop&q=80',
     ];
-    setBeforePhotos(prev => [...prev, samplePhotos[prev.length % samplePhotos.length]]);
-  };
-
-  const handleRemoveAfterPhoto = (index: number) => {
-    setAfterPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleAddAfterPhoto = () => {
-    const samplePhotos = [
-      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=400&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=400&auto=format&fit=crop&q=80',
-    ];
-    setAfterPhotos(prev => [...prev, samplePhotos[prev.length % samplePhotos.length]]);
+    setPhotos(prev => [...prev, samplePhotos[prev.length % samplePhotos.length]]);
   };
 
   const handlePost = () => {
@@ -81,24 +70,25 @@ export default function UploadActivityScreen() {
       return;
     }
 
-    if (beforePhotos.length === 0 || afterPhotos.length === 0) {
+    if (photos.length === 0) {
       Alert.alert(
         'Photos Required',
-        'Please add at least one before photo and one after photo to document the plantation.'
+        'Please upload at least one photo documenting the planted saplings and protective guards.'
       );
       return;
     }
 
     volunteerUploadActivity(req.id, {
-      beforePhotos,
-      afterPhotos,
+      photos,
+      beforePhotos: photos,
+      afterPhotos: photos,
       saplingsPlanted: saplingsCount,
       date,
-      notes: notes.trim() || 'Saplings successfully planted with protective guard and initial watering.',
+      notes: notes.trim() || 'Saplings successfully planted with protective guard, vermicompost, and initial watering.',
     });
 
     router.replace({
-      pathname: '/pages/update-submitted',
+      pathname: '/pages/request-details',
       params: { id: req.id },
     } as any);
   };
@@ -113,12 +103,7 @@ export default function UploadActivityScreen() {
           <Icon name="chevron-left" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.topTitle}>Upload Plantation Activity</Text>
-        <TouchableOpacity
-          style={styles.menuBtn}
-          onPress={() => router.push('/pages/select-update-request' as any)}
-        >
-          <Icon name="search" size={20} color="#111827" />
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView
@@ -151,73 +136,35 @@ export default function UploadActivityScreen() {
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.changeReqBtn}
-            onPress={() => router.push('/pages/select-update-request' as any)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.changeReqBtnText}>Change</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* ─── Before Plantation Photos ─── */}
-        <View style={styles.bannerOrange}>
-          <Icon name="clock" size={16} color="#FFFFFF" />
-          <Text style={styles.bannerOrangeText}>Before Plantation Photos</Text>
-        </View>
-
-        <View style={styles.photoSlotsContainer}>
-          {beforePhotos.map((uri, idx) => (
-            <View key={idx} style={styles.photoWrap}>
-              <Image source={{ uri }} style={styles.photoPreview} />
-              <TouchableOpacity
-                style={styles.removePhotoBtn}
-                onPress={() => handleRemoveBeforePhoto(idx)}
-              >
-                <Icon name="close" size={12} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          ))}
-          {Array.from({ length: Math.max(0, 3 - beforePhotos.length) }).map((_, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={styles.dashedSlot}
-              onPress={handleAddBeforePhoto}
-            >
-              <Icon name="camera" size={22} color="#9CA3AF" />
-              <Text style={styles.dashedSlotLabel}>Add Photo</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ─── After Plantation Photos ─── */}
+        {/* ─── Plantation Site Photos (Clean Single Section) ─── */}
         <View style={styles.bannerGreen}>
           <Icon name="plant" size={16} color="#FFFFFF" />
-          <Text style={styles.bannerGreenText}>After Plantation Photos</Text>
+          <Text style={styles.bannerGreenText}>Plantation Site Photos</Text>
         </View>
 
         <View style={styles.photoSlotsContainer}>
-          {afterPhotos.map((uri, idx) => (
+          {photos.map((uri, idx) => (
             <View key={idx} style={styles.photoWrap}>
               <Image source={{ uri }} style={styles.photoPreview} />
               <TouchableOpacity
                 style={styles.removePhotoBtn}
-                onPress={() => handleRemoveAfterPhoto(idx)}
+                onPress={() => handleRemovePhoto(idx)}
               >
                 <Icon name="close" size={12} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
           ))}
-          {Array.from({ length: Math.max(0, 3 - afterPhotos.length) }).map((_, idx) => (
+          {photos.length < 4 && (
             <TouchableOpacity
-              key={idx}
               style={styles.dashedSlot}
-              onPress={handleAddAfterPhoto}
+              onPress={handleAddPhoto}
             >
-              <Icon name="camera" size={22} color="#9CA3AF" />
+              <Icon name="camera" size={22} color="#0B3B24" />
               <Text style={styles.dashedSlotLabel}>Add Photo</Text>
             </TouchableOpacity>
-          ))}
+          )}
         </View>
 
         {/* ─── Form Fields Card ─── */}
@@ -240,48 +187,47 @@ export default function UploadActivityScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Date of Plantation */}
+          {/* Date of Plantation (Auto-filled) */}
           <Text style={[styles.inputLabel, { marginTop: 18 }]}>Date of Plantation</Text>
           <View style={styles.dateInputBox}>
             <TextInput
               style={styles.dateInput}
               value={date}
               onChangeText={setDate}
-              placeholder="e.g. 13 Nov 2026"
+              placeholder="e.g. 21 Nov 2026"
             />
-            <Icon name="calendar" size={18} color="#6B7280" />
+            <Icon name="calendar" size={18} color="#0B3B24" />
           </View>
 
           {/* Plantation Notes */}
-          <Text style={[styles.inputLabel, { marginTop: 18 }]}>Plantation Notes</Text>
+          <Text style={[styles.inputLabel, { marginTop: 18 }]}>Plantation & Soil Notes</Text>
           <TextInput
             style={styles.notesTextarea}
-            placeholder="Add notes about soil condition, species planted, tree guard installed..."
-            placeholderTextColor="#9CA3AF"
-            multiline
-            numberOfLines={3}
             value={notes}
             onChangeText={setNotes}
+            placeholder="Record tree species planted, soil condition, tree guard setup, and initial watering notes for the citizen & admin..."
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
           />
         </View>
 
-        {/* ─── Guidance Banner ─── */}
-        <View style={styles.infoBanner}>
-          <Icon name="info" size={18} color="#0D4E2B" />
-          <Text style={styles.infoBannerText}>
-            Submitting this update will notify the Citizen and Admin immediately. A tree
-            watering & maintenance schedule will be created automatically.
+        {/* ─── Notification Dispatch Notice ─── */}
+        <View style={styles.noticeBox}>
+          <Icon name="check-circle" size={16} color="#0B3B24" />
+          <Text style={styles.noticeText}>
+            Submitting marks this drive as planted. Both Kartik Vichare (Citizen) and Aanandvan Admin will see this update in the request thread.
           </Text>
         </View>
 
-        {/* ─── Primary Post CTA Button ─── */}
+        {/* ─── Primary Submit CTA ─── */}
         <TouchableOpacity
-          style={styles.primaryPostBtn}
+          style={styles.postBtn}
           activeOpacity={0.88}
           onPress={handlePost}
         >
-          <Icon name="upload" size={20} color="#FFFFFF" />
-          <Text style={styles.primaryPostBtnText}>Post Plantation Update</Text>
+          <Text style={styles.postBtnText}>Post Plantation Update & Notify</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -291,7 +237,7 @@ export default function UploadActivityScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFBF9',
   },
   topBar: {
     flexDirection: 'row',
@@ -299,144 +245,108 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: '#FAFBF9',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#E5E7EB',
   },
   backBtn: {
-    padding: 6,
+    padding: 4,
   },
   topTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#0B3B24',
-    letterSpacing: -0.4,
-  },
-  menuBtn: {
-    padding: 6,
   },
   scroll: {
     flex: 1,
-    backgroundColor: '#F8FAF9',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingTop: 16,
-    paddingBottom: 40,
+    paddingBottom: 48,
   },
   activeReqCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: '#E5E7EB',
     marginBottom: 16,
   },
   activeReqLeft: {
     flex: 1,
-    paddingRight: 10,
   },
   activeReqHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   activeReqId: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#0D4E2B',
+    color: '#6B7280',
   },
   statusPillSmall: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
   statusPillSmallText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#0D4E2B',
+    color: '#166534',
   },
   activeReqTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#111827',
+    marginBottom: 4,
   },
   activeReqLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 2,
   },
   activeReqLocation: {
     fontSize: 12,
     color: '#4B5563',
   },
-  changeReqBtn: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#A7D7B5',
-  },
-  changeReqBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0D4E2B',
-  },
-  bannerOrange: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EA580C',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 8,
-    marginBottom: 10,
-  },
-  bannerOrangeText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
   bannerGreen: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E3A2F',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
     gap: 8,
-    marginTop: 14,
-    marginBottom: 10,
+    backgroundColor: '#0B3B24',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 10,
+    marginBottom: 12,
   },
   bannerGreenText: {
-    color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
   photoSlotsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#EEF2F0',
-    gap: 10,
+    gap: 12,
+    marginBottom: 18,
   },
   photoWrap: {
-    flex: 1,
-    height: 85,
+    width: 88,
+    height: 88,
+    borderRadius: 12,
+    overflow: 'hidden',
     position: 'relative',
   },
   photoPreview: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
   },
   removePhotoBtn: {
     position: 'absolute',
@@ -445,39 +355,39 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dashedSlot: {
-    flex: 1,
-    height: 85,
+    width: 88,
+    height: 88,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#D1D5DB',
+    borderColor: '#A7F3D0',
     borderStyle: 'dashed',
+    backgroundColor: '#F0FDF4',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-    gap: 4,
   },
   dashedSlotLabel: {
     fontSize: 10,
-    color: '#9CA3AF',
-    fontWeight: '600',
+    color: '#0B3B24',
+    fontWeight: '700',
+    marginTop: 4,
   },
   formCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    marginTop: 18,
+    borderRadius: 14,
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#E5E7EB',
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#374151',
+    color: '#0B3B24',
     marginBottom: 8,
   },
   stepperPill: {
@@ -485,45 +395,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#F3F4F6',
-    borderRadius: 25,
+    borderRadius: 10,
     padding: 4,
-    width: 170,
+    width: 140,
   },
   stepBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepBtnMinus: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#374151',
-  },
-  stepValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
   },
   stepBtnPlus: {
     backgroundColor: '#0B3B24',
   },
   stepBtnPlusText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  stepValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
   },
   dateInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 48,
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 46,
   },
   dateInput: {
     flex: 1,
@@ -533,48 +444,46 @@ const styles = StyleSheet.create({
   },
   notesTextarea: {
     backgroundColor: '#F9FAFB',
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    borderRadius: 10,
     padding: 12,
-    height: 90,
-    textAlignVertical: 'top',
     fontSize: 13,
     color: '#111827',
+    minHeight: 88,
   },
-  infoBanner: {
+  noticeBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#D1FAE5',
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
-    marginTop: 16,
+    gap: 8,
+    backgroundColor: '#F0FDF4',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 20,
   },
-  infoBannerText: {
+  noticeText: {
     flex: 1,
     fontSize: 12,
-    color: '#065F46',
-    lineHeight: 18,
+    color: '#166534',
+    lineHeight: 17,
   },
-  primaryPostBtn: {
-    flexDirection: 'row',
+  postBtn: {
+    height: 50,
+    backgroundColor: '#0B3B24',
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0B3B24',
-    borderRadius: 16,
-    height: 54,
-    gap: 8,
-    marginTop: 20,
     shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 3,
   },
-  primaryPostBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  postBtnText: {
+    fontSize: 15,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

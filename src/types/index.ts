@@ -56,10 +56,13 @@ export interface AppUser {
   requestsCount?: number;
   verifiedRequestsCount?: number;
   treesCount?: number;
+  isBlocked?: boolean;
+  blockReason?: string;
 }
 
 export type PlantationStatus =
   | 'pending'
+  | 'needs_info'
   | 'verified'
   | 'assigned'
   | 'scheduled'
@@ -70,18 +73,31 @@ export type PlantationStatus =
 export interface ScheduleDetails {
   date: string;
   timeSlot: string; // e.g. "Morning (8:00 AM - 11:00 AM)"
-  checklist: string[];
+  checklist?: string[];
   notes?: string;
   confirmedAt?: string;
   isApprovedByAdmin: boolean;
 }
 
 export interface ActivityReport {
-  beforePhotos: string[];
-  afterPhotos: string[];
+  beforePhotos?: string[];
+  afterPhotos?: string[];
+  photos?: string[];
   saplingsPlanted: number;
+  species?: string;
   date: string;
   notes: string;
+  volunteerName?: string;
+}
+
+export interface NurturingUpdate {
+  id: string;
+  date: string;
+  photos: string[];
+  notes: string;
+  volunteerName: string;
+  volunteerId: string;
+  actionsTaken?: string[];
 }
 
 export interface PlantationRequest {
@@ -91,7 +107,7 @@ export interface PlantationRequest {
   location: string;
   manualAddress: string;
   landmark: string;
-  coordinates: string; // "34.0522° N, 118.2437° W"
+  coordinates: string; // "19.0178° N, 72.8478° E"
   areaPhotos: string[];
   landmarkPhotos: string[];
   status: PlantationStatus;
@@ -102,6 +118,7 @@ export interface PlantationRequest {
   // Citizen Details
   citizenId: string;
   citizenName: string;
+  userId?: string;
   citizenEmail?: string;
   citizenPhone?: string;
   citizenAvatar?: string;
@@ -109,20 +126,26 @@ export interface PlantationRequest {
   // Volunteer Details
   assignedVolunteerId?: string;
   assignedVolunteerName?: string;
+  volunteerName?: string;
   assignedVolunteerAvatar?: string;
   assignedVolunteerPhone?: string;
   assignedVolunteerLevel?: string;
   assignedVolunteerPlantations?: number;
   
-  // Scheduling & Completion
+  // Scheduling, Plantation & Nurturing Thread
   schedule?: ScheduleDetails;
   activityReport?: ActivityReport;
+  activityUpdate?: ActivityReport;
+  nurturingUpdates?: NurturingUpdate[];
+  adminClarificationNotes?: string;
+  isTakenOverByAdmin?: boolean;
 }
 
 export type VolunteerStatus = 'pending' | 'verified' | 'rejected' | 'suspended';
 
 export interface VolunteerApplication {
   id: string;
+  volunteerCode: string; // e.g. "VOL-DAD-0104"
   name: string;
   email: string;
   phone: string;
@@ -134,9 +157,17 @@ export interface VolunteerApplication {
   status: VolunteerStatus;
   avatar?: string;
   visionQuote: string;
+  bio?: string;
   adminNotes?: string;
   plantationsCount?: number;
   lastActive?: string;
+  isBlocked?: boolean;
+  blockReason?: string;
+  blockedAt?: string;
+  acceptedDrivesCount?: number;
+  completedDrivesCount?: number;
+  ongoingDrivesCount?: number;
+  lastActiveDate?: string;
 }
 
 export interface MaintenanceTimelineEvent {

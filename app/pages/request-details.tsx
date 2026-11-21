@@ -2,8 +2,10 @@ import React, { useMemo, useState } from 'react';
 import {
   Image,
   Linking,
+  Modal,
   ScrollView,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -18,7 +20,6 @@ const DEFAULT_AREA_PHOTOS = [
   'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1511497584788-876760111969?w=600&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop',
 ];
 
 const DEFAULT_LANDMARK_PHOTOS = [
@@ -28,12 +29,13 @@ const DEFAULT_LANDMARK_PHOTOS = [
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; fg: string }> = {
   submitted: { label: 'Submitted', bg: '#FEF3C7', fg: '#92400E' },
+  needs_info: { label: 'Clarification Needed', bg: '#FEE2E2', fg: '#B91C1C' },
   verified: { label: 'Available', bg: '#CCF2DB', fg: '#0D4E2B' },
   assigned: { label: 'Assigned', bg: '#CCF2DB', fg: '#0D4E2B' },
   scheduled: { label: 'Scheduled', bg: '#DCFCE7', fg: '#166534' },
   in_progress: { label: 'In Progress', bg: '#E0F2FE', fg: '#0369A1' },
-  completed: { label: 'Completed', bg: '#CCF2DB', fg: '#0D4E2B' },
-  maintenance_due: { label: 'Maintenance', bg: '#FEE2E2', fg: '#B91C1C' },
+  completed: { label: 'Planted & Nurturing', bg: '#CCF2DB', fg: '#0D4E2B' },
+  maintenance_due: { label: 'Maintenance Due', bg: '#FEE2E2', fg: '#B91C1C' },
   rejected: { label: 'Rejected', bg: '#FEE2E2', fg: '#B91C1C' },
 };
 
@@ -47,13 +49,19 @@ function chunkIntoRows<T>(items: T[], size: number): T[][] {
 
 export default function RequestDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { currentRole, requests } = useApp();
+  const { currentRole, requests, updateCitizenRequest } = useApp();
   const [acceptModalVisible, setAcceptModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
   const req = useMemo(() => {
     if (!id) return requests[0];
     return requests.find((r) => r.id === id) ?? requests[0];
   }, [id, requests]);
+
+  // Edit form state for Citizen
+  const [editTitle, setEditTitle] = useState(req?.title || '');
+  const [editDescription, setEditDescription] = useState(req?.description || '');
+  const [editLocation, setEditLocation] = useState(req?.location || '');
 
   if (!req) {
     return (
@@ -73,6 +81,9 @@ export default function RequestDetailsScreen() {
 
   const isVolunteer = currentRole === 'volunteer';
   const isAdmin = currentRole === 'admin';
+  const isCitizen = !isVolunteer && !isAdmin;
+
+  const isNeedsInfo = req.status === 'needs_info';
   const isVerified = req.status === 'verified';
   const isAssigned = req.status === 'assigned';
   const isScheduled = req.status === 'scheduled';
@@ -85,9 +96,7 @@ export default function RequestDetailsScreen() {
     fg: '#0D4E2B',
   };
 
-  const formattedId = req.id.toUpperCase().startsWith('REQ-')
-    ? `#${req.id.toUpperCase()}`
-    : `#${req.id.toUpperCase()}`;
+  const formattedId = `#${req.id.toUpperCase()}`;
 
   const areaPhotos: string[] =
     req.areaPhotos && req.areaPhotos.length >= 2
@@ -102,10 +111,6 @@ export default function RequestDetailsScreen() {
   const areaRows = chunkIntoRows(areaPhotos, 3);
   const landmarkRows = chunkIntoRows(landmarkPhotos, 3);
 
-  const saplingCount = 5;
-  const distanceLabel =
-    req.distanceKm !== undefined ? `${req.distanceKm.toFixed(1)} kms` : '1.2 kms';
-
   const handleGetDirections = () => {
     const query = encodeURIComponent(req.location);
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
@@ -114,6 +119,15 @@ export default function RequestDetailsScreen() {
   const handleAcceptAndSchedule = () => {
     setAcceptModalVisible(false);
     router.push({ pathname: '/pages/schedule-plantation', params: { id: req.id } } as any);
+  };
+
+  const handleSaveCitizenEdit = () => {
+    updateCitizenRequest(req.id, {
+      title: editTitle,
+      description: editDescription,
+      location: editLocation,
+    });
+    setEditModalVisible(false);
   };
 
   return (
@@ -134,6 +148,7 @@ export default function RequestDetailsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Top Header Card */}
         <View style={styles.topInfoRow}>
           <View style={styles.topInfoLeft}>
             <Text style={styles.title}>{req.title}</Text>
@@ -153,6 +168,123 @@ export default function RequestDetailsScreen() {
           </View>
         </View>
 
+        {/* ─── Admin Clarification Alert (if needs_info) ─── */}
+        {isNeedsInfo && (
+          <View style={styles.clarificationAlert}>
+            <View style={styles.alertHeader}>
+              <Icon name="alert-triangle" size={18} color="#B91C1C" />
+              <Text style={styles.alertTitle}>Admin Clarification Requested</Text>
+            </View>
+            <Text style={styles.alertBody}>
+              {req.adminClarificationNotes ||
+                'Please update landmark details or upload clearer spot photographs so volunteers can accurately identify the site.'}
+            </Text>
+            {isCitizen && (
+              <TouchableOpacity
+                style={styles.editRequestBtn}
+                activeOpacity={0.85}
+                onPress={() => setEditModalVisible(true)}
+              >
+                <Icon name="edit" size={14} color="#FFFFFF" />
+                <Text style={styles.editRequestBtnText}>Edit Request & Resubmit</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* ─── Continuous WhatsApp-Style Thread: Plantation & Nurturing ─── */}
+        {(isCompleted || (req.nurturingUpdates && req.nurturingUpdates.length > 0)) && (
+          <View style={styles.threadSection}>
+            <View style={styles.threadHeaderRow}>
+              <Icon name="plant" size={18} color="#0B3B24" />
+              <Text style={styles.threadHeaderTitle}>Plantation & Care Timeline</Text>
+            </View>
+            <Text style={styles.threadHeaderSub}>
+              One-way transparent progress thread visible to citizen, volunteer, and admin.
+            </Text>
+
+            {/* Phase 1: Initial Plantation Card */}
+            <View style={styles.threadCard}>
+              <View style={styles.threadBadgeRow}>
+                <View style={styles.phaseBadge}>
+                  <Text style={styles.phaseBadgeText}>PHASE 1: PLANTATION COMPLETED</Text>
+                </View>
+                <Text style={styles.threadDateText}>
+                  {req.activityUpdate?.date || '18 Nov 2026'}
+                </Text>
+              </View>
+
+              <Text style={styles.threadVolunteerText}>
+                Planted by {req.activityUpdate?.volunteerName || req.assignedVolunteerName || 'Vaibhav Shirke'}
+              </Text>
+
+              <Text style={styles.threadCountHighlight}>
+                🌱 {req.activityUpdate?.saplingsPlanted || 5} native saplings planted with protective guards
+              </Text>
+
+              {/* Photos */}
+              {req.activityUpdate?.afterPhotos && req.activityUpdate.afterPhotos.length > 0 && (
+                <View style={styles.threadPhotosRow}>
+                  {req.activityUpdate.afterPhotos.map((uri: string, idx: number) => (
+                    <Image key={idx} source={{ uri }} style={styles.threadPhotoThumb} />
+                  ))}
+                </View>
+              )}
+
+              <Text style={styles.threadNotes}>
+                "{req.activityUpdate?.notes || 'Saplings planted with 20L initial watering, tree guard, and organic compost.'}"
+              </Text>
+            </View>
+
+            {/* Phase 2: Recurring Nurturing Thread Updates */}
+            {req.nurturingUpdates && req.nurturingUpdates.map((update, idx) => (
+              <View key={update.id || idx} style={styles.threadCardNurturing}>
+                <View style={styles.threadBadgeRow}>
+                  <View style={styles.nurtureBadge}>
+                    <Text style={styles.nurtureBadgeText}>CARE UPDATE #{idx + 1}</Text>
+                  </View>
+                  <Text style={styles.threadDateText}>{update.date}</Text>
+                </View>
+
+                <Text style={styles.threadVolunteerText}>
+                  Care Logged by {update.volunteerName} ({update.volunteerId || 'Volunteer'})
+                </Text>
+
+                {/* Actions Taken Chips */}
+                {update.actionsTaken && (
+                  <View style={styles.actionsTakenRow}>
+                    {update.actionsTaken.map((act, actIdx) => (
+                      <View key={actIdx} style={styles.actionChip}>
+                        <Text style={styles.actionChipText}>✓ {act}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Nurturing Photos */}
+                {update.photos && update.photos.length > 0 && (
+                  <View style={styles.threadPhotosRow}>
+                    {update.photos.map((uri, pIdx) => (
+                      <Image key={pIdx} source={{ uri }} style={styles.threadPhotoThumb} />
+                    ))}
+                  </View>
+                )}
+
+                <Text style={styles.threadNotes}>"{update.notes}"</Text>
+              </View>
+            ))}
+
+            {/* Alternate-day Nurturing Schedule Info */}
+            <View style={styles.nurturingScheduleNotice}>
+              <Icon name="bell" size={15} color="#0B3B24" />
+              <Text style={styles.nurturingScheduleText}>
+                Aanandvan Nurturing Protocol: Volunteer receives automated alerts every 48 hours for watering and sapling health monitoring.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ─── Site Original Photographs ─── */}
         <Text style={styles.sectionTitle}>Area photographs</Text>
         <View style={styles.gridGroup}>
           {areaRows.map((row, rowIndex) => (
@@ -188,16 +320,13 @@ export default function RequestDetailsScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Location</Text>
-        <View style={styles.metricsRow}>
-          <View style={styles.metricCol}>
-            <Text style={styles.metricLabel}>Distance from you</Text>
-            <Text style={styles.metricValue}>{distanceLabel}</Text>
-          </View>
-          <View style={styles.metricCol}>
-            <Text style={styles.metricLabel}>Space for</Text>
-            <Text style={styles.metricValue}>about {saplingCount} saplings</Text>
-          </View>
+        {/* Location & Directions */}
+        <Text style={styles.sectionTitle}>Location Details</Text>
+        <View style={styles.descriptionCard}>
+          <Text style={styles.locationDetailText}>{req.manualAddress || req.location}</Text>
+          {req.landmark && (
+            <Text style={styles.landmarkDetailText}>Landmark: {req.landmark}</Text>
+          )}
         </View>
 
         <TouchableOpacity
@@ -205,40 +334,41 @@ export default function RequestDetailsScreen() {
           onPress={handleGetDirections}
           activeOpacity={0.8}
         >
-          <Icon name="navigation" size={16} color="#0D4E2B" />
-          <Text style={styles.directionsBtnText}>Get directions</Text>
+          <Icon name="navigation" size={16} color="#0B3B24" />
+          <Text style={styles.directionsBtnText}>Get directions via Google Maps</Text>
         </TouchableOpacity>
 
+        {/* Description */}
         <Text style={[styles.sectionTitle, { marginTop: 22 }]}>Description</Text>
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionText}>{`"${req.description}"`}</Text>
         </View>
 
-        {!isVolunteer && (
-          <View style={styles.metaCard}>
-            <Text style={styles.metaCardLabel}>Requested by</Text>
-            <Text style={styles.metaCardValue}>{req.citizenName}</Text>
-            {req.assignedVolunteerName ? (
-              <>
-                <Text style={[styles.metaCardLabel, { marginTop: 10 }]}>
-                  Assigned volunteer
-                </Text>
-                <Text style={styles.metaCardValue}>{req.assignedVolunteerName}</Text>
-              </>
-            ) : null}
-          </View>
-        )}
+        {/* Request Metadata */}
+        <View style={styles.metaCard}>
+          <Text style={styles.metaCardLabel}>Requested by</Text>
+          <Text style={styles.metaCardValue}>{req.citizenName || 'Kartik Vichare'}</Text>
+          {req.assignedVolunteerName && (
+            <>
+              <Text style={[styles.metaCardLabel, { marginTop: 10 }]}>
+                Assigned volunteer
+              </Text>
+              <Text style={styles.metaCardValue}>{req.assignedVolunteerName}</Text>
+            </>
+          )}
+        </View>
 
-        {req.schedule ? (
+        {req.schedule && (
           <View style={styles.metaCard}>
             <Text style={styles.metaCardLabel}>Scheduled plantation</Text>
             <Text style={styles.metaCardValue}>
               {req.schedule.date} • {req.schedule.timeSlot}
             </Text>
           </View>
-        ) : null}
+        )}
       </ScrollView>
 
+      {/* ─── Footer Action Bar ─── */}
       <View style={styles.footer}>
         {isVolunteer && isVerified && (
           <TouchableOpacity
@@ -246,7 +376,7 @@ export default function RequestDetailsScreen() {
             onPress={() => setAcceptModalVisible(true)}
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryBtnText}>Accept request</Text>
+            <Text style={styles.primaryBtnText}>Accept plantation request</Text>
           </TouchableOpacity>
         )}
 
@@ -258,7 +388,7 @@ export default function RequestDetailsScreen() {
             }
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryBtnText}>Schedule plantation</Text>
+            <Text style={styles.primaryBtnText}>Schedule plantation drive</Text>
           </TouchableOpacity>
         )}
 
@@ -266,11 +396,11 @@ export default function RequestDetailsScreen() {
           <TouchableOpacity
             style={styles.primaryBtn}
             onPress={() =>
-              router.push({ pathname: '/pages/collect-saplings', params: { id: req.id } } as any)
+              router.push({ pathname: '/pages/upload-activity', params: { id: req.id } } as any)
             }
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryBtnText}>Collect saplings</Text>
+            <Text style={styles.primaryBtnText}>Upload plantation activity</Text>
           </TouchableOpacity>
         )}
 
@@ -286,11 +416,17 @@ export default function RequestDetailsScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Volunteer completed: Log Nurturing button */}
         {isVolunteer && isCompleted && (
-          <View style={styles.completedBanner}>
-            <Icon name="check-circle" size={18} color="#0D4E2B" />
-            <Text style={styles.completedText}>Plantation drive completed</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() =>
+              router.push({ pathname: '/pages/log-nurturing', params: { id: req.id } } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryBtnText}>+ Log Nurturing & Watering Update</Text>
+          </TouchableOpacity>
         )}
 
         {isAdmin && (
@@ -304,30 +440,31 @@ export default function RequestDetailsScreen() {
             }
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryBtnText}>Open admin verification review</Text>
+            <Text style={styles.primaryBtnText}>Open admin review & verification</Text>
           </TouchableOpacity>
         )}
 
-        {!isVolunteer && !isAdmin && (
+        {isCitizen && !isNeedsInfo && (
           <View style={styles.completedBanner}>
             <Icon
-              name={isCompleted ? 'check' : isAssigned || isInProgress ? 'plant' : 'clock'}
+              name={isCompleted ? 'check-circle' : isAssigned || isInProgress ? 'plant' : 'clock'}
               size={18}
-              color="#0D4E2B"
+              color="#0B3B24"
             />
             <Text style={styles.completedText}>
               {isCompleted
-                ? `Plantation completed by ${req.assignedVolunteerName || 'Volunteer'}!`
+                ? `Plantation completed by ${req.assignedVolunteerName || 'Vaibhav Shirke'}! Nurturing is ongoing.`
                 : isAssigned || isInProgress
-                ? `${req.assignedVolunteerName || 'Volunteer'} is working on this drive.`
+                ? `${req.assignedVolunteerName || 'Vaibhav Shirke'} is working on this drive.`
                 : isVerified
-                ? 'Request verified & open for volunteers.'
+                ? 'Request verified by Admin & open for volunteers to accept.'
                 : 'Awaiting admin verification.'}
             </Text>
           </View>
         )}
       </View>
 
+      {/* Volunteer Accept Modal */}
       <AcceptRequestModal
         visible={acceptModalVisible}
         requestTitle={req.title}
@@ -335,6 +472,53 @@ export default function RequestDetailsScreen() {
         onAcceptAndSchedule={handleAcceptAndSchedule}
         onClose={() => setAcceptModalVisible(false)}
       />
+
+      {/* Citizen Edit Request Modal (for clarification) */}
+      <Modal visible={editModalVisible} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Request Details</Text>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                <Icon name="close" size={20} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 380 }}>
+              <Text style={styles.editLabel}>Request Title</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editTitle}
+                onChangeText={setEditTitle}
+              />
+
+              <Text style={styles.editLabel}>Location / Street</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editLocation}
+                onChangeText={setEditLocation}
+              />
+
+              <Text style={styles.editLabel}>Description & Landmarks</Text>
+              <TextInput
+                style={[styles.editInput, { minHeight: 90 }]}
+                multiline
+                value={editDescription}
+                onChangeText={setEditDescription}
+                textAlignVertical="top"
+              />
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.saveEditBtn}
+              onPress={handleSaveCitizenEdit}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.saveEditText}>Save & Resubmit to Admin</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -359,7 +543,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#0D4325',
+    color: '#0B3B24',
   },
   scroll: {
     flex: 1,
@@ -373,7 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   topInfoLeft: {
     flex: 1,
@@ -383,9 +567,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#0B3E22',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0B3B24',
     marginBottom: 4,
   },
   locationRow: {
@@ -405,19 +589,196 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+    fontWeight: '700',
   },
   reqIdText: {
     fontSize: 11.5,
     color: '#6E7B73',
     marginTop: 6,
+    fontWeight: '600',
+  },
+  clarificationAlert: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 18,
+  },
+  alertHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  alertTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#991B1B',
+  },
+  alertBody: {
+    fontSize: 13,
+    color: '#7F1D1D',
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  editRequestBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+  },
+  editRequestBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  threadSection: {
+    backgroundColor: '#F3FAF5',
+    borderWidth: 1,
+    borderColor: '#C7EED8',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  threadHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  threadHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0B3B24',
+  },
+  threadHeaderSub: {
+    fontSize: 12,
+    color: '#4B5563',
+    marginBottom: 14,
+  },
+  threadCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#D1E7DD',
+    marginBottom: 12,
+  },
+  threadCardNurturing: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#D1E7DD',
+    borderLeftWidth: 4,
+    borderLeftColor: '#0B3B24',
+    marginBottom: 12,
+  },
+  threadBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  phaseBadge: {
+    backgroundColor: '#0B3B24',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  phaseBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  nurtureBadge: {
+    backgroundColor: '#15803D',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  nurtureBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  threadDateText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  threadVolunteerText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  threadCountHighlight: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0B3B24',
+    marginBottom: 8,
+  },
+  actionsTakenRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 8,
+  },
+  actionChip: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  actionChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#1B5E20',
+  },
+  threadPhotosRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  threadPhotoThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 8,
+  },
+  threadNotes: {
+    fontSize: 12.5,
+    fontStyle: 'italic',
+    color: '#4B5563',
+    lineHeight: 18,
+  },
+  nurturingScheduleNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#E8F5E9',
+    padding: 10,
+    borderRadius: 8,
+  },
+  nurturingScheduleText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#166534',
+    lineHeight: 16,
     fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 14.5,
-    fontWeight: '600',
-    color: '#0D4E2B',
+    fontWeight: '700',
+    color: '#0B3B24',
     marginBottom: 10,
   },
   gridGroup: {
@@ -443,70 +804,67 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  metricsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  metricCol: {
-    flex: 1,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: '#7A867E',
-    marginBottom: 4,
-  },
-  metricValue: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#163020',
-  },
   directionsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    borderRadius: 999,
-    borderWidth: 1.2,
-    borderColor: '#0D4E2B',
-    backgroundColor: '#FFFFFF',
     gap: 8,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+    marginTop: 10,
+    marginBottom: 16,
   },
   directionsBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0D4E2B',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   descriptionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#D6DDD4',
-    padding: 16,
+    borderColor: '#E5E7EB',
+    marginBottom: 10,
+  },
+  locationDetailText: {
+    fontSize: 13.5,
+    color: '#111827',
+    fontWeight: '600',
+  },
+  landmarkDetailText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
   },
   descriptionText: {
-    fontSize: 13.5,
-    lineHeight: 21,
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 19,
     fontStyle: 'italic',
-    color: '#4F5C54',
   },
   metaCard: {
-    marginTop: 14,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E6EBE4',
     padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginTop: 12,
   },
   metaCardLabel: {
-    fontSize: 11.5,
-    color: '#7A867E',
-    marginBottom: 2,
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   metaCardValue: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#163020',
+    color: '#111827',
+    fontWeight: '700',
+    marginTop: 2,
   },
   footer: {
     paddingHorizontal: 18,
@@ -518,29 +876,29 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     height: 48,
-    borderRadius: 999,
-    backgroundColor: '#0D4E2B',
+    borderRadius: 12,
+    backgroundColor: '#0B3B24',
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryBtnText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   completedBanner: {
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: '#CCF2DB',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    backgroundColor: '#DCFCE7',
+    padding: 12,
+    borderRadius: 10,
   },
   completedText: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 13,
+    color: '#166534',
     fontWeight: '600',
-    color: '#0D4E2B',
   },
   emptyBox: {
     flex: 1,
@@ -550,5 +908,59 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: '#5F6C64',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
+  editLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0B3B24',
+    marginBottom: 4,
+    marginTop: 10,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: '#111827',
+  },
+  saveEditBtn: {
+    backgroundColor: '#0B3B24',
+    borderRadius: 10,
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+  },
+  saveEditText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

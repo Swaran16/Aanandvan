@@ -1,12 +1,12 @@
 /**
- * Citizen Home / Dashboard Screen
- * Matches Batch 1 — Image 1 & Volunteer Dashboard Symmetry:
- * - Namaste Rahul Sharma header with avatar & notification bell
- * - 4 Status cards (2x2 Grid) perfectly aligned:
- *   Assigned, Available, Completed, Maintenance
- * - Recent Requests list with live status indicators and See All
- * - Nurseries removed per user instructions
- * - Floating Action Button (+) to create new plantation request
+ * Citizen Home / Dashboard Screen — Aanandvan
+ *
+ * Designed for citizen community engagement:
+ * - Namaste Kartik Vichare greeting
+ * - Impactful 2x2 KPIs: My Requests, Active Volunteers, Trees Planted, Neighborhood Drives
+ * - "Spotted an empty space?" callout card with "Request a Tree →"
+ * - Clean Recent Requests list
+ * - Properly aligned floating action button (+)
  */
 
 import React from 'react';
@@ -25,26 +25,26 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 
 export default function CitizenHomeScreen() {
-  const { currentUser, requests, maintenanceItems, loginAs } = useApp();
+  const { currentUser, requests } = useApp();
 
-  // Dynamic metrics aligned with lifecycle stages
-  const assignedCount =
+  const citizenName = currentUser.name || 'Kartik Vichare';
+
+  // Meaningful community impact metrics
+  const myRequestsCount =
     requests.filter(
-      r => r.status === 'assigned' || r.status === 'in_progress' || r.status === 'scheduled'
-    ).length || 3;
-  const availableCount =
-    requests.filter(r => r.status === 'verified' || r.status === 'pending').length || 7;
-  const completedCount =
-    requests.filter(r => r.status === 'completed').length || 23;
-  const maintenanceCount = maintenanceItems?.length || 2;
+      r => r.citizenName?.includes('Kartik') || r.citizenId === currentUser.id
+    ).length || 4;
+  const activeVolunteersCount = '140+';
+  const treesPlantedCount = '1,280+';
+  const neighborhoodDrivesCount = `${requests.length + 35}+`;
 
-  const recentRequests = requests.slice(0, 3);
+  const recentRequests = requests.slice(0, 4);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* ─── Header Banner with Aligned 2x2 Stats ─── */}
+      {/* ─── Header Banner with Aligned 2x2 Community Impact Stats ─── */}
       <View style={styles.header}>
         <SafeAreaView edges={['top']} style={styles.safeHeader}>
           <View style={styles.headerRow}>
@@ -53,13 +53,13 @@ export default function CitizenHomeScreen() {
                 source={{
                   uri:
                     currentUser.avatar ||
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
                 }}
                 style={styles.avatar}
               />
               <View>
                 <Text style={styles.greetingText}>Namaste,</Text>
-                <Text style={styles.userName}>{currentUser.name || 'Rahul Sharma'}</Text>
+                <Text style={styles.userName}>{citizenName}</Text>
               </View>
             </View>
 
@@ -76,7 +76,7 @@ export default function CitizenHomeScreen() {
             </View>
           </View>
 
-          {/* 4 Status Cards (2x2 Grid) — Assigned, Available, Completed, Maintenance */}
+          {/* 4 Community Impact Cards (2x2 Grid) */}
           <View style={styles.statsContainer}>
             <View style={styles.statsRow}>
               <TouchableOpacity
@@ -84,39 +84,35 @@ export default function CitizenHomeScreen() {
                 activeOpacity={0.85}
                 onPress={() => router.push('/(citizen)/requests' as any)}
               >
-                <Text style={styles.statNumber}>{String(assignedCount)}</Text>
-                <Text style={styles.statLabel}>Assigned</Text>
+                <Text style={styles.statNumber}>{myRequestsCount}</Text>
+                <Text style={styles.statLabel}>My Requests</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.statBox}
-                activeOpacity={0.85}
-                onPress={() => router.push('/(citizen)/requests' as any)}
-              >
-                <Text style={styles.statNumber}>{String(availableCount)}</Text>
-                <Text style={styles.statLabel}>Available</Text>
-              </TouchableOpacity>
+              <View style={styles.statBox}>
+                <Text style={[styles.statNumber, { color: '#1B5E20' }]}>
+                  {activeVolunteersCount}
+                </Text>
+                <Text style={styles.statLabel}>Active Volunteers</Text>
+              </View>
             </View>
 
             <View style={styles.statsRow}>
-              <TouchableOpacity
-                style={styles.statBox}
-                activeOpacity={0.85}
-                onPress={() => router.push('/(citizen)/requests' as any)}
-              >
-                <Text style={styles.statNumber}>{String(completedCount)}</Text>
-                <Text style={styles.statLabel}>Completed</Text>
-              </TouchableOpacity>
+              <View style={styles.statBox}>
+                <Text style={[styles.statNumber, { color: '#0B3B24' }]}>
+                  {treesPlantedCount}
+                </Text>
+                <Text style={styles.statLabel}>Trees Planted</Text>
+              </View>
 
               <TouchableOpacity
                 style={styles.statBox}
                 activeOpacity={0.85}
                 onPress={() => router.push('/(citizen)/requests' as any)}
               >
-                <Text style={[styles.statNumber, { color: '#DC2626' }]}>
-                  {String(maintenanceCount)}
+                <Text style={[styles.statNumber, { color: '#15803D' }]}>
+                  {neighborhoodDrivesCount}
                 </Text>
-                <Text style={styles.statLabel}>Maintenance</Text>
+                <Text style={styles.statLabel}>Dadar & City Drives</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -128,59 +124,30 @@ export default function CitizenHomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Community Drive Highlight Card ─── */}
-        <TouchableOpacity
-          style={styles.driveBanner}
-          activeOpacity={0.88}
-          onPress={() => router.push('/pages/create-request' as any)}
-        >
-          <View style={styles.driveLeft}>
-            <View style={styles.driveBadge}>
-              <Text style={styles.driveBadgeText}>ACTIVE DRIVE</Text>
+        {/* ─── "Spotted an empty space?" Callout Card (Figma Design) ─── */}
+        <View style={styles.spottedCard}>
+          <View style={styles.spottedTextCol}>
+            <View style={styles.spottedBadge}>
+              <Text style={styles.spottedBadgeText}>COMMUNITY ACTION</Text>
             </View>
-            <Text style={styles.driveTitle}>Mega Monsoon Forest Drive</Text>
-            <Text style={styles.driveSubtitle}>
-              500 indigenous Neem & Peepal saplings • Sector 29 City Forest
+            <Text style={styles.spottedTitle}>Spotted an empty space?</Text>
+            <Text style={styles.spottedSubtitle}>
+              Spot an unplanted concrete patch or open road divider? Request a native sapling drive and our verified volunteers will inspect and plant.
             </Text>
+
+            <TouchableOpacity
+              style={styles.spottedCta}
+              activeOpacity={0.85}
+              onPress={() => router.push('/pages/create-request' as any)}
+            >
+              <Text style={styles.spottedCtaText}>Request a Tree →</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.driveActionPill}>
-            <Text style={styles.driveActionText}>Plant</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* ─── Quick Action Shortcuts ─── */}
-        <View style={styles.quickActionsBar}>
-          <TouchableOpacity
-            style={styles.quickActionPill}
-            activeOpacity={0.8}
-            onPress={() => router.push('/pages/create-request' as any)}
-          >
-            <Icon name="plus" size={14} color="#0B3B24" />
-            <Text style={styles.quickActionText}>New Request</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionPill}
-            activeOpacity={0.8}
-            onPress={() => router.push('/(citizen)/requests' as any)}
-          >
-            <Icon name="search" size={14} color="#0B3B24" />
-            <Text style={styles.quickActionText}>Track Trees</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionPill}
-            activeOpacity={0.8}
-            onPress={() => router.push('/(tabs)/nursery' as any)}
-          >
-            <Icon name="plant" size={14} color="#0B3B24" />
-            <Text style={styles.quickActionText}>Nurseries</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* ─── Recent Requests Section ─── */}
+        {/* ─── Recent Requests in Dadar & Mumbai ─── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Requests</Text>
+          <Text style={styles.sectionTitle}>My Neighborhood Requests</Text>
           <TouchableOpacity onPress={() => router.push('/(citizen)/requests' as any)}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
@@ -188,29 +155,35 @@ export default function CitizenHomeScreen() {
 
         <View style={styles.requestsList}>
           {recentRequests.map(item => {
+            const isCompleted = item.status === 'completed';
+            const isNeedsInfo = item.status === 'needs_info';
             const isVerified =
               item.status === 'verified' ||
               item.status === 'assigned' ||
               item.status === 'in_progress' ||
-              item.status === 'completed';
+              item.status === 'scheduled';
 
             const statusLabel =
               item.status === 'pending'
-                ? 'Pending Verification'
+                ? 'Under Admin Review'
+                : isNeedsInfo
+                ? 'Clarification Needed'
                 : item.status === 'verified'
-                ? 'Verified'
+                ? 'Verified • Open for Volunteers'
                 : item.status === 'in_progress'
-                ? 'In Progress'
+                ? 'Ongoing Drive'
                 : item.status === 'completed'
-                ? 'Completed'
-                : 'Assigned';
+                ? 'Planted & Nurturing'
+                : 'Assigned to Volunteer';
 
-            const statusDotColor =
+            const statusColor =
               item.status === 'pending'
-                ? '#F59E0B'
-                : item.status === 'completed' || isVerified
-                ? '#10B981'
-                : '#3B82F6';
+                ? '#D97706'
+                : isNeedsInfo
+                ? '#DC2626'
+                : item.status === 'completed'
+                ? '#15803D'
+                : '#2563EB';
 
             return (
               <TouchableOpacity
@@ -239,11 +212,18 @@ export default function CitizenHomeScreen() {
                   <Text style={styles.requestLocation} numberOfLines={1}>
                     {item.location}
                   </Text>
+
+                  {(item.assignedVolunteerName || item.volunteerName) && (
+                    <Text style={styles.volunteerAssignee}>
+                      Volunteer: {item.assignedVolunteerName || item.volunteerName}
+                    </Text>
+                  )}
+
                   <View style={styles.statusRow}>
                     <View
-                      style={[styles.statusDot, { backgroundColor: statusDotColor }]}
+                      style={[styles.statusDot, { backgroundColor: statusColor }]}
                     />
-                    <Text style={[styles.statusText, { color: statusDotColor }]}>
+                    <Text style={[styles.statusText, { color: statusColor }]}>
                       {statusLabel}
                     </Text>
                   </View>
@@ -255,10 +235,10 @@ export default function CitizenHomeScreen() {
         </View>
       </ScrollView>
 
-      {/* ─── Floating Action Button (+) ─── */}
+      {/* ─── Floating Action Button (+) with Figma-style Alignment ─── */}
       <TouchableOpacity
         style={styles.fab}
-        activeOpacity={0.85}
+        activeOpacity={0.88}
         onPress={() => router.push('/pages/create-request' as any)}
       >
         <Icon name="plus" size={26} color="#FFFFFF" />
@@ -316,19 +296,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  adminSwitchBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#FFD600',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adminSwitchText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
   bellBtn: {
     width: 42,
     height: 42,
@@ -359,14 +326,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statNumber: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     color: '#0B3B24',
     letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#4B5563',
     fontWeight: '600',
     marginTop: 2,
   },
@@ -375,24 +342,81 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 20,
-    paddingBottom: 90,
+    paddingTop: 18,
+    paddingBottom: 96,
+  },
+  spottedCard: {
+    backgroundColor: '#EBF7EE',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#C7EED8',
+    marginBottom: 24,
+    shadowColor: '#0B3B24',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  spottedTextCol: {
+    width: '100%',
+  },
+  spottedBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#0B3B24',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 10,
+  },
+  spottedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  spottedTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0B3B24',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+  },
+  spottedSubtitle: {
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 19,
+    marginBottom: 14,
+  },
+  spottedCta: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#0B3B24',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  spottedCtaText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 14,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '800',
-    color: '#111827',
+    color: '#0B3B24',
+    letterSpacing: -0.3,
   },
   seeAllText: {
     fontSize: 13,
+    color: '#15803D',
     fontWeight: '700',
-    color: '#0B3B24',
   },
   requestsList: {
     gap: 12,
@@ -401,21 +425,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 12,
-    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#EEF2F0',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 1,
   },
   requestThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    marginRight: 14,
+    width: 68,
+    height: 68,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: '#E5E7EB',
   },
   requestInfo: {
     flex: 1,
@@ -424,31 +449,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#111827',
+    marginBottom: 3,
   },
   requestLocation: {
     fontSize: 12,
     color: '#6B7280',
-    marginTop: 2,
+    marginBottom: 4,
+  },
+  volunteerAssignee: {
+    fontSize: 11,
+    color: '#1B5E20',
+    fontWeight: '600',
+    marginBottom: 4,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 5,
   },
   statusDot: {
     width: 7,
     height: 7,
-    borderRadius: 3.5,
+    borderRadius: 4,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 24,
+    bottom: 22,
+    right: 22,
     width: 58,
     height: 58,
     borderRadius: 29,
@@ -456,85 +487,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 6,
-  },
-  driveBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0B3B24',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  driveLeft: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  driveBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#FFD600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 6,
-  },
-  driveBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: 0.4,
-  },
-  driveTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 3,
-  },
-  driveSubtitle: {
-    fontSize: 12,
-    color: '#A8D5BA',
-    lineHeight: 16,
-  },
-  driveActionPill: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  driveActionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
-  },
-  quickActionsBar: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 20,
-  },
-  quickActionPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#EBF5EE',
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D1E8DA',
-  },
-  quickActionText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#0B3B24',
   },
 });

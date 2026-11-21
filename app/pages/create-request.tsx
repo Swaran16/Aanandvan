@@ -46,7 +46,6 @@ export default function CreateRequestScreen() {
   // Step 3: Details
   const [title, setTitle] = useState('');
   const [species, setSpecies] = useState('');
-  const [saplingsCount, setSaplingsCount] = useState(1);
   const [description, setDescription] = useState('');
   const [hasPermission, setHasPermission] = useState(false);
 
@@ -78,10 +77,10 @@ export default function CreateRequestScreen() {
   };
 
   const handleUseCurrentLocation = () => {
-    setAddress('Adi Shankaracharya Marg, Powai Vihar Complex');
-    setLandmark('Near Damji Shamji Corporate Square');
+    setAddress('Ranade Road, near Shivaji Park, Dadar West');
+    setLandmark('Near Veer Savarkar Smarak');
     setCity('Mumbai');
-    setPincode('400076');
+    setPincode('400028');
   };
 
   const handleStep1Next = () => {
@@ -127,13 +126,13 @@ export default function CreateRequestScreen() {
 
     const created = createRequest({
       title: title.trim(),
-      manualAddress: fullAddress || 'Mumbai, Maharashtra',
-      location: address.split(',')[0]?.trim() || city.trim() || 'Mumbai',
-      landmark: landmark.trim() || 'Near community park',
-      coordinates: '19.1176° N, 72.9060° E',
+      manualAddress: fullAddress || 'Dadar West, Mumbai, Maharashtra',
+      location: address.split(',')[0]?.trim() || city.trim() || 'Dadar West, Mumbai',
+      landmark: landmark.trim() || 'Near Shivaji Park',
+      coordinates: '19.0282° N, 72.8385° E',
       description:
         description.trim() ||
-        `Requesting plantation of ${saplingsCount} sapling${saplingsCount > 1 ? 's' : ''}${species.trim() ? ` (${species.trim()})` : ''}.`,
+        `Requesting green canopy plantation at this open site.${species.trim() ? ` Preferred species: ${species.trim()}.` : ''}`,
       areaPhotos: areaPhotos.length >= 2 ? areaPhotos : SAMPLE_AREA_PHOTOS.slice(0, 2),
       landmarkPhotos:
         landmarkPhotos.length > 0 ? landmarkPhotos : SAMPLE_LANDMARK_PHOTOS.slice(0, 1),
@@ -379,42 +378,17 @@ export default function CreateRequestScreen() {
             <Text style={styles.fieldLabel}>Preferred tree species (Optional)</Text>
             <TextInput
               style={styles.input}
-              placeholder="E.g. Neem, Banyan, Peepal"
+              placeholder="E.g. Neem, Banyan, Peepal, Karanj"
               placeholderTextColor="#8B968F"
               value={species}
               onChangeText={setSpecies}
             />
 
-            <Text style={styles.fieldLabel}>No. of saplings planted</Text>
-            <View style={styles.stepperContainer}>
-              <TouchableOpacity
-                style={styles.stepperSideBtn}
-                onPress={() => setSaplingsCount((c) => Math.max(1, c - 1))}
-                activeOpacity={0.75}
-              >
-                <Icon name="minus" size={18} color="#163020" />
-              </TouchableOpacity>
-
-              <View style={styles.stepperCenter}>
-                <Text style={styles.stepperText}>
-                  {String(saplingsCount).padStart(2, '0')}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.stepperSideBtn}
-                onPress={() => setSaplingsCount((c) => Math.min(99, c + 1))}
-                activeOpacity={0.75}
-              >
-                <Icon name="plus" size={18} color="#163020" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.fieldLabel}>Description</Text>
+            <Text style={styles.fieldLabel}>Site & Neighborhood Notes (Optional)</Text>
             <TextInput
               style={[styles.textArea, { minHeight: 112 }]}
               multiline
-              placeholder="Start typing to share any specific details about the soil quality, weather conditions, or volunteer highlights..."
+              placeholder="Describe the open spot (e.g. soil condition, sunlight, nearby water source, tree guards needed)..."
               placeholderTextColor="#8B968F"
               value={description}
               onChangeText={setDescription}

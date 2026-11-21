@@ -1,3 +1,12 @@
+/**
+ * Admin Plantation Requests Screen — Aanandvan
+ *
+ * Dedicated pipeline for admin triage:
+ * - Filter tabs: Pending Review, Verified & Unassigned (Critical for Takeover), Needs Clarification, Ongoing & Completed
+ * - "Admin Takeover" button on unassigned drives (>3 days unaccepted by volunteers)
+ * - Citizen details, area photos strip, and direct review navigation
+ */
+
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
@@ -6,6 +15,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -14,80 +24,122 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest } from '@/types';
 
-type FilterTab = 'pending' | 'needs_info' | 'verified';
+type FilterTab = 'all' | 'pending' | 'unassigned' | 'needs_info' | 'active';
 
 const FALLBACK_PHOTOS = [
   'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=300&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1448375240586-882707db888b?w=300&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=300&auto=format&fit=crop',
 ];
 
 export default function AdminRequestsScreen() {
-  const { requests } = useApp();
+  const { requests, adminTakeoverRequest } = useApp();
   const [filter, setFilter] = useState<FilterTab>('pending');
 
-  const pendingCount = requests.filter(
-    (r) => r.status === 'pending' || r.status === 'scheduled'
-  ).length;
-  const needsInfoCount = requests.filter((r) => r.status === 'rejected').length;
-  const verifiedCount = requests.filter(
-    (r) =>
-      r.status === 'verified' ||
-      r.status === 'assigned' ||
-      r.status === 'in_progress' ||
-      r.status === 'completed'
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const unassignedCount = requests.filter(r => r.status === 'verified').length;
+  const needsInfoCount = requests.filter(r => r.status === 'needs_info').length;
+  const activeCount = requests.filter(
+    r => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed'
   ).length;
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
-      if (filter === 'pending') {
-        return req.status === 'pending' || req.status === 'scheduled';
+      if (filter === 'pending') return req.status === 'pending';
+      if (filter === 'unassigned') return req.status === 'verified';
+      if (filter === 'needs_info') return req.status === 'needs_info';
+      if (filter === 'active') {
+        return (
+          req.status === 'assigned' ||
+          req.status === 'scheduled' ||
+          req.status === 'in_progress' ||
+          req.status === 'completed'
+        );
       }
-      if (filter === 'needs_info') {
-        return req.status === 'rejected';
-      }
-      return (
-        req.status === 'verified' ||
-        req.status === 'assigned' ||
-        req.status === 'in_progress' ||
-        req.status === 'completed'
-      );
+      return true;
     });
   }, [requests, filter]);
+
+  const handleTakeover = (reqId: string, title: string) => {
+    Alert.alert(
+      'Admin Squad Takeover',
+      `Take over "${title}"? This assigns the drive directly to the internal Aanandvan squad for immediate execution.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Takeover',
+          onPress: () => {
+            adminTakeoverRequest(reqId);
+            router.push({
+              pathname: '/pages/upload-activity',
+              params: { id: reqId },
+            } as any);
+          },
+        },
+      ]
+    );
+  };
 
   const renderCard = ({ item }: { item: PlantationRequest }) => {
     const photos = [...(item.areaPhotos ?? []), ...(item.landmarkPhotos ?? []), ...FALLBACK_PHOTOS].slice(
       0,
-      5
+      4
     );
-    const hasDuplicateRisk = item.duplicateRisk === 'Potential match';
+
+    const isVerifiedUnassigned = item.status === 'verified';
+    const isNeedsInfo = item.status === 'needs_info';
 
     return (
       <View style={styles.card}>
+        {/* Photo Strip */}
         <View style={styles.photosStrip}>
-          {photos.map((uri, idx) => {
-            const isLast = idx === 4;
-            return (
-              <View key={`${item.id}-ph-${idx}`} style={styles.stripCell}>
-                <Image source={{ uri }} style={styles.stripImg} resizeMode="cover" />
-                {isLast && (
-                  <View style={styles.moreOverlay}>
-                    <Text style={styles.moreText}>+2 more</Text>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+          {photos.map((uri, idx) => (
+            <View key={`${item.id}-ph-${idx}`} style={styles.stripCell}>
+              <Image source={{ uri }} style={styles.stripImg} resizeMode="cover" />
+            </View>
+          ))}
         </View>
 
-        <Text style={styles.reqIdText}>#{item.id.toUpperCase()}</Text>
+        <View style={styles.cardHeaderRow}>
+          <Text style={styles.reqIdText}>#{item.id.toUpperCase()}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              isNeedsInfo
+                ? { backgroundColor: '#FEE2E2' }
+                : isVerifiedUnassigned
+                ? { backgroundColor: '#FEF3C7' }
+                : { backgroundColor: '#E0F2FE' },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusBadgeText,
+                isNeedsInfo
+                  ? { color: '#B91C1C' }
+                  : isVerifiedUnassigned
+                  ? { color: '#92400E' }
+                  : { color: '#0369A1' },
+              ]}
+            >
+              {isNeedsInfo
+                ? 'Clarification Needed'
+                : isVerifiedUnassigned
+                ? 'Verified • Unaccepted'
+                : item.status.replace(/_/g, ' ')}
+            </Text>
+          </View>
+        </View>
+
         <Text style={styles.cardTitle} numberOfLines={1}>
           {item.title}
         </Text>
+        <Text style={styles.cardLocation} numberOfLines={1}>
+          📍 {item.manualAddress || item.location}
+        </Text>
         <Text style={styles.cardDesc} numberOfLines={2}>
-          {item.manualAddress || item.description}
+          "{item.description}"
         </Text>
 
         <View style={styles.submitterRow}>
@@ -99,32 +151,41 @@ export default function AdminRequestsScreen() {
             }}
             style={styles.citizenAvatar}
           />
-          <View>
-            <Text style={styles.submittedBy}>Submitted by: {item.citizenName}</Text>
-            <Text style={styles.submittedDate}>{item.createdAt}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.submittedBy}>Submitted by: {item.citizenName || 'Kartik Vichare'}</Text>
+            <Text style={styles.submittedDate}>
+              {item.createdAt} • Dadar Ward
+            </Text>
           </View>
         </View>
 
-        {hasDuplicateRisk && (
-          <View style={styles.duplicateBox}>
-            <Text style={styles.duplicateText}>
-              Possible duplicate of #REQ-2024-0042 (about 20 meters away)
-            </Text>
-          </View>
-        )}
+        {/* Buttons Row */}
+        <View style={styles.cardActionsRow}>
+          <TouchableOpacity
+            style={styles.reviewBtn}
+            onPress={() =>
+              router.push({
+                pathname: '/pages/admin-review-request',
+                params: { id: item.id },
+              } as any)
+            }
+            activeOpacity={0.85}
+          >
+            <Text style={styles.reviewBtnText}>Review & Verify</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.reviewBtn}
-          onPress={() =>
-            router.push({
-              pathname: '/pages/admin-review-request',
-              params: { id: item.id },
-            } as any)
-          }
-          activeOpacity={0.85}
-        >
-          <Text style={styles.reviewBtnText}>Review request</Text>
-        </TouchableOpacity>
+          {/* Admin Takeover Button (if unaccepted by volunteers) */}
+          {isVerifiedUnassigned && (
+            <TouchableOpacity
+              style={styles.takeoverBtn}
+              onPress={() => handleTakeover(item.id, item.title)}
+              activeOpacity={0.85}
+            >
+              <Icon name="plant" size={14} color="#FFFFFF" />
+              <Text style={styles.takeoverBtnText}>Take Over Drive</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   };
@@ -137,11 +198,12 @@ export default function AdminRequestsScreen() {
           style={styles.backBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="chevron-left" size={22} color="#163020" />
+          <Icon name="chevron-left" size={22} color="#0B3B24" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Plantation requests</Text>
+        <Text style={styles.headerTitle}>Plantation Requests</Text>
       </View>
 
+      {/* Filter Tabs */}
       <View style={styles.filtersWrap}>
         <ScrollView
           horizontal
@@ -158,7 +220,18 @@ export default function AdminRequestsScreen() {
             >
               Pending ({pendingCount})
             </Text>
-            {filter === 'pending' && <Icon name="close" size={12} color="#FFFFFF" />}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.filterPill, filter === 'unassigned' && styles.filterPillActive]}
+            onPress={() => setFilter('unassigned')}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[styles.filterText, filter === 'unassigned' && styles.filterTextActive]}
+            >
+              Verified & Unassigned ({unassignedCount})
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -167,24 +240,21 @@ export default function AdminRequestsScreen() {
             activeOpacity={0.8}
           >
             <Text
-              style={[
-                styles.filterText,
-                filter === 'needs_info' && styles.filterTextActive,
-              ]}
+              style={[styles.filterText, filter === 'needs_info' && styles.filterTextActive]}
             >
-              Needs info ({needsInfoCount})
+              Clarification Sent ({needsInfoCount})
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.filterPill, filter === 'verified' && styles.filterPillActive]}
-            onPress={() => setFilter('verified')}
+            style={[styles.filterPill, filter === 'active' && styles.filterPillActive]}
+            onPress={() => setFilter('active')}
             activeOpacity={0.8}
           >
             <Text
-              style={[styles.filterText, filter === 'verified' && styles.filterTextActive]}
+              style={[styles.filterText, filter === 'active' && styles.filterTextActive]}
             >
-              Verified ({verifiedCount})
+              Ongoing & Planted ({activeCount})
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -196,16 +266,9 @@ export default function AdminRequestsScreen() {
         renderItem={renderCard}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ListFooterComponent={
-          <Text style={styles.footerNote}>
-            Note: There might be duplication of requests.
-          </Text>
-        }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Icon name="requests" size={36} color="#8BA093" />
-            <Text style={styles.emptyTitle}>No requests in this filter</Text>
-            <Text style={styles.emptySub}>Switch tabs above to inspect other requests.</Text>
+            <Text style={styles.emptyText}>No requests in this view.</Text>
           </View>
         }
       />
@@ -223,7 +286,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 10,
-    paddingBottom: 10,
+    paddingBottom: 12,
+    backgroundColor: '#FAFBF9',
   },
   backBtn: {
     padding: 4,
@@ -231,44 +295,44 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0D4325',
+    fontWeight: '800',
+    color: '#0B3B24',
   },
   filtersWrap: {
-    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#FAFBF9',
+    paddingVertical: 8,
   },
   filtersContent: {
     paddingHorizontal: 16,
     gap: 8,
   },
   filterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 999,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#CED7CD',
-    gap: 6,
+    borderColor: '#D1D5DB',
   },
   filterPillActive: {
-    backgroundColor: '#0D4E2B',
-    borderColor: '#0D4E2B',
+    backgroundColor: '#0B3B24',
+    borderColor: '#0B3B24',
   },
   filterText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4F5C54',
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#4B5563',
   },
   filterTextActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 28,
+    paddingTop: 14,
+    paddingBottom: 40,
     gap: 14,
   },
   card: {
@@ -276,129 +340,128 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#EAEEE7',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1,
   },
   photosStrip: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
     marginBottom: 12,
   },
   stripCell: {
     flex: 1,
-    aspectRatio: 1,
+    aspectRatio: 1.2,
     borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#E5EAE3',
+    backgroundColor: '#F3F4F6',
   },
   stripImg: {
     width: '100%',
     height: '100%',
   },
-  moreOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(17, 24, 39, 0.55)',
+  cardHeaderRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moreText: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
   reqIdText: {
-    fontSize: 11.5,
-    color: '#7A867E',
-    marginBottom: 4,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'capitalize',
   },
   cardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#0B3E22',
-    marginBottom: 4,
+    color: '#111827',
+    marginBottom: 3,
+  },
+  cardLocation: {
+    fontSize: 12.5,
+    color: '#4B5563',
+    marginBottom: 6,
   },
   cardDesc: {
-    fontSize: 12.5,
-    lineHeight: 18,
-    color: '#4F5C54',
+    fontSize: 12,
+    color: '#6B7280',
+    lineHeight: 16,
+    fontStyle: 'italic',
     marginBottom: 12,
   },
   submitterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
     marginBottom: 12,
   },
   citizenAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#E5EAE3',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   submittedBy: {
-    fontSize: 12.5,
-    color: '#5F6C64',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1F2937',
   },
   submittedDate: {
-    fontSize: 11.5,
-    color: '#7A867E',
+    fontSize: 11,
+    color: '#6B7280',
   },
-  duplicateBox: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  duplicateText: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: '#92580A',
-    fontWeight: '500',
+  cardActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
   reviewBtn: {
-    height: 44,
-    borderRadius: 999,
-    backgroundColor: '#0D4E2B',
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#0B3B24',
     alignItems: 'center',
     justifyContent: 'center',
   },
   reviewBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
-  footerNote: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    color: '#6E7B73',
-    marginTop: 4,
-    marginBottom: 12,
+  takeoverBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#15803D',
+  },
+  takeoverBtnText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   emptyBox: {
+    paddingVertical: 40,
     alignItems: 'center',
-    paddingVertical: 56,
-    paddingHorizontal: 24,
   },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#163020',
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  emptySub: {
-    fontSize: 13,
-    color: '#6C7870',
-    textAlign: 'center',
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });

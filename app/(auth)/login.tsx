@@ -1,6 +1,6 @@
 /**
- * Login Screen — Aanandvan (Design 4)
- * Clean OTP-based mobile login screen, properly center-aligned.
+ * Login Screen — Aanandvan
+ * Clean OTP-based email login screen.
  */
 
 import React, { useState } from 'react';
@@ -24,31 +24,34 @@ import { UserRole } from '@/types';
 
 export default function LoginScreen() {
   const { loginAs } = useApp();
-  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleMobileChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9\s]/g, '');
-    setMobile(cleaned);
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
     if (errorMsg) setErrorMsg('');
   };
 
-  const inferRoleFromNumber = (digits: string): UserRole => {
-    if (digits === '9999900000') return 'admin';
-    if (digits === '9812345678' || digits === '9123456789') return 'volunteer';
+  const inferRoleFromEmail = (val: string): UserRole => {
+    const lower = val.toLowerCase().trim();
+    if (lower.includes('admin')) return 'admin';
+    if (lower.includes('volunteer') || lower.includes('shirke') || lower.includes('aanandvan.in')) return 'volunteer';
     return 'citizen';
   };
 
-  const handleSendOtp = () => {
-    const digitsOnly = mobile.replace(/\s+/g, '');
-    if (digitsOnly.length > 0 && digitsOnly.length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number.');
+  const handleSendOtp = (overrideEmail?: string) => {
+    const targetEmail = (overrideEmail || email).trim().toLowerCase();
+    if (!targetEmail) {
+      setErrorMsg('Please enter your email ID.');
+      return;
+    }
+    if (!targetEmail.includes('@') || !targetEmail.includes('.')) {
+      setErrorMsg('Please enter a valid email address.');
       return;
     }
 
-    const finalDigits = digitsOnly.length === 10 ? digitsOnly : '9876543210';
-    const inferredRole = inferRoleFromNumber(finalDigits);
+    const inferredRole = inferRoleFromEmail(targetEmail);
 
     setLoading(true);
     setTimeout(() => {
@@ -56,7 +59,7 @@ export default function LoginScreen() {
       router.push({
         pathname: '/(auth)/otp',
         params: {
-          mobile: `+91 ${finalDigits.slice(0, 5)} ${finalDigits.slice(5)}`,
+          email: targetEmail,
           role: inferredRole,
           source: 'login',
         },
@@ -101,25 +104,26 @@ export default function LoginScreen() {
           {/* ─── Center-Aligned Form Block ─── */}
           <View style={styles.centerCard}>
             <Text style={styles.instructionText}>
-              Enter your registered mobile number. We will send you a 6-digit OTP.
+              Enter your registered Email ID. We will send you a 6-digit OTP verification code.
             </Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Mobile number</Text>
-              <View style={[styles.phoneInputWrap, errorMsg ? styles.phoneInputError : undefined]}>
-                <View style={styles.countryCodeBox}>
-                  <Text style={styles.countryCodeText}>+91</Text>
+              <Text style={styles.inputLabel}>Email ID</Text>
+              <View style={[styles.inputWrap, errorMsg ? styles.inputError : undefined]}>
+                <View style={styles.inputIconBox}>
+                  <Icon name="mail" size={20} color="#0B3B24" />
                 </View>
                 <TextInput
-                  style={styles.phoneInput}
-                  placeholder="00000 00000"
+                  style={styles.textInput}
+                  placeholder="e.g. kartik.vichare@gmail.com"
                   placeholderTextColor="#9CA3AF"
-                  keyboardType="phone-pad"
-                  maxLength={11}
-                  value={mobile}
-                  onChangeText={handleMobileChange}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  value={email}
+                  onChangeText={handleEmailChange}
                   returnKeyType="done"
-                  onSubmitEditing={handleSendOtp}
+                  onSubmitEditing={() => handleSendOtp()}
                 />
               </View>
               {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
@@ -140,36 +144,53 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={styles.sendOtpBtn}
               activeOpacity={0.88}
-              onPress={handleSendOtp}
+              onPress={() => handleSendOtp()}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.sendOtpText}>Send OTP</Text>
+                <Text style={styles.sendOtpText}>Send OTP Verification Code</Text>
               )}
             </TouchableOpacity>
 
-            {/* Quick Demo Login Buttons */}
-            <View style={styles.quickRolesRow}>
-              <TouchableOpacity
-                style={styles.quickRoleBtn}
-                activeOpacity={0.85}
-                onPress={() => {
-                  loginAs('volunteer');
-                  router.replace('/(volunteer)' as any);
-                }}
-              >
-                <Text style={styles.quickRoleText}>Volunteer</Text>
-              </TouchableOpacity>
+            {/* Quick Demo Login Presets */}
+            <View style={styles.presetsContainer}>
+              <Text style={styles.presetsLabel}>Quick Switch / Demo Profiles</Text>
+              <View style={styles.presetsRow}>
+                <TouchableOpacity
+                  style={styles.presetChip}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setEmail('kartik.vichare@gmail.com');
+                    handleSendOtp('kartik.vichare@gmail.com');
+                  }}
+                >
+                  <Text style={styles.presetChipText}>Citizen (Kartik)</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.quickRoleBtn}
-                activeOpacity={0.85}
-                onPress={() => router.push('/(auth)/admin-login' as any)}
-              >
-                <Text style={styles.quickRoleText}>Admin Login</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.presetChip}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setEmail('vaibhav.shirke@aanandvan.in');
+                    handleSendOtp('vaibhav.shirke@aanandvan.in');
+                  }}
+                >
+                  <Text style={styles.presetChipText}>Volunteer (Vaibhav)</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.presetChip, styles.presetChipAdmin]}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setEmail('admin@aanandvan.in');
+                    handleSendOtp('admin@aanandvan.in');
+                  }}
+                >
+                  <Text style={[styles.presetChipText, styles.presetChipAdminText]}>Admin</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Privacy Footer */}
@@ -226,12 +247,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   instructionText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0B3B24',
-    lineHeight: 24,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1F3D2B',
+    lineHeight: 22,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   inputGroup: {
     width: '100%',
@@ -243,7 +264,7 @@ const styles = StyleSheet.create({
     color: '#0B3B24',
     marginBottom: 8,
   },
-  phoneInputWrap: {
+  inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 50,
@@ -251,92 +272,108 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
+    paddingHorizontal: 12,
   },
-  phoneInputError: {
-    borderColor: '#DC2626',
+  inputError: {
+    borderColor: '#EF4444',
   },
-  countryCodeBox: {
-    paddingHorizontal: 16,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRightWidth: 1,
-    borderRightColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+  inputIconBox: {
+    marginRight: 10,
   },
-  countryCodeText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#6B7280',
-  },
-  phoneInput: {
+  textInput: {
     flex: 1,
-    height: '100%',
-    paddingHorizontal: 14,
     fontSize: 15,
     color: '#111827',
+    fontWeight: '500',
   },
   errorText: {
     fontSize: 12,
-    color: '#DC2626',
+    color: '#EF4444',
     marginTop: 6,
+    marginLeft: 2,
   },
   signupRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 26,
   },
   signupPrompt: {
     fontSize: 13,
-    color: '#9CA3AF',
-    fontWeight: '400',
+    color: '#6B7280',
   },
   signupLink: {
     fontSize: 13,
-    color: '#0B3B24',
     fontWeight: '700',
+    color: '#0B3B24',
+    textDecorationLine: 'underline',
   },
   sendOtpBtn: {
     width: '100%',
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#0A4D2E',
+    backgroundColor: '#0B3B24',
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    shadowColor: '#0B3B24',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 5,
+    elevation: 3,
+    marginBottom: 24,
   },
   sendOtpText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  quickRolesRow: {
-    flexDirection: 'row',
-    gap: 10,
+  presetsContainer: {
     width: '100%',
-    marginBottom: 16,
-  },
-  quickRoleBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.2,
-    borderColor: '#0A4D2E',
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
+    marginBottom: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  presetsLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  presetsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     justifyContent: 'center',
   },
-  quickRoleText: {
-    fontSize: 14,
+  presetChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+  },
+  presetChipText: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#0A4D2E',
+    color: '#1B5E20',
+  },
+  presetChipAdmin: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  presetChipAdminText: {
+    color: '#92400E',
   },
   privacyText: {
     fontSize: 12,
     color: '#9CA3AF',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 16,
   },
 });

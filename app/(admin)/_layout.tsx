@@ -81,15 +81,7 @@ export default function AdminLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
-          title: 'Inbox',
-          tabBarIcon: ({ color, focused }) => {
-            const iconColor = typeof color === 'string' ? (focused ? '#0B3B24' : color) : '#6B7280';
-            return (
-              <View style={[styles.iconWrapper, focused ? styles.activePill : undefined]}>
-                <Icon name="message" size={20} color={iconColor} />
-              </View>
-            );
-          },
+          href: null,
         }}
       />
       <Tabs.Screen

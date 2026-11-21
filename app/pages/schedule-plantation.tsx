@@ -172,27 +172,30 @@ export default function SchedulePlantationScreen() {
           })}
         </View>
 
-        <Text style={styles.sectionLabel}>Checklist of materials</Text>
-        <View style={styles.checklistList}>
-          {CHECKLIST_ITEMS.map((item) => {
-            const isChecked = !!checkedItems[item];
-            return (
-              <TouchableOpacity
-                key={item}
-                style={styles.checkRow}
-                onPress={() => toggleCheck(item)}
-                activeOpacity={0.75}
-              >
-                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-                  {isChecked && <Icon name="check" size={12} color="#FFFFFF" />}
-                </View>
-                <Text style={styles.checkLabel}>{item}</Text>
-              </TouchableOpacity>
-            );
-          })}
+        <Text style={styles.sectionLabel}>Equipment & Saplings Provided by Aanandvan</Text>
+        <View style={styles.equipmentNoteCard}>
+          <View style={styles.equipmentRow}>
+            <Icon name="check-circle" size={18} color="#0B3B24" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.equipmentHeader}>Tools for Digging & Soil Preparation</Text>
+              <Text style={styles.equipmentDesc}>
+                Heavy-duty gardening spade, pickaxe, trench trowel, 5kg organic vermicompost, and bamboo tree guards are provided by the Aanandvan Dadar Hub.
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.equipmentRow, { marginTop: 14 }]}>
+            <Icon name="plant" size={18} color="#0B3B24" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.equipmentHeader}>Native Sapling Varieties</Text>
+              <Text style={styles.equipmentDesc}>
+                Healthy 3-4 ft indigenous saplings (Neem, Karanj, Peepal, or Jamun) suited for urban Mumbai soil and roadside survival.
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Additional notes</Text>
+        <Text style={styles.sectionLabel}>Additional notes (Optional)</Text>
         <TextInput
           style={styles.notesInput}
           multiline
@@ -357,34 +360,29 @@ const styles = StyleSheet.create({
   slotSubActive: {
     color: '#D5EBD9',
   },
-  checklistList: {
-    gap: 12,
+  equipmentNoteCard: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 22,
   },
-  checkRow: {
+  equipmentRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: '#8B968F',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
+  equipmentHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0B3B24',
+    marginBottom: 3,
   },
-  checkboxChecked: {
-    backgroundColor: '#0D4E2B',
-    borderColor: '#0D4E2B',
-  },
-  checkLabel: {
-    flex: 1,
-    fontSize: 13.5,
-    color: '#2B3E33',
-    lineHeight: 19,
+  equipmentDesc: {
+    fontSize: 12.5,
+    color: '#374151',
+    lineHeight: 18,
   },
   notesInput: {
     backgroundColor: '#FFFFFF',

@@ -49,7 +49,9 @@ export type IconName =
   | 'users'
   | 'grid'
   | 'building'
-  | 'message';
+  | 'message'
+  | 'alert-triangle'
+  | 'edit';
 
 interface IconProps {
   name: IconName;
@@ -107,6 +109,8 @@ const GLYPHS: Record<IconName, string> = {
   grid: '⊞',
   building: '🏛',
   message: '💬',
+  'alert-triangle': '⚠',
+  edit: '✎',
 };
 
 export const Icon: React.FC<IconProps> = ({

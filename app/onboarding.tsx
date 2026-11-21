@@ -144,9 +144,8 @@ export default function OnboardingScreen() {
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
               />
-              {/* Atmospheric dark scrim for high text contrast */}
+              {/* Seamless atmospheric dark scrim for high contrast with no partition lines */}
               <View style={styles.topScrim} />
-              <View style={styles.bottomScrim} />
 
               <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
                 {/* Middle area: Dummy Aanandvan Logo on Screen 1 */}
@@ -273,15 +272,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(8, 18, 12, 0.48)',
-  },
-  bottomScrim: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '58%',
-    backgroundColor: 'rgba(6, 14, 9, 0.52)',
+    backgroundColor: 'rgba(8, 18, 12, 0.58)',
   },
   safeArea: {
     flex: 1,

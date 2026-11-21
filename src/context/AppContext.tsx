@@ -7,6 +7,7 @@ import {
   MaintenanceItem,
   ScheduleDetails,
   ActivityReport,
+  NurturingUpdate,
   AppNotificationItem,
   AdminInboxItem,
 } from '@/types';
@@ -27,12 +28,27 @@ interface AppContextType {
   
   // Request Lifecycle Actions
   createRequest: (data: Partial<PlantationRequest>) => PlantationRequest;
+  updateCitizenRequest: (id: string, data: Partial<PlantationRequest>) => void;
   verifyRequest: (id: string) => void;
   rejectRequest: (id: string) => void;
+  requestClarification: (id: string, notes: string) => void;
+  adminTakeoverRequest: (id: string) => void;
+  republishRequest: (id: string) => void;
   volunteerAcceptRequest: (id: string) => void;
   volunteerScheduleRequest: (id: string, schedule: ScheduleDetails) => void;
   adminApproveSchedule: (id: string) => void;
   volunteerUploadActivity: (id: string, activity: ActivityReport) => void;
+  addNurturingUpdate: (
+    id: string,
+    update: {
+      photos: string[];
+      notes: string;
+      actionsTaken?: string[];
+      date?: string;
+      volunteerName?: string;
+      volunteerId?: string;
+    }
+  ) => void;
   
   // Notifications Actions
   markNotificationAsRead: (id: string) => void;
@@ -43,8 +59,9 @@ interface AppContextType {
   // Volunteer Management Actions
   submitVolunteerApplication: (app: Partial<VolunteerApplication>) => VolunteerApplication;
   approveVolunteer: (id: string) => void;
-  rejectVolunteer: (id: string) => void;
   saveVolunteerAdminNote: (id: string, note: string) => void;
+  blockVolunteer: (id: string, reason: string) => void;
+  unblockVolunteer: (id: string) => void;
   
   // Maintenance Actions
   addMaintenanceLog: (id: string, note: string) => void;
@@ -54,34 +71,34 @@ interface AppContextType {
 const DEFAULT_USERS: Record<UserRole, AppUser> = {
   citizen: {
     id: 'user-citizen-1',
-    name: 'Rahul Sharma',
-    email: 'rahul.sharma@example.com',
-    phone: '+91 98765 43210',
-    city: 'New Delhi',
+    name: 'Kartik Vichare',
+    email: 'kartik.vichare@gmail.com',
+    phone: '+91 98201 34567',
+    city: 'Dadar West, Mumbai',
     role: 'citizen',
     isVerified: true,
-    requestsCount: 12,
-    verifiedRequestsCount: 8,
-    treesCount: 24,
+    requestsCount: 4,
+    verifiedRequestsCount: 3,
+    treesCount: 14,
   },
   volunteer: {
     id: 'user-vol-1',
-    name: 'Amit Kumar',
-    email: 'amit.kumar@example.com',
-    phone: '+91 98123 45678',
-    city: 'Gurugram',
+    name: 'Vaibhav Shirke',
+    email: 'vaibhav.shirke@aanandvan.in',
+    phone: '+91 98204 88776',
+    city: 'Dadar, Mumbai',
     role: 'volunteer',
     isVerified: true,
-    requestsCount: 3,
-    verifiedRequestsCount: 7,
-    treesCount: 23,
+    requestsCount: 2,
+    verifiedRequestsCount: 8,
+    treesCount: 28,
   },
   admin: {
     id: 'user-admin-1',
     name: 'Aanandvan Admin',
     email: 'admin@aanandvan.in',
     phone: '+91 99999 00000',
-    city: 'New Delhi',
+    city: 'Mumbai',
     role: 'admin',
     isVerified: true,
   },
@@ -90,14 +107,13 @@ const DEFAULT_USERS: Record<UserRole, AppUser> = {
 const INITIAL_REQUESTS: PlantationRequest[] = [
   {
     id: 'REQ-2024-0042',
-    title: 'Oak Valley Reforestation',
+    title: 'Shivaji Park Perimeter Greening',
     description:
-      'This area requires immediate reforestation due to recent erosion. The soil is predominantly loam, suitable for White Oak. Please ensure to follow the grid planting method discussed during the briefing. Accessibility is good for small transport vehicles via the northern service road.',
-    location: 'Greenwood North District, Area 4B',
-    manualAddress:
-      'Greenwood North District, Area 4B. Access via the service road near the old water tower, Sector 12, Los Angeles, CA.',
-    landmark: 'Near the Old Water Tower',
-    coordinates: '34.0522° N, 118.2437° W',
+      'Unshaded walking patch along the outer boundary wall of Shivaji Park. Red soil base with optimal sunlight, ideal for native shade trees like Neem or Peepal.',
+    location: 'Shivaji Park, Dadar West',
+    manualAddress: 'Near Gate 3, Shivaji Park Outer Ring, Dadar West, Mumbai 400028',
+    landmark: 'Opposite Samarth Vyayam Mandir',
+    coordinates: '19.0269° N, 72.8375° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
@@ -105,29 +121,29 @@ const INITIAL_REQUESTS: PlantationRequest[] = [
     ],
     landmarkPhotos: [
       'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=600&auto=format&fit=crop&q=80',
     ],
     status: 'assigned',
-    createdAt: 'Oct 24, 2023',
-    distanceKm: 1.2,
+    createdAt: '24 Oct 2026',
+    distanceKm: 0.6,
     duplicateRisk: 'None detected',
     citizenId: 'user-citizen-1',
-    citizenName: 'Rahul Sharma',
-    citizenEmail: 'rahul.sharma@example.com',
-    citizenPhone: '+91 98765 43210',
+    citizenName: 'Kartik Vichare',
+    citizenEmail: 'kartik.vichare@gmail.com',
+    citizenPhone: '+91 98201 34567',
     assignedVolunteerId: 'user-vol-1',
-    assignedVolunteerName: 'Amit Kumar',
+    assignedVolunteerName: 'Vaibhav Shirke',
     assignedVolunteerLevel: 'Level 4 • 25+ Plantations',
+    nurturingUpdates: [],
   },
   {
     id: 'REQ-8794',
-    title: 'Mangrove Restoration',
+    title: 'Dadar TT Circle Underpass Green Belt',
     description:
-      'Tidal zone wetland planting to fortify natural shoreline defense and promote marine ecosystem recovery.',
-    location: 'East Creek Shoreline',
-    manualAddress: 'Plot 18, East Creek Shoreline, Coastal Zone 3',
-    landmark: 'Near Fisherman Jetty #4',
-    coordinates: '18.9220° N, 72.8347° E',
+      'Underpass median space near Dadar TT circle needing pollution-absorbing indigenous green shrubs and canopy trees.',
+    location: 'Dadar TT Circle, Dadar East',
+    manualAddress: 'Flyover Underpass Median, Dadar TT Circle, Mumbai 400014',
+    landmark: 'Near Khodadad Circle Fountain',
+    coordinates: '19.0182° N, 72.8436° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&auto=format&fit=crop&q=80',
     ],
@@ -135,224 +151,286 @@ const INITIAL_REQUESTS: PlantationRequest[] = [
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
     ],
     status: 'verified',
-    createdAt: 'Oct 20, 2023',
-    distanceKm: 2.5,
+    createdAt: '20 Oct 2026',
+    distanceKm: 1.1,
     duplicateRisk: 'None detected',
     citizenId: 'user-citizen-2',
-    citizenName: 'Sarah Miller',
-    citizenEmail: 'sarah.m@example.com',
+    citizenName: 'Tanvi Sawant',
+    citizenEmail: 'tanvi.sawant@gmail.com',
+    nurturingUpdates: [],
   },
   {
     id: 'REQ-8652',
-    title: 'Cedar Buffer Zone',
+    title: 'Five Gardens Green Canopy',
     description:
-      'Community buffer zone between residential avenue and bypass road for noise pollution mitigation.',
-    location: 'Highland Community Center',
-    manualAddress: 'Highland Community Center Grounds, Sector 21',
-    landmark: 'Opposite Community Library',
-    coordinates: '28.4595° N, 77.0266° E',
+      'Open circular patch inside Garden No. 3 requiring flowering Karanj saplings to restore damaged storm tree cover.',
+    location: 'Five Gardens, Matunga East',
+    manualAddress: 'Garden 3, Mancherji Joshi Road, Five Gardens, Matunga East 400019',
+    landmark: 'Adjacent to Parsi Colony Library',
+    coordinates: '19.0210° N, 72.8530° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=600&auto=format&fit=crop&q=80',
     ],
     landmarkPhotos: [],
     status: 'in_progress',
-    createdAt: 'Oct 15, 2023',
-    distanceKm: 0.8,
+    createdAt: '15 Oct 2026',
+    distanceKm: 1.4,
     duplicateRisk: 'None detected',
     citizenId: 'user-citizen-3',
-    citizenName: 'Anil Kapoor',
+    citizenName: 'Aniket Deshmukh',
     assignedVolunteerId: 'user-vol-1',
-    assignedVolunteerName: 'Amit Kumar',
+    assignedVolunteerName: 'Vaibhav Shirke',
+    nurturingUpdates: [],
   },
   {
     id: 'REQ-8430',
-    title: 'Urban Fruit Orchard',
+    title: 'Prabhadevi Beachside Buffer',
     description:
-      'Neighborhood orchard with native guava, pomegranate, and amla trees for community harvest.',
-    location: 'Northside Commons',
-    manualAddress: 'Northside Commons Open Grounds, Gate 2',
-    landmark: 'Behind Public Solar Array',
-    coordinates: '28.5355° N, 77.3910° E',
+      'Community coastal walkway greening with salt-tolerant Indian Almond and native coconut saplings.',
+    location: 'Kirti College Road, Prabhadevi',
+    manualAddress: 'Seaward Lane, Near Kirti College Gate 2, Prabhadevi 400025',
+    landmark: 'Behind Beachside Sports Complex',
+    coordinates: '19.0195° N, 72.8280° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=600&auto=format&fit=crop&q=80',
     ],
     landmarkPhotos: [],
     status: 'completed',
-    createdAt: 'Sep 28, 2023',
+    createdAt: '28 Sep 2026',
     citizenId: 'user-citizen-1',
-    citizenName: 'Rahul Sharma',
-    assignedVolunteerId: 'user-vol-2',
-    assignedVolunteerName: 'James Wilson',
+    citizenName: 'Kartik Vichare',
+    assignedVolunteerId: 'user-vol-1',
+    assignedVolunteerName: 'Vaibhav Shirke',
     assignedVolunteerLevel: 'Level 4 • 25+ Plantations',
+    activityReport: {
+      photos: [
+        'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
+      ],
+      saplingsPlanted: 6,
+      species: 'Badam & Karanj',
+      date: '02 Oct 2026',
+      notes: '6 native saplings securely planted with organic mulch and bamboo protective guards.',
+    },
+    nurturingUpdates: [
+      {
+        id: 'nurt-1',
+        date: '08 Oct 2026',
+        photos: [
+          'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
+        ],
+        notes: 'Deep 15L root watering completed. Soil moisture checked and weeded surrounding circular trench.',
+        volunteerName: 'Vaibhav Shirke',
+        volunteerId: 'user-vol-1',
+        actionsTaken: ['Watered (15L)', 'Weeded Trench', 'Mulched'],
+      },
+      {
+        id: 'nurt-2',
+        date: '18 Oct 2026',
+        photos: [
+          'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
+        ],
+        notes: 'Protective bamboo cage tightened after heavy sea breeze. New green shoots emerging healthy!',
+        volunteerName: 'Vaibhav Shirke',
+        volunteerId: 'user-vol-1',
+        actionsTaken: ['Guard Reinforced', 'Foliage Check', 'Organic Compost Added'],
+      },
+    ],
   },
   {
     id: 'REQ-8211',
-    title: 'Pine Hill Nursery Perimeter',
+    title: 'Hindu Colony 6th Lane Sidewalk',
     description:
-      'Perimeter green belt planting along Pine Hill Ridge to prevent dust accumulation.',
-    location: 'Pine Hill Ridge',
-    manualAddress: 'Ridge Road, North Ridge Enclave',
-    landmark: 'Near Water Reservoir Tank 3',
-    coordinates: '28.6139° N, 77.2090° E',
+      'Bare concrete pavement cutout needing a wide-canopy tree to cool residential walkway.',
+    location: '6th Lane, Hindu Colony, Dadar East',
+    manualAddress: 'Outside Shanti Sadan, 6th Lane, Hindu Colony, Dadar East 400014',
+    landmark: 'Near King George School Play Area',
+    coordinates: '19.0205° N, 72.8485° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
     ],
     landmarkPhotos: [],
-    status: 'pending',
-    createdAt: 'Sep 15, 2023',
+    status: 'needs_info',
+    createdAt: '15 Sep 2026',
     citizenId: 'user-citizen-1',
-    citizenName: 'Rahul Sharma',
-  },
-  {
-    id: 'REQ-2024-0045',
-    title: 'Greenwood Apartments, Noida Sector 76',
-    description:
-      'Community requested plantation drive. Space for 40 fruit trees along the north perimeter wall. Local soil tested fertile.',
-    location: 'Greenwood Apartments, Sector 76',
-    manualAddress: 'Block C, Row 12, Greenwood Apartments, Noida Sector 76',
-    landmark: 'North Perimeter Gate',
-    coordinates: '28.5678° N, 77.3821° E',
-    areaPhotos: [
-      'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
-    ],
-    landmarkPhotos: [],
-    status: 'pending',
-    createdAt: '15 Jan 2025',
-    duplicateRisk: 'None detected',
-    citizenId: 'user-citizen-4',
-    citizenName: 'Priya Desai',
+    citizenName: 'Kartik Vichare',
+    adminClarificationNotes:
+      'Please upload a clearer landmark photo showing pavement width so our volunteer team can confirm utility pipe clearance.',
   },
   {
     id: 'REQ-2024-0063',
-    title: 'Heritage Public School',
+    title: 'Mahim Nature Park Boundary Restoration',
     description:
-      'School beautification drive. Planting 10 flowering cherry trees along the north walkway. Great for student participation.',
-    location: 'Main Gate, North Campus, Heritage',
-    manualAddress: 'Heritage Public School Campus, Sector 15',
-    landmark: 'Opposite Administrative Wing',
-    coordinates: '28.4800° N, 77.0800° E',
+      'Boundary walkway plantation drive. Ideal space for flowering Gulmohar and Bakul trees.',
+    location: 'Sion-Bandra Link Road, Mahim',
+    manualAddress: 'Maharashtra Nature Park Perimeter, Mahim East 400017',
+    landmark: 'Opposite Dharavi Bus Depot',
+    coordinates: '19.0430° N, 72.8590° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop&q=80',
     ],
     landmarkPhotos: [],
     status: 'verified',
-    createdAt: '18 Jan 2025',
-    distanceKm: 0.8,
+    createdAt: '18 Oct 2026',
+    distanceKm: 2.1,
     duplicateRisk: 'None detected',
-    citizenId: 'user-citizen-5',
-    citizenName: 'Sunil Mathur',
+    citizenId: 'user-citizen-4',
+    citizenName: 'Prakash More',
   },
   {
     id: 'REQ-2024-0088',
-    title: 'Riverbank Restoration',
+    title: 'Chaityabhoomi Coastal Promenade',
     description:
-      'Help prevent soil erosion by planting native riverbank vegetation. Tough terrain, sturdy footwear recommended.',
-    location: 'Old Ferry Wharf, East Bank',
-    manualAddress: 'Old Ferry Terminal Road, Riverfront East',
-    landmark: 'Old Ferry Pier',
-    coordinates: '28.6400° N, 77.2500° E',
+      'Coastal pathway needing windbreak vegetation along the rocky sea wall.',
+    location: 'Ranade Road, Dadar West',
+    manualAddress: 'Chaityabhoomi Seafront Promenade, Dadar West 400028',
+    landmark: 'Near Dr. Babasaheb Ambedkar Smarak',
+    coordinates: '19.0245° N, 72.8330° E',
     areaPhotos: [
       'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
     ],
     landmarkPhotos: [],
     status: 'verified',
-    createdAt: '20 Jan 2025',
-    distanceKm: 4.1,
+    createdAt: '22 Oct 2026',
+    distanceKm: 0.9,
     duplicateRisk: 'None detected',
-    citizenId: 'user-citizen-6',
-    citizenName: 'Vikram Batra',
+    citizenId: 'user-citizen-5',
+    citizenName: 'Priya Kulkarni',
   },
 ];
 
 const INITIAL_VOLUNTEERS: VolunteerApplication[] = [
   {
     id: 'vol-app-1',
-    name: 'Priya Sharma',
-    email: 'priya.sharma@example.com',
-    phone: '+91 98765 43210',
-    city: 'Powai, Mumbai',
-    pincode: '400076',
-    address: 'Flat 402, Green Meadows Apartment, Powai, Mumbai, Maharashtra',
-    coordinates: '19.1176° N, 72.9060° E',
-    appliedDate: 'Oct 24, 2023',
-    status: 'pending',
+    volunteerCode: 'VOL-DAD-0104',
+    name: 'Vaibhav Shirke',
+    email: 'vaibhav.shirke@aanandvan.in',
+    phone: '+91 98204 88776',
+    city: 'Dadar, Mumbai',
+    pincode: '400028',
+    address: 'Flat 12, Sahakar Niwas, Gokhale Road, Dadar West, Mumbai',
+    coordinates: '19.0234° N, 72.8390° E',
+    appliedDate: '24 Oct 2025',
+    status: 'verified',
     visionQuote:
-      'My vision for Aanandvan is to transform our local urban spaces into thriving green corridors. I am committed to community-led reforestation that not only improves our air quality but also creates a lasting legacy of environmental stewardship for the next generation.',
-    adminNotes: 'Candidate has prior experience leading weekend youth eco-drives in Powai.',
+      'Committed to restoring Mumbai native canopy corridors in Shivaji Park and Prabhadevi.',
+    bio: 'Botanical researcher and community green volunteer with 4+ years urban planting experience across Dadar and Matunga.',
+    adminNotes: 'Senior volunteer. Qualified to lead tree plantation and sapling training.',
+    plantationsCount: 28,
+    acceptedDrivesCount: 18,
+    completedDrivesCount: 16,
+    ongoingDrivesCount: 2,
+    lastActiveDate: 'Today',
+    lastActive: 'Today',
   },
   {
     id: 'vol-app-2',
-    name: 'Arjun Mehta',
-    email: 'arjun.mehta@workmail.com',
-    phone: '+91 77220 11990',
-    city: 'New Delhi',
-    pincode: '110001',
-    address: '14 Barakhamba Road, Connaught Place, New Delhi',
-    coordinates: '28.6304° N, 77.2177° E',
-    appliedDate: '12 Jan 2025',
-    status: 'pending',
-    visionQuote:
-      'I want to bring urban terrace gardens and street canopy restoration to central Delhi.',
+    volunteerCode: 'VOL-MAT-0219',
+    name: 'Tanvi Sawant',
+    email: 'tanvi.sawant@workmail.com',
+    phone: '+91 98209 11990',
+    city: 'Matunga East, Mumbai',
+    pincode: '400019',
+    address: '14 Bhaudaji Road, Matunga East, Mumbai',
+    coordinates: '19.0280° N, 72.8550° E',
+    appliedDate: '12 Jan 2026',
+    status: 'verified',
+    visionQuote: 'Passionate about native biodiversity and planting indigenous flowering trees.',
+    bio: 'Avid terrace gardener and environmental activist keen on adopting public sidewalks in Matunga.',
+    plantationsCount: 8,
+    acceptedDrivesCount: 9,
+    completedDrivesCount: 8,
+    ongoingDrivesCount: 1,
+    lastActiveDate: '2 days ago',
+    lastActive: '2d ago',
   },
   {
     id: 'vol-app-3',
-    name: 'Rohan Verma',
-    email: 'rohan.v@example.com',
+    volunteerCode: 'VOL-PRB-0342',
+    name: 'Rohit Gaikwad',
+    email: 'rohit.g@example.com',
     phone: '+91 99887 76655',
-    city: 'Gurugram',
-    pincode: '122001',
-    address: 'DLF Phase 2, Gurugram, Haryana',
-    coordinates: '28.4595° N, 77.0266° E',
-    appliedDate: '05 Jan 2024',
+    city: 'Prabhadevi, Mumbai',
+    pincode: '400025',
+    address: 'Sayani Road, Near Siddhivinayak Temple, Prabhadevi',
+    coordinates: '19.0160° N, 72.8290° E',
+    appliedDate: '05 Jan 2026',
     status: 'verified',
-    plantationsCount: 23,
-    lastActive: '2d ago',
-    visionQuote: 'Dedicated to community park greening and indigenous tree planting.',
+    plantationsCount: 0,
+    acceptedDrivesCount: 0,
+    completedDrivesCount: 0,
+    ongoingDrivesCount: 0,
+    lastActiveDate: 'Inactive (No drives accepted)',
+    lastActive: '30d ago',
+    visionQuote: 'College student eager to join weekend community plantation drives.',
+    bio: 'Student at Ruia College interested in weekend urban forestry.',
+  },
+  {
+    id: 'vol-app-4',
+    volunteerCode: 'VOL-WAD-0408',
+    name: 'Swapnil More',
+    email: 'swapnil.m@example.com',
+    phone: '+91 98711 22334',
+    city: 'Wadala, Mumbai',
+    pincode: '400031',
+    address: 'Bhakti Park, Wadala East, Mumbai',
+    coordinates: '19.0270° N, 72.8680° E',
+    appliedDate: '15 Feb 2026',
+    status: 'suspended',
+    isBlocked: true,
+    blockReason: 'Accepted 3 drives and remained completely unresponsive for 21 days without scheduling.',
+    blockedAt: '10 Nov 2026',
+    plantationsCount: 1,
+    acceptedDrivesCount: 3,
+    completedDrivesCount: 0,
+    ongoingDrivesCount: 3,
+    lastActiveDate: '21 days ago',
+    lastActive: '21d ago',
+    visionQuote: 'Urban greening advocate.',
+    bio: 'Independent volunteer.',
   },
 ];
 
 const INITIAL_MAINTENANCE: MaintenanceItem[] = [
   {
     id: 'maint-1',
-    treeName: 'Young White Oak #042',
+    treeName: 'Shivaji Park Neem Tree #042',
     treeTag: '#042',
-    location: 'Lincoln Park, Sector C',
+    location: 'Shivaji Park Outer Ring, Dadar West',
     status: 'needs_water',
     isUrgent: true,
-    lastVisit: 'Oct 12, 2023',
-    planterName: 'Sarah Mitchell',
+    lastVisit: '10 Nov 2026',
+    planterName: 'Vaibhav Shirke',
     imageUrl:
       'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
     timeline: [
       {
-        date: 'Oct 12, 2023',
-        title: 'Initial Plantation',
-        description: 'Sapling planted with compost and primary protective mesh.',
-      },
-      {
-        date: 'Oct 20, 2023',
-        title: 'First Routine Water Log',
-        description: 'Moisture level optimal, mulch checked.',
+        date: '10 Nov 2026',
+        title: 'Initial Plantation Completed',
+        description: 'Native Neem sapling grounded with vermicompost and protective guard.',
       },
     ],
   },
   {
     id: 'maint-2',
-    treeName: 'Red Maple #109',
+    treeName: 'Prabhadevi Karanj Canopy #109',
     treeTag: '#109',
-    location: 'Heritage Square',
+    location: 'Kirti College Road, Prabhadevi',
     status: 'healthy',
     isUrgent: false,
-    lastVisit: 'Nov 02, 2023',
-    planterName: 'Mark J. Peterson',
+    lastVisit: '18 Oct 2026',
+    planterName: 'Vaibhav Shirke',
     imageUrl:
       'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
     timeline: [
       {
-        date: 'Nov 02, 2023',
-        title: 'Canopy Inspection',
-        description: 'Strong foliage development, no pest activity detected.',
+        date: '02 Oct 2026',
+        title: 'Initial Plantation Completed',
+        description: '6 saplings planted with organic mulch.',
+      },
+      {
+        date: '18 Oct 2026',
+        title: 'Nurturing & Bamboo Cage Check',
+        description: 'Protective bamboo cage tightened; healthy new leaf shoots developing.',
       },
     ],
   },
@@ -362,8 +440,8 @@ const INITIAL_NOTIFICATIONS: AppNotificationItem[] = [
   {
     id: 'n-1',
     section: 'Today',
-    title: 'Volunteer assigned',
-    body: 'Amit Kumar has accepted Oak Valley Reforestation and will schedule a planting slot soon.',
+    title: 'Volunteer Assigned to Your Request',
+    body: 'Vaibhav Shirke has accepted your Shivaji Park perimeter request and is preparing the sapling.',
     time: '2 hours ago',
     icon: 'profile',
     unread: true,
@@ -372,40 +450,20 @@ const INITIAL_NOTIFICATIONS: AppNotificationItem[] = [
   {
     id: 'n-2',
     section: 'Today',
-    title: 'Request verified',
-    body: 'Your plantation request for Mangrove Restoration has been verified and is open for volunteers.',
-    time: '5 hours ago',
-    icon: 'check',
+    title: 'Clarification Needed for Request',
+    body: 'Admin asked for clearer landmark details for Hindu Colony 6th Lane Sidewalk. Tap to edit.',
+    time: '4 hours ago',
+    icon: 'info',
     unread: true,
-    requestId: 'REQ-8794',
+    requestId: 'REQ-8211',
   },
   {
     id: 'n-3',
     section: 'Earlier',
-    title: 'Planting completed',
-    body: '5 saplings have been planted at Cedar Buffer Zone. Tap to review site photos.',
-    time: '02 Nov',
+    title: 'Tree Nurturing Update Added! 🌱',
+    body: 'Vaibhav Shirke watered and added mulch to Prabhadevi Beachside Buffer. Tap to view new photos.',
+    time: '18 Oct',
     icon: 'plant',
-    unread: true,
-    requestId: 'REQ-8652',
-  },
-  {
-    id: 'n-4',
-    section: 'Earlier',
-    title: 'More information needed',
-    body: 'Please add a clearer landmark photo so volunteers can locate the planting patch.',
-    time: '30 Oct',
-    icon: 'info',
-    unread: false,
-    requestId: 'REQ-2024-0042',
-  },
-  {
-    id: 'n-5',
-    section: 'Earlier',
-    title: 'Planting completed',
-    body: 'Maintenance hydration check recorded for Urban Fruit Orchard saplings.',
-    time: '22 Oct',
-    icon: 'camera',
     unread: false,
     requestId: 'REQ-8430',
   },
@@ -414,18 +472,18 @@ const INITIAL_NOTIFICATIONS: AppNotificationItem[] = [
 const INITIAL_ADMIN_INBOX: AdminInboxItem[] = [
   {
     id: 'inb-1',
-    title: 'New plantation request',
-    body: 'Rahul Sharma submitted a new plantation request for Greenwood Apartments awaiting verification.',
+    title: 'New Plantation Spot Reported',
+    body: 'Kartik Vichare submitted an unshaded space at Shivaji Park, Dadar West awaiting review.',
     time: '2 hours ago',
     icon: 'plant',
     unread: true,
     route: '/pages/admin-review-request',
-    params: { id: 'REQ-2024-0045' },
+    params: { id: 'REQ-2024-0042' },
   },
   {
     id: 'inb-2',
-    title: 'New volunteer applicant',
-    body: 'Priya Sharma has applied to join as a verified volunteer in Powai, Mumbai.',
+    title: 'New Volunteer Application',
+    body: 'Tanvi Sawant applied to volunteer from Matunga East, Mumbai.',
     time: '5 hours ago',
     icon: 'profile',
     unread: true,
@@ -433,29 +491,11 @@ const INITIAL_ADMIN_INBOX: AdminInboxItem[] = [
   },
   {
     id: 'inb-3',
-    title: 'Request complete',
-    body: 'James Wilson marked Urban Fruit Orchard plantation drive complete with 5 saplings.',
-    time: '5 hours ago',
-    icon: 'check',
+    title: 'Drive Unaccepted Alert',
+    body: 'Chaityabhoomi Coastal Promenade has been verified for 3+ days without volunteer acceptance.',
+    time: '1 day ago',
+    icon: 'alert',
     unread: true,
-    route: '/(admin)/requests',
-  },
-  {
-    id: 'inb-4',
-    title: 'Possible duplication',
-    body: 'Detected overlapping coordinates near #REQ-2024-0042 within 20 meters.',
-    time: '5 hours ago',
-    icon: 'document',
-    unread: false,
-    route: '/(admin)/requests',
-  },
-  {
-    id: 'inb-5',
-    title: 'Planting update submitted',
-    body: 'Before and after activity photos uploaded for review by verified volunteer.',
-    time: '5 hours ago',
-    icon: 'profile',
-    unread: false,
     route: '/(admin)/requests',
   },
 ];
@@ -488,17 +528,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(DEFAULT_USERS.citizen);
   };
 
-  // ─── Citizen Creates Request ─────────────────────────────────────────────
+  // ─── Citizen Creates Request (Spotting Empty Space) ────────────────────────
   const createRequest = (data: Partial<PlantationRequest>): PlantationRequest => {
     const newReqId = `REQ-2024-${String(requests.length + 43).padStart(4, '0')}`;
     const newReq: PlantationRequest = {
       id: newReqId,
-      title: data.title || 'Community Plantation Drive',
+      title: data.title || 'Community Tree Plantation Spot',
       description: data.description || '',
-      location: data.location || 'Local Green Belt',
-      manualAddress: data.manualAddress || data.location || '',
-      landmark: data.landmark || 'Near Main Entrance',
-      coordinates: data.coordinates || '28.6139° N, 77.2090° E',
+      location: data.location || 'Dadar, Mumbai',
+      manualAddress: data.manualAddress || data.location || 'Dadar, Mumbai',
+      landmark: data.landmark || 'Near main sidewalk',
+      coordinates: data.coordinates || '19.0200° N, 72.8400° E',
       areaPhotos: data.areaPhotos?.length
         ? data.areaPhotos
         : ['https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80'],
@@ -510,6 +550,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       citizenEmail: currentUser.email,
       citizenPhone: currentUser.phone,
       duplicateRisk: 'None detected',
+      nurturingUpdates: [],
     };
 
     setRequests(prev => [newReq, ...prev]);
@@ -517,8 +558,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Notify Admin Inbox of newly created request
     const adminItem: AdminInboxItem = {
       id: `inb-${Date.now()}`,
-      title: 'New plantation request',
-      body: `${currentUser.name} submitted a new request for ${newReq.location}.`,
+      title: 'New Plantation Spot Reported',
+      body: `${currentUser.name} reported a tree planting spot at ${newReq.location}.`,
       time: 'Just now',
       icon: 'plant',
       unread: true,
@@ -531,8 +572,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const citizenItem: AppNotificationItem = {
       id: `n-${Date.now()}`,
       section: 'Today',
-      title: 'Request submitted',
-      body: `Your request "${newReq.title}" has been submitted for verification.`,
+      title: 'Request Submitted',
+      body: `Your spot "${newReq.title}" has been submitted for admin verification.`,
       time: 'Just now',
       icon: 'plant',
       unread: true,
@@ -543,23 +584,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newReq;
   };
 
+  // ─── Citizen Edits Request after Clarification ─────────────────────────────
+  const updateCitizenRequest = (id: string, data: Partial<PlantationRequest>) => {
+    setRequests(prev =>
+      prev.map(req =>
+        req.id === id
+          ? {
+              ...req,
+              ...data,
+              status: 'pending', // Re-submits to admin review
+              adminClarificationNotes: undefined, // Clear old clarification note
+            }
+          : req
+      )
+    );
+
+    // Notify Admin that request was updated
+    const adminItem: AdminInboxItem = {
+      id: `inb-${Date.now()}`,
+      title: 'Request Updated by Citizen',
+      body: `Clarification updated for #${id}. Ready for re-verification.`,
+      time: 'Just now',
+      icon: 'document',
+      unread: true,
+      route: '/pages/admin-review-request',
+      params: { id },
+    };
+    setAdminInbox(prev => [adminItem, ...prev]);
+  };
+
   // ─── Admin Verifies Request ──────────────────────────────────────────────
   const verifyRequest = (id: string) => {
     const target = requests.find(r => r.id === id);
     const title = target?.title || 'Plantation Drive';
 
     setRequests(prev =>
-      prev.map(req => (req.id === id ? { ...req, status: 'verified' } : req))
+      prev.map(req => (req.id === id ? { ...req, status: 'verified', adminClarificationNotes: undefined } : req))
     );
 
     // Notify Citizen that their request was verified and posted
     const citizenNotif: AppNotificationItem = {
       id: `n-${Date.now()}`,
       section: 'Today',
-      title: 'Request verified',
-      body: `Your plantation request for "${title}" has been verified and posted to volunteers!`,
+      title: 'Request Verified',
+      body: `Your plantation request for "${title}" has been verified and posted to Dadar volunteers!`,
       time: 'Just now',
       icon: 'check',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
+  };
+
+  // ─── Admin Requests Clarification (Ask More Info) ─────────────────────────
+  const requestClarification = (id: string, notes: string) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
+    setRequests(prev =>
+      prev.map(req =>
+        req.id === id
+          ? {
+              ...req,
+              status: 'needs_info',
+              adminClarificationNotes: notes,
+            }
+          : req
+      )
+    );
+
+    // Notify Citizen with the admin's note
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Clarification Needed for Request',
+      body: `Admin note: "${notes}". Tap to review and update your request.`,
+      time: 'Just now',
+      icon: 'info',
       unread: true,
       requestId: id,
     };
@@ -575,22 +676,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(req => (req.id === id ? { ...req, status: 'rejected' } : req))
     );
 
-    // Notify Citizen that more info is needed
     const citizenNotif: AppNotificationItem = {
       id: `n-${Date.now()}`,
       section: 'Today',
-      title: 'More information needed',
-      body: `Admin requested clearer landmark or location details for "${title}".`,
+      title: 'Request Not Approved',
+      body: `Unfortunately, the proposed site "${title}" could not be approved due to underground utility or space constraints.`,
       time: 'Just now',
-      icon: 'info',
+      icon: 'close',
       unread: true,
       requestId: id,
     };
     setNotifications(prev => [citizenNotif, ...prev]);
   };
 
+  // ─── Admin Takes Over Unaccepted Drive ────────────────────────────────────
+  const adminTakeoverRequest = (id: string) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
+    setRequests(prev =>
+      prev.map(req =>
+        req.id === id
+          ? {
+              ...req,
+              status: 'assigned',
+              isTakenOverByAdmin: true,
+              assignedVolunteerId: 'admin-team',
+              assignedVolunteerName: 'Aanandvan Direct Mobile Squad',
+              assignedVolunteerLevel: 'Aanandvan Core Team',
+            }
+          : req
+      )
+    );
+
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Drive Taken Over by Aanandvan Team',
+      body: `Aanandvan central team has taken direct responsibility for "${title}" to expedite planting.`,
+      time: 'Just now',
+      icon: 'shield',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
+  };
+
+  // ─── Re-publish Request (e.g. after volunteer blocked) ────────────────────
+  const republishRequest = (id: string) => {
+    setRequests(prev =>
+      prev.map(req =>
+        req.id === id
+          ? {
+              ...req,
+              status: 'verified',
+              assignedVolunteerId: undefined,
+              assignedVolunteerName: undefined,
+              assignedVolunteerAvatar: undefined,
+              schedule: undefined,
+            }
+          : req
+      )
+    );
+  };
+
   // ─── Volunteer Accepts Request ───────────────────────────────────────────
   const volunteerAcceptRequest = (id: string) => {
+    // If volunteer is blocked, block them from accepting!
+    const isVolunteerBlocked = volunteers.find(v => v.email === currentUser.email)?.isBlocked;
+    if (isVolunteerBlocked) return;
+
     const target = requests.find(r => r.id === id);
     const title = target?.title || 'Plantation Drive';
 
@@ -608,12 +763,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
+    // Update volunteer stats
+    setVolunteers(prev =>
+      prev.map(v =>
+        v.id === currentUser.id
+          ? {
+              ...v,
+              acceptedDrivesCount: (v.acceptedDrivesCount || 0) + 1,
+              ongoingDrivesCount: (v.ongoingDrivesCount || 0) + 1,
+              lastActiveDate: 'Today',
+            }
+          : v
+      )
+    );
+
     // Notify Citizen that volunteer accepted
     const citizenNotif: AppNotificationItem = {
       id: `n-${Date.now()}`,
       section: 'Today',
-      title: 'Volunteer assigned',
-      body: `${currentUser.name} has accepted "${title}" and scheduled planting!`,
+      title: 'Volunteer Assigned',
+      body: `${currentUser.name} has accepted "${title}" and will schedule planting soon!`,
       time: 'Just now',
       icon: 'profile',
       unread: true,
@@ -621,11 +790,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setNotifications(prev => [citizenNotif, ...prev]);
 
-    // Alert Admin Inbox
+    // Alert Admin
     const adminItem: AdminInboxItem = {
       id: `inb-${Date.now()}`,
-      title: 'Volunteer accepted drive',
-      body: `${currentUser.name} has taken responsibility for #${id} (${title}).`,
+      title: 'Drive Accepted by Volunteer',
+      body: `${currentUser.name} accepted request #${id} (${title}).`,
       time: 'Just now',
       icon: 'profile',
       unread: true,
@@ -665,7 +834,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // ─── Volunteer Completes Plantation & Uploads Activity ───────────────────
+  // ─── Phase 1: Volunteer Uploads Initial Plantation Activity ──────────────
   const volunteerUploadActivity = (id: string, activity: ActivityReport) => {
     const target = requests.find(r => r.id === id);
     const title = target?.title || 'Plantation Drive';
@@ -682,12 +851,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // 1. Notify Citizen with before & after completion alert
+    // Update volunteer stats
+    setVolunteers(prev =>
+      prev.map(v =>
+        v.id === currentUser.id
+          ? {
+              ...v,
+              completedDrivesCount: (v.completedDrivesCount || 0) + 1,
+              ongoingDrivesCount: Math.max(0, (v.ongoingDrivesCount || 1) - 1),
+              plantationsCount: (v.plantationsCount || 0) + activity.saplingsPlanted,
+              lastActiveDate: 'Today',
+            }
+          : v
+      )
+    );
+
+    // 1. Notify Citizen with initial plantation alert
     const citizenNotif: AppNotificationItem = {
       id: `n-${Date.now()}`,
       section: 'Today',
-      title: 'Planting completed! 🎉',
-      body: `${currentUser.name} planted ${activity.saplingsPlanted} saplings at "${title}". Tap to view site photos!`,
+      title: 'Tree Planted! 🎉',
+      body: `${currentUser.name} planted native saplings at "${title}". Tap to view photos & follow nurturing updates!`,
       time: 'Just now',
       icon: 'plant',
       unread: true,
@@ -695,11 +879,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setNotifications(prev => [citizenNotif, ...prev]);
 
-    // 2. Notify Admin in Inbox
+    // 2. Notify Admin
     const adminItem: AdminInboxItem = {
       id: `inb-${Date.now()}`,
-      title: 'Plantation activity completed',
-      body: `${currentUser.name} planted ${activity.saplingsPlanted} saplings and uploaded photos for #${id}.`,
+      title: 'Plantation Drive Completed',
+      body: `${currentUser.name} planted ${activity.saplingsPlanted} saplings for #${id}.`,
       time: 'Just now',
       icon: 'check',
       unread: true,
@@ -708,35 +892,162 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setAdminInbox(prev => [adminItem, ...prev]);
 
-    // 3. Automatically create Tree Maintenance Item for watering and tracking
+    // 3. Create Maintenance Item for watering reminders
     const newMaint: MaintenanceItem = {
       id: `maint-${Date.now()}`,
-      treeName: `${title} Trees`,
-      treeTag: `#${id.replace(/[^0-9]/g, '').slice(-3) || '101'}`,
+      treeName: `${title} Tree`,
+      treeTag: `#${id.replace(/[^0-9]/g, '').slice(-3) || '042'}`,
       location: target?.location || 'Plantation Site',
       status: 'healthy',
       isUrgent: false,
       lastVisit: activity.date || 'Today',
       planterName: currentUser.name,
       imageUrl:
-        activity.afterPhotos[0] ||
+        activity.photos?.[0] ||
+        activity.afterPhotos?.[0] ||
         target?.areaPhotos[0] ||
         'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
       timeline: [
         {
           date: activity.date || 'Today',
           title: 'Initial Plantation Completed',
-          description: `${activity.saplingsPlanted} saplings planted with organic compost. Tree guard installed.`,
+          description: `${activity.saplingsPlanted} native sapling(s) grounded with vermicompost and protective guard.`,
         },
       ],
     };
     setMaintenanceItems(prev => [newMaint, ...prev]);
 
-    // 4. Update current user tree count
+    // Update current user count
     setCurrentUser(prev => ({
       ...prev,
       treesCount: (prev.treesCount || 0) + activity.saplingsPlanted,
     }));
+  };
+
+  // ─── Phase 2: Ongoing Nurturing Updates (Watering, Weeding, Guard Check) ─
+  const addNurturingUpdate = (
+    id: string,
+    update: {
+      photos: string[];
+      notes: string;
+      actionsTaken?: string[];
+      date?: string;
+      volunteerName?: string;
+      volunteerId?: string;
+    }
+  ) => {
+    const target = requests.find(r => r.id === id);
+    const title = target?.title || 'Plantation Drive';
+
+    const newNurturing: NurturingUpdate = {
+      id: `nurt-${Date.now()}`,
+      date: update.date || 'Today',
+      photos: update.photos,
+      notes: update.notes,
+      volunteerName: update.volunteerName || currentUser.name || 'Vaibhav Shirke',
+      volunteerId: update.volunteerId || currentUser.id || 'VOL-DAD-0104',
+      actionsTaken: update.actionsTaken || ['Watered', 'Health Inspected'],
+    };
+
+    setRequests(prev =>
+      prev.map(req =>
+        req.id === id
+          ? {
+              ...req,
+              nurturingUpdates: [newNurturing, ...(req.nurturingUpdates || [])],
+            }
+          : req
+      )
+    );
+
+    // Update volunteer last active
+    setVolunteers(prev =>
+      prev.map(v => (v.id === currentUser.id ? { ...v, lastActiveDate: 'Today' } : v))
+    );
+
+    // Notify Citizen that tree received nurturing care
+    const citizenNotif: AppNotificationItem = {
+      id: `n-${Date.now()}`,
+      section: 'Today',
+      title: 'Tree Nurturing Update Added 🌱',
+      body: `${currentUser.name} checked and watered your tree at "${title}". Tap to view new photo!`,
+      time: 'Just now',
+      icon: 'plant',
+      unread: true,
+      requestId: id,
+    };
+    setNotifications(prev => [citizenNotif, ...prev]);
+
+    // Update maintenance item
+    setMaintenanceItems(prev =>
+      prev.map(item =>
+        item.location === target?.location || item.treeName.includes(title)
+          ? {
+              ...item,
+              status: 'healthy',
+              isUrgent: false,
+              lastVisit: 'Today',
+              timeline: [
+                {
+                  date: 'Today',
+                  title: 'Routine Nurturing & Care',
+                  description: update.notes,
+                  photo: update.photos[0],
+                },
+                ...item.timeline,
+              ],
+            }
+          : item
+      )
+    );
+  };
+
+  // ─── Block & Unblock Volunteer ─────────────────────────────────────────────
+  const blockVolunteer = (volunteerId: string, reason: string) => {
+    setVolunteers(prev =>
+      prev.map(v =>
+        v.id === volunteerId
+          ? {
+              ...v,
+              isBlocked: true,
+              blockReason: reason,
+              blockedAt: 'Today',
+              status: 'suspended',
+            }
+          : v
+      )
+    );
+
+    // Automatically re-publish any ongoing requests assigned to this blocked volunteer
+    setRequests(prev =>
+      prev.map(r =>
+        r.assignedVolunteerId === volunteerId && (r.status === 'assigned' || r.status === 'scheduled')
+          ? {
+              ...r,
+              status: 'verified',
+              assignedVolunteerId: undefined,
+              assignedVolunteerName: undefined,
+              schedule: undefined,
+            }
+          : r
+      )
+    );
+  };
+
+  const unblockVolunteer = (volunteerId: string) => {
+    setVolunteers(prev =>
+      prev.map(v =>
+        v.id === volunteerId
+          ? {
+              ...v,
+              isBlocked: false,
+              blockReason: undefined,
+              blockedAt: undefined,
+              status: 'verified',
+            }
+          : v
+      )
+    );
   };
 
   // ─── Notification Actions ────────────────────────────────────────────────
@@ -760,21 +1071,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAdminInbox(prev => prev.map(i => ({ ...i, unread: false })));
   };
 
-  // ─── Volunteer Management Actions ──────────────────────────────────────────
+  // ─── Volunteer Application Submission ─────────────────────────────────────
   const submitVolunteerApplication = (data: Partial<VolunteerApplication>): VolunteerApplication => {
+    const codeNum = String(volunteers.length + 105).padStart(4, '0');
     const newApp: VolunteerApplication = {
       id: `vol-app-${Date.now()}`,
+      volunteerCode: `VOL-DAD-${codeNum}`,
       name: data.name || 'New Volunteer',
       email: data.email || 'volunteer@aanandvan.in',
-      phone: data.phone || '+91 98123 45678',
-      city: data.city || 'Mumbai',
-      pincode: data.pincode || '400076',
-      address: data.address || 'Powai, Mumbai',
-      coordinates: data.coordinates || '19.1176° N, 72.9060° E',
+      phone: data.phone || '+91 98200 11223',
+      city: data.city || 'Dadar, Mumbai',
+      pincode: data.pincode || '400028',
+      address: data.address || 'Dadar West, Mumbai',
+      coordinates: data.coordinates || '19.0200° N, 72.8400° E',
       appliedDate: 'Today',
       status: 'pending',
-      visionQuote: data.visionQuote || 'Passionate about urban forestry and native biodiversity.',
+      visionQuote: data.visionQuote || data.bio || 'Passionate about Mumbai urban forestry.',
+      bio: data.bio || data.visionQuote || 'Passionate about Mumbai urban forestry.',
       avatar: data.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+      plantationsCount: 0,
+      acceptedDrivesCount: 0,
+      completedDrivesCount: 0,
+      ongoingDrivesCount: 0,
+      lastActiveDate: 'Just applied',
+      lastActive: 'Just applied',
     };
 
     setVolunteers(prev => [newApp, ...prev]);
@@ -784,12 +1104,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const approveVolunteer = (id: string) => {
     setVolunteers(prev =>
       prev.map(vol => (vol.id === id ? { ...vol, status: 'verified' } : vol))
-    );
-  };
-
-  const rejectVolunteer = (id: string) => {
-    setVolunteers(prev =>
-      prev.map(vol => (vol.id === id ? { ...vol, status: 'rejected' } : vol))
     );
   };
 
@@ -807,7 +1121,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? {
               ...item,
               timeline: [
-                { date: 'Today', title: 'Volunteer Visit', description: note },
+                { date: 'Today', title: 'Volunteer Care Visit', description: note },
                 ...item.timeline,
               ],
             }
@@ -853,20 +1167,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loginAs,
         logout,
         createRequest,
+        updateCitizenRequest,
         verifyRequest,
         rejectRequest,
+        requestClarification,
+        adminTakeoverRequest,
+        republishRequest,
         volunteerAcceptRequest,
         volunteerScheduleRequest,
         adminApproveSchedule,
         volunteerUploadActivity,
+        addNurturingUpdate,
         markNotificationAsRead,
         markAllNotificationsAsRead,
         markAdminInboxAsRead,
         markAllAdminInboxAsRead,
         submitVolunteerApplication,
         approveVolunteer,
-        rejectVolunteer,
         saveVolunteerAdminNote,
+        blockVolunteer,
+        unblockVolunteer,
         addMaintenanceLog,
         waterTree,
       }}
@@ -883,4 +1203,3 @@ export const useApp = () => {
   }
   return context;
 };
-

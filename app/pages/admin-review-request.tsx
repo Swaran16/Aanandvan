@@ -1,26 +1,35 @@
+/**
+ * Admin Review Request Screen — Aanandvan
+ *
+ * Full administrative review of citizen plantation requests:
+ * - Spot photographs, landmarks, and coordinates inspection
+ * - "Request Clarification" modal sending specific feedback notes to citizen
+ * - "Verify & Publish" navigation
+ * - Once verified, hide verify/reject buttons completely
+ */
+
 import React, { useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   Linking,
-  Platform,
+  Modal,
   ScrollView,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
-import { RejectRequestModal } from '@/components/admin/RejectRequestModal';
 import { useApp } from '@/context/AppContext';
 
 const DEFAULT_AREA = [
   'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1511497584788-876760111969?w=600&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop',
 ];
 
 const DEFAULT_LANDMARK = [
@@ -38,8 +47,10 @@ function chunkIntoRows<T>(items: T[], size: number): T[][] {
 
 export default function AdminReviewRequestScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { requests, rejectRequest } = useApp();
-  const [rejectModalVisible, setRejectModalVisible] = useState(false);
+  const { requests, requestClarification } = useApp();
+
+  const [clarifyModalVisible, setClarifyModalVisible] = useState(false);
+  const [clarificationNotes, setClarificationNotes] = useState('');
 
   const req = useMemo(() => {
     if (!id) return requests[0];
@@ -51,18 +62,27 @@ export default function AdminReviewRequestScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Icon name="chevron-left" size={22} color="#163020" />
+            <Icon name="chevron-left" size={22} color="#0B3B24" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Review request</Text>
+          <Text style={styles.headerTitle}>Review Request</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  const isAlreadyVerified =
+    req.status === 'verified' ||
+    req.status === 'assigned' ||
+    req.status === 'scheduled' ||
+    req.status === 'in_progress' ||
+    req.status === 'completed';
+
+  const isNeedsInfo = req.status === 'needs_info';
+
   const areaPhotos =
     req.areaPhotos && req.areaPhotos.length >= 2
       ? req.areaPhotos
-      : [...(req.areaPhotos ?? []), ...DEFAULT_AREA].slice(0, 4);
+      : [...(req.areaPhotos ?? []), ...DEFAULT_AREA].slice(0, 3);
 
   const landmarkPhotos =
     req.landmarkPhotos && req.landmarkPhotos.length > 0
@@ -72,41 +92,25 @@ export default function AdminReviewRequestScreen() {
   const areaRows = chunkIntoRows(areaPhotos, 3);
   const landmarkRows = chunkIntoRows(landmarkPhotos, 3);
 
-  const badgeLabel =
-    req.status === 'pending'
-      ? 'Pending'
-      : req.status === 'verified'
-        ? 'Verified'
-        : req.status === 'rejected'
-          ? 'Need info'
-          : req.status.replace(/_/g, ' ');
-
   const handleOpenMaps = () => {
     const query = encodeURIComponent(req.coordinates || req.manualAddress || req.location);
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
-  const handleAskMoreInfo = () => {
-    rejectRequest(req.id);
-    if (Platform.OS === 'web') {
-      router.back();
+  const handleSendClarification = () => {
+    if (!clarificationNotes.trim()) {
+      Alert.alert('Note Required', 'Please enter feedback notes for the citizen.');
       return;
     }
+
+    requestClarification(req.id, clarificationNotes.trim());
+    setClarifyModalVisible(false);
+
     Alert.alert(
-      'More Information Requested',
-      `The citizen (${req.citizenName}) will be notified to provide clearer details.`,
+      'Clarification Requested',
+      `Feedback notes sent to ${req.citizenName || 'Citizen'}. The request status is set to Needs Clarification.`,
       [{ text: 'OK', onPress: () => router.back() }]
     );
-  };
-
-  const handleReject = () => {
-    setRejectModalVisible(true);
-  };
-
-  const handleConfirmReject = (reason: string, message: string) => {
-    rejectRequest(req.id);
-    setRejectModalVisible(false);
-    router.back();
   };
 
   return (
@@ -117,9 +121,9 @@ export default function AdminReviewRequestScreen() {
           style={styles.backBtn}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="chevron-left" size={22} color="#163020" />
+          <Icon name="chevron-left" size={22} color="#0B3B24" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Review request</Text>
+        <Text style={styles.headerTitle}>Review Request</Text>
       </View>
 
       <ScrollView
@@ -131,18 +135,50 @@ export default function AdminReviewRequestScreen() {
           <View style={styles.topInfoLeft}>
             <Text style={styles.title}>{req.title}</Text>
             <View style={styles.locationRow}>
-              <Icon name="map-pin" size={14} color="#5F6C64" />
+              <Icon name="map-pin" size={14} color="#0B3B24" />
               <Text style={styles.locationText}>{req.location}</Text>
             </View>
           </View>
 
           <View style={styles.topInfoRight}>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>{badgeLabel}</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                isAlreadyVerified
+                  ? { backgroundColor: '#DCFCE7' }
+                  : isNeedsInfo
+                  ? { backgroundColor: '#FEE2E2' }
+                  : { backgroundColor: '#FEF3C7' },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusText,
+                  isAlreadyVerified
+                    ? { color: '#166534' }
+                    : isNeedsInfo
+                    ? { color: '#B91C1C' }
+                    : { color: '#92400E' },
+                ]}
+              >
+                {isAlreadyVerified
+                  ? 'Verified'
+                  : isNeedsInfo
+                  ? 'Clarification Needed'
+                  : 'Pending Review'}
+              </Text>
             </View>
             <Text style={styles.reqIdText}>#{req.id.toUpperCase()}</Text>
           </View>
         </View>
+
+        {/* Existing Clarification Notes (if already sent) */}
+        {isNeedsInfo && req.adminClarificationNotes && (
+          <View style={styles.activeClarifyBox}>
+            <Text style={styles.activeClarifyTitle}>Active Clarification Note to Citizen:</Text>
+            <Text style={styles.activeClarifyText}>"{req.adminClarificationNotes}"</Text>
+          </View>
+        )}
 
         <Text style={styles.sectionTitle}>Area photographs</Text>
         <View style={styles.gridGroup}>
@@ -176,25 +212,23 @@ export default function AdminReviewRequestScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>Location</Text>
-        <Text style={styles.metaLabel}>Address</Text>
-        <Text style={styles.metaValue}>
-          {req.manualAddress || req.location}
-        </Text>
+        <Text style={styles.sectionTitle}>Location Details</Text>
+        <Text style={styles.metaLabel}>Full Address</Text>
+        <Text style={styles.metaValue}>{req.manualAddress || req.location}</Text>
 
-        <Text style={[styles.metaLabel, { marginTop: 12 }]}>Nearby landmark</Text>
-        <Text style={styles.metaValue}>{req.landmark || 'Near main road'}</Text>
+        <Text style={[styles.metaLabel, { marginTop: 10 }]}>Nearby landmark</Text>
+        <Text style={styles.metaValue}>{req.landmark || 'Near Shivaji Park'}</Text>
 
         <TouchableOpacity
           style={styles.mapsBtn}
           onPress={handleOpenMaps}
           activeOpacity={0.8}
         >
-          <Icon name="navigation" size={16} color="#0D4E2B" />
-          <Text style={styles.mapsBtnText}>Open in maps</Text>
+          <Icon name="navigation" size={16} color="#0B3B24" />
+          <Text style={styles.mapsBtnText}>Open in Google Maps</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.sectionTitle, { marginTop: 22 }]}>Description</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Description</Text>
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionText}>{`"${req.description}"`}</Text>
         </View>
@@ -209,52 +243,93 @@ export default function AdminReviewRequestScreen() {
             style={styles.citizenAvatar}
           />
           <View>
-            <Text style={styles.submittedBy}>Submitted by: {req.citizenName}</Text>
-            <Text style={styles.submittedDate}>{req.createdAt}</Text>
+            <Text style={styles.submittedBy}>Submitted by: {req.citizenName || 'Kartik Vichare'}</Text>
+            <Text style={styles.submittedDate}>{req.createdAt} • Citizen</Text>
           </View>
         </View>
       </ScrollView>
 
+      {/* ─── Footer Action Bar ─── */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.verifyBtn}
-          onPress={() =>
-            router.push({
-              pathname: '/pages/verify-publish',
-              params: { id: req.id },
-            } as any)
-          }
-          activeOpacity={0.85}
-        >
-          <Text style={styles.verifyBtnText}>Verify & publish to volunteers</Text>
-        </TouchableOpacity>
+        {isAlreadyVerified ? (
+          <View style={styles.verifiedBanner}>
+            <Icon name="check-circle" size={18} color="#0B3B24" />
+            <Text style={styles.verifiedBannerText}>
+              This request is verified and published to volunteers.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={styles.verifyBtn}
+              onPress={() =>
+                router.push({
+                  pathname: '/pages/verify-publish',
+                  params: { id: req.id },
+                } as any)
+              }
+              activeOpacity={0.88}
+            >
+              <Text style={styles.verifyBtnText}>Verify & Publish to Volunteers</Text>
+            </TouchableOpacity>
 
-        <View style={styles.secondaryRow}>
-          <TouchableOpacity
-            style={styles.outlineBtn}
-            onPress={handleAskMoreInfo}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.outlineBtnText}>Ask more info</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.outlineBtn}
-            onPress={handleReject}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.outlineBtnText}>Reject request</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.clarifyBtn}
+              onPress={() => setClarifyModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Icon name="help" size={16} color="#0B3B24" />
+              <Text style={styles.clarifyBtnText}>Request Clarification from Citizen</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
-      <RejectRequestModal
-        visible={rejectModalVisible}
-        requestTitle={req.title}
-        citizenName={req.citizenName}
-        onConfirmReject={handleConfirmReject}
-        onClose={() => setRejectModalVisible(false)}
-      />
+      {/* ─── Clarification Note Modal ─── */}
+      <Modal visible={clarifyModalVisible} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Request Clarification</Text>
+              <TouchableOpacity onPress={() => setClarifyModalVisible(false)}>
+                <Icon name="close" size={20} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>
+              Send specific instructions to {req.citizenName || 'Kartik Vichare'} explaining what needs updating (e.g. clearer area photos, specific landmark, permission confirmation).
+            </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              multiline
+              numberOfLines={4}
+              placeholder="E.g. Please upload a wider photo of the sidewalk and specify if this spot is directly in front of building gate 2..."
+              placeholderTextColor="#9CA3AF"
+              value={clarificationNotes}
+              onChangeText={setClarificationNotes}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setClarifyModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalSendBtn}
+                onPress={handleSendClarification}
+                activeOpacity={0.88}
+              >
+                <Text style={styles.modalSendText}>Send to Citizen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -270,6 +345,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,
+    backgroundColor: '#FAFBF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   backBtn: {
     padding: 4,
@@ -277,22 +355,22 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0D4325',
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 18,
-    paddingTop: 4,
-    paddingBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 36,
   },
   topInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   topInfoLeft: {
     flex: 1,
@@ -302,128 +380,146 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#0B3E22',
+    color: '#111827',
     marginBottom: 4,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
   locationText: {
     fontSize: 13,
-    color: '#5F6C64',
-    flexShrink: 1,
+    color: '#4B5563',
   },
   statusBadge: {
-    backgroundColor: '#FBF0C4',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#92580A',
-    textTransform: 'capitalize',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
   reqIdText: {
     fontSize: 11.5,
-    color: '#6E7B73',
-    marginTop: 6,
-    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  activeClarifyBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  activeClarifyTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#991B1B',
+    marginBottom: 2,
+  },
+  activeClarifyText: {
+    fontSize: 12.5,
+    color: '#7F1D1D',
+    fontStyle: 'italic',
   },
   sectionTitle: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: '#0D4E2B',
-    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0B3B24',
+    marginBottom: 8,
   },
   gridGroup: {
-    gap: 10,
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 16,
   },
   photoRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   photoCell: {
     flex: 1,
-    aspectRatio: 1,
+    aspectRatio: 1.2,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#E5EAE3',
+    backgroundColor: '#E5E7EB',
   },
   photoSpacer: {
     flex: 1,
-    aspectRatio: 1,
+    aspectRatio: 1.2,
   },
   photoImg: {
     width: '100%',
     height: '100%',
   },
   metaLabel: {
-    fontSize: 12,
-    color: '#7A867E',
-    marginBottom: 4,
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'uppercase',
   },
   metaValue: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#163020',
+    fontSize: 13.5,
+    color: '#111827',
+    fontWeight: '600',
+    marginTop: 2,
   },
   mapsBtn: {
-    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    height: 44,
-    borderRadius: 999,
-    borderWidth: 1.2,
-    borderColor: '#0D4E2B',
-    backgroundColor: '#FFFFFF',
-    gap: 8,
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8F5E9',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 10,
   },
   mapsBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0D4E2B',
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#0B3B24',
   },
   descriptionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#E5EAE2',
-    padding: 16,
+    borderColor: '#E5E7EB',
     marginBottom: 16,
   },
   descriptionText: {
-    fontSize: 13.5,
-    lineHeight: 21,
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 18,
     fontStyle: 'italic',
-    color: '#4F5C54',
   },
   submitterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   citizenAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#E5EAE3',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   submittedBy: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#163020',
+    color: '#111827',
   },
   submittedDate: {
-    fontSize: 12,
-    color: '#6E7B73',
+    fontSize: 11.5,
+    color: '#6B7280',
   },
   footer: {
     paddingHorizontal: 18,
@@ -431,38 +527,117 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     backgroundColor: '#FAFBF9',
     borderTopWidth: 1,
-    borderTopColor: '#EAEEE7',
-    gap: 10,
+    borderTopColor: '#EDF0EA',
+    gap: 8,
+  },
+  verifiedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#DCFCE7',
+    padding: 14,
+    borderRadius: 12,
+  },
+  verifiedBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#166534',
+    flex: 1,
   },
   verifyBtn: {
-    height: 46,
-    borderRadius: 999,
-    backgroundColor: '#0D4E2B',
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#0B3B24',
     alignItems: 'center',
     justifyContent: 'center',
   },
   verifyBtnText: {
-    fontSize: 14.5,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
-  secondaryRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  outlineBtn: {
-    flex: 1,
+  clarifyBtn: {
     height: 44,
-    borderRadius: 999,
-    borderWidth: 1.2,
-    borderColor: '#0D4E2B',
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
-  outlineBtnText: {
-    fontSize: 13.5,
+  clarifyBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0B3B24',
+  },
+  modalSubtitle: {
+    fontSize: 12.5,
+    color: '#4B5563',
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 13,
+    color: '#111827',
+    minHeight: 100,
+    marginBottom: 16,
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  modalCancelText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#0D4E2B',
+    color: '#4B5563',
+  },
+  modalSendBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: '#0B3B24',
+  },
+  modalSendText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

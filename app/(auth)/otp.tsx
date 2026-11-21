@@ -1,9 +1,8 @@
 /**
- * OTP Verification Screen — Aanandvan (Designs 1 & 3)
+ * OTP Verification Screen — Aanandvan
  *
- * - Design 1 (`source === 'login'`): Clean 6-digit OTP verification after login
- * - Design 3 (`source === 'register'`): Adds "Change mobile number" link after registration
- * - Mock OTP: Accepts any 6 numeric digits and verifies seamlessly
+ * Verifies 6-digit OTP sent to registered Email ID.
+ * Mock OTP: Accepts any 6 digits (e.g. 123456) and verifies seamlessly.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,17 +27,22 @@ import { UserRole } from '@/types';
 const OTP_LENGTH = 6;
 
 export default function OtpScreen() {
-  const { mobile, role, source, name } = useLocalSearchParams<{
+  const { email, mobile, role, source, name, bio, address } = useLocalSearchParams<{
+    email?: string;
     mobile?: string;
     role?: string;
     source?: string;
     name?: string;
+    bio?: string;
+    address?: string;
   }>();
   const { loginAs, submitVolunteerApplication } = useApp();
 
   const resolvedRole: UserRole =
     role === 'admin' ? 'admin' : role === 'volunteer' ? 'volunteer' : 'citizen';
   const isRegisterFlow = source === 'register';
+
+  const userIdentifier = email || mobile || 'user@aanandvan.in';
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timer, setTimer] = useState<number>(42);
@@ -54,12 +58,6 @@ export default function OtpScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [timer]);
-
-  const formatMaskedMobile = (raw?: string): string => {
-    const digits = (raw || '').replace(/\D/g, '');
-    const last4 = digits.length >= 4 ? digits.slice(-4) : '2536';
-    return `+91 ***** *${last4}`;
-  };
 
   const handleChange = (text: string, index: number) => {
     const digits = text.replace(/[^0-9]/g, '');
@@ -103,7 +101,7 @@ export default function OtpScreen() {
   const handleVerify = () => {
     const isComplete = otp.every((d) => d !== '');
     if (!isComplete) {
-      setErrorMsg('Please enter all 6 digits of the OTP.');
+      setErrorMsg('Please enter all 6 digits of the OTP verification code.');
       return;
     }
 
@@ -116,8 +114,10 @@ export default function OtpScreen() {
       } else if (resolvedRole === 'volunteer') {
         if (isRegisterFlow) {
           submitVolunteerApplication({
-            name: name || 'New Volunteer',
+            name: name || 'Vaibhav Shirke',
             phone: mobile || '+91 98123 45678',
+            bio: bio || 'Active resident of Dadar West passionate about green canopy expansion and tree nurturing.',
+            address: address || '14, Ranade Road, Dadar West, Mumbai - 400028',
           });
           router.replace('/(auth)/volunteer-verification' as any);
         } else {
@@ -153,7 +153,7 @@ export default function OtpScreen() {
         >
           <Icon name="chevron-left" size={26} color="#0B3B24" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mobile number verification</Text>
+        <Text style={styles.headerTitle}>Email OTP Verification</Text>
       </View>
 
       <KeyboardAvoidingView
@@ -167,23 +167,24 @@ export default function OtpScreen() {
         >
           {/* ─── Top Form Section ─── */}
           <View style={styles.topSection}>
-            <Text style={styles.title}>Verify mobile number</Text>
+            <Text style={styles.title}>Check your email</Text>
             <Text style={styles.subtitle}>
-              Enter 6-digit OTP send to {formatMaskedMobile(mobile)}
+              Enter 6-digit verification code sent to{'\n'}
+              <Text style={styles.emailHighlight}>{userIdentifier}</Text>
             </Text>
 
             {isRegisterFlow && (
               <TouchableOpacity
                 onPress={handleBack}
-                style={styles.changeMobileBtn}
+                style={styles.changeEmailBtn}
                 activeOpacity={0.75}
               >
-                <Text style={styles.changeMobileText}>Change mobile number</Text>
+                <Text style={styles.changeEmailText}>Change email address</Text>
               </TouchableOpacity>
             )}
 
             <Text style={[styles.otpLabel, isRegisterFlow && { marginTop: 18 }]}>
-              Enter OTP
+              Enter 6-digit Code
             </Text>
 
             {/* 6 OTP Boxes */}
@@ -197,32 +198,46 @@ export default function OtpScreen() {
                   style={[
                     styles.otpBox,
                     digit ? styles.otpBoxFilled : undefined,
+                    errorMsg ? styles.otpBoxError : undefined,
                   ]}
                   value={digit}
                   onChangeText={(text) => handleChange(text, i)}
                   onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
                   keyboardType="number-pad"
-                  maxLength={6}
+                  maxLength={1}
+                  selectTextOnFocus
                   textAlign="center"
-                  selectionColor="#0A4D2E"
+                  autoFocus={i === 0}
                 />
               ))}
             </View>
 
             {!!errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 
-            {/* Resend Timer Row */}
+            {/* Resend OTP Row */}
             <View style={styles.resendRow}>
-              <Text style={styles.resendText}>
-                Resend OTP in 00:{formattedSeconds} seconds. Didn't receive the code?{' '}
-                <Text style={styles.resendLink} onPress={handleResend}>
-                  Resend
+              <Text style={styles.resendLabel}>Didn't receive the email? </Text>
+              {timer > 0 ? (
+                <Text style={styles.timerText}>
+                  Resend code in <Text style={styles.timerBold}>00:{formattedSeconds}</Text>
                 </Text>
+              ) : (
+                <TouchableOpacity onPress={handleResend} activeOpacity={0.75}>
+                  <Text style={styles.resendLink}>Resend code</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Hint / Demo helper */}
+            <View style={styles.demoHintBox}>
+              <Icon name="info" size={16} color="#0B3B24" />
+              <Text style={styles.demoHintText}>
+                Demo Mode: Enter any 6 digits (e.g. 1 2 3 4 5 6) to proceed.
               </Text>
             </View>
           </View>
 
-          {/* ─── Bottom Pinned CTA & Legal ─── */}
+          {/* ─── Bottom CTA ─── */}
           <View style={styles.bottomSection}>
             <TouchableOpacity
               style={styles.verifyBtn}
@@ -233,12 +248,12 @@ export default function OtpScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.verifyBtnText}>Verify & Proceed</Text>
+                <Text style={styles.verifyText}>Verify & Proceed</Text>
               )}
             </TouchableOpacity>
 
-            <Text style={styles.legalText}>
-              By proceeding, you agree to Aanandvan's Terms of Service and Privacy Policy.
+            <Text style={styles.privacyNote}>
+              Protected by Aanandvan Green Identity protocol
             </Text>
           </View>
         </ScrollView>
@@ -260,6 +275,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
   backBtn: {
     width: 36,
@@ -281,99 +298,144 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 24,
+    paddingTop: 28,
+    paddingBottom: 36,
   },
   topSection: {
     width: '100%',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#0B3B24',
-    marginBottom: 4,
+    letterSpacing: -0.4,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 13.5,
-    color: '#6B7280',
-    lineHeight: 19,
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 22,
+    marginBottom: 16,
   },
-  changeMobileBtn: {
-    alignSelf: 'flex-start',
-    marginTop: 14,
-  },
-  changeMobileText: {
-    fontSize: 13.5,
+  emailHighlight: {
     fontWeight: '700',
     color: '#0B3B24',
   },
+  changeEmailBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  changeEmailText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1B5E20',
+    textDecorationLine: 'underline',
+  },
   otpLabel: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '600',
     color: '#0B3B24',
-    marginTop: 22,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
+    marginBottom: 12,
   },
   otpBox: {
     flex: 1,
-    maxWidth: 50,
-    height: 48,
-    borderWidth: 1,
+    height: 54,
+    borderWidth: 1.5,
     borderColor: '#D1D5DB',
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    fontSize: 18,
+    borderRadius: 12,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
+    color: '#0B3B24',
+    backgroundColor: '#FAFAFA',
+    textAlign: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#0A4D2E',
-    backgroundColor: '#F4F9F6',
+    borderColor: '#0B3B24',
+    backgroundColor: '#F0FDF4',
+  },
+  otpBoxError: {
+    borderColor: '#EF4444',
   },
   errorText: {
-    fontSize: 12.5,
-    color: '#DC2626',
-    marginTop: 8,
+    fontSize: 12,
+    color: '#EF4444',
+    marginBottom: 12,
+    marginLeft: 2,
   },
   resendRow: {
-    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 20,
   },
-  resendText: {
-    fontSize: 12.5,
-    color: '#9CA3AF',
-    lineHeight: 18,
+  resendLabel: {
+    fontSize: 13,
+    color: '#6B7280',
   },
-  resendLink: {
-    fontSize: 12.5,
+  timerText: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  timerBold: {
     fontWeight: '700',
     color: '#0B3B24',
   },
+  resendLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0B3B24',
+    textDecorationLine: 'underline',
+  },
+  demoHintBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F0FDF4',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginTop: 10,
+  },
+  demoHintText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#166534',
+    fontWeight: '500',
+    lineHeight: 16,
+  },
   bottomSection: {
     width: '100%',
-    paddingTop: 32,
+    paddingTop: 24,
   },
   verifyBtn: {
-    width: '100%',
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#0A4D2E',
+    height: 52,
+    backgroundColor: '#0B3B24',
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    shadowColor: '#0B3B24',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 5,
+    elevation: 3,
+    marginBottom: 16,
   },
-  verifyBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
+  verifyText: {
+    fontSize: 16,
+    fontWeight: '700',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  legalText: {
-    fontSize: 11.5,
+  privacyNote: {
+    fontSize: 12,
     color: '#9CA3AF',
-    lineHeight: 17,
+    textAlign: 'center',
   },
 });
