@@ -1,34 +1,23 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   FlatList,
   Image,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Text } from '@/components/common';
+import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest, PlantationStatus } from '@/types';
-
-type FilterTab = 'all' | 'pending' | 'verified' | 'in_progress' | 'completed';
-
-const FILTERS: Array<{ key: FilterTab; label: string }> = [
-  { key: 'all', label: 'All Requests' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'verified', label: 'Verified' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'completed', label: 'Completed' },
-];
 
 const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: string }> = {
   pending: { label: 'Pending Review', bg: '#FEF3C7', fg: '#92400E' },
   needs_info: { label: 'Clarification Needed', bg: '#FEE2E2', fg: '#B91C1C' },
   verified: { label: 'Verified', bg: '#E8EFEA', fg: '#163E2B' },
-  assigned: { label: 'Assigned', bg: '#EFF6FF', fg: '#1E40AF' },
+  assigned: { label: 'Assigned to Volunteer', bg: '#EFF6FF', fg: '#1E40AF' },
   scheduled: { label: 'Scheduled', bg: '#EFF6FF', fg: '#1E40AF' },
   in_progress: { label: 'In Progress', bg: '#EFF6FF', fg: '#1E40AF' },
   completed: { label: 'Planted & Nurturing', bg: '#ECFDF5', fg: '#047857' },
@@ -37,23 +26,22 @@ const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: st
 
 export default function CitizenRequestsScreen() {
   const { requests } = useApp();
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
-  const filteredRequests = useMemo(() => {
-    return requests.filter((req) => {
-      if (activeFilter === 'pending') return req.status === 'pending' || req.status === 'rejected';
-      if (activeFilter === 'verified') return req.status === 'verified';
-      if (activeFilter === 'in_progress') {
-        return (
-          req.status === 'assigned' ||
-          req.status === 'scheduled' ||
-          req.status === 'in_progress'
-        );
-      }
-      if (activeFilter === 'completed') return req.status === 'completed';
-      return true;
-    });
-  }, [requests, activeFilter]);
+  // Prioritize pending & active requests at the top
+  const sortedRequests = useMemo(() => {
+    const priority: Record<string, number> = {
+      pending: 0,
+      needs_info: 1,
+      verified: 2,
+      assigned: 3,
+      scheduled: 4,
+      in_progress: 5,
+      completed: 6,
+    };
+    return [...requests].sort(
+      (a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9)
+    );
+  }, [requests]);
 
   const renderCard = ({ item }: { item: PlantationRequest }) => {
     const badge = STATUS_STYLE[item.status] ?? {
@@ -90,7 +78,7 @@ export default function CitizenRequestsScreen() {
             {item.title}
           </Text>
           <Text style={styles.cardLocation} numberOfLines={1}>
-            {item.location}
+            📍 {item.manualAddress || item.location}
           </Text>
           <Text style={styles.cardDate}>{item.createdAt}</Text>
         </View>
@@ -101,44 +89,27 @@ export default function CitizenRequestsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="chevron-left" size={22} color="#163020" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My requests</Text>
-      </View>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Icon name="chevron-left" size={22} color="#163020" />
+          </TouchableOpacity>
+          <View>
+            <Text style={styles.headerTitle}>My requests</Text>
+            <Text style={styles.headerSubtitle}>
+              {sortedRequests.length} Community Submissions
+            </Text>
+          </View>
+        </View>
 
-      <View style={styles.filtersWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContent}
-        >
-          {FILTERS.map((tab) => {
-            const active = activeFilter === tab.key;
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={[styles.filterChip, active && styles.filterChipActive]}
-                onPress={() => setActiveFilter(tab.key)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[styles.filterChipText, active && styles.filterChipTextActive]}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <RoleSwitcher theme="light" />
       </View>
 
       <FlatList
-        data={filteredRequests}
+        data={sortedRequests}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         contentContainerStyle={styles.listContent}
@@ -160,94 +131,73 @@ export default function CitizenRequestsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FAFBF9',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
-    backgroundColor: '#FFFFFF',
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: '#FAFBF9',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   backBtn: {
     padding: 4,
-    marginRight: 8,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: '#163E2B',
+    letterSpacing: -0.3,
   },
-  filtersWrap: {
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  filtersContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  filterChipActive: {
-    backgroundColor: '#163E2B',
-    borderColor: '#163E2B',
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+  headerSubtitle: {
+    fontSize: 11.5,
+    color: '#6B7280',
+    marginTop: 1,
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 28,
-    gap: 8,
+    paddingTop: 14,
+    paddingBottom: 40,
+    gap: 12,
   },
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    overflow: 'hidden',
+    padding: 10,
     gap: 12,
   },
   thumb: {
-    width: 64,
-    height: 64,
+    width: 76,
+    height: 76,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
   },
   cardBody: {
     flex: 1,
+    justifyContent: 'center',
   },
   cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   reqIdText: {
     fontSize: 11,
+    fontWeight: '700',
     color: '#6B7280',
-    fontWeight: '500',
   },
   badgePill: {
     paddingHorizontal: 8,
@@ -255,40 +205,41 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   cardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 14.5,
+    fontWeight: '700',
     color: '#111827',
     marginBottom: 2,
   },
   cardLocation: {
     fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 2,
+    color: '#4B5563',
+    marginBottom: 4,
   },
   cardDate: {
     fontSize: 11,
     color: '#9CA3AF',
   },
   emptyBox: {
+    paddingVertical: 48,
     alignItems: 'center',
-    paddingVertical: 64,
-    paddingHorizontal: 28,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   emptyTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#374151',
     marginTop: 12,
-    marginBottom: 4,
   },
   emptySub: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6B7280',
     textAlign: 'center',
+    marginTop: 4,
     lineHeight: 18,
   },
 });

@@ -106,6 +106,33 @@ const DEFAULT_USERS: Record<UserRole, AppUser> = {
 
 const INITIAL_REQUESTS: PlantationRequest[] = [
   {
+    id: 'REQ-2024-0105',
+    title: 'Dadar Flower Market Walkway Greening',
+    description:
+      'Bare concrete pedestrian walkway outside Dadar Flower Market on Senapati Bapat Marg. Heavy morning commuter footfall and no tree cover. Space available for 4-5 native shade trees with protective metal guards.',
+    location: 'Senapati Bapat Marg, Dadar West',
+    manualAddress: 'Opposite Dadar Western Station, Senapati Bapat Marg, Dadar West, Mumbai 400028',
+    landmark: 'Near Flower Market Foot Overbridge',
+    coordinates: '19.0182° N, 72.8422° E',
+    areaPhotos: [
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1448375240586-882707db888b?w=600&auto=format&fit=crop&q=80',
+    ],
+    landmarkPhotos: [
+      'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
+    ],
+    status: 'pending',
+    createdAt: 'Today, 10:30 AM',
+    distanceKm: 0.5,
+    duplicateRisk: 'None detected',
+    citizenId: 'user-citizen-1',
+    citizenName: 'Kartik Vichare',
+    citizenEmail: 'kartik.vichare@gmail.com',
+    citizenPhone: '+91 98201 34567',
+    nurturingUpdates: [],
+  },
+  {
     id: 'REQ-2024-0042',
     title: 'Shivaji Park Perimeter Greening',
     description:
@@ -494,12 +521,12 @@ const INITIAL_ADMIN_INBOX: AdminInboxItem[] = [
   {
     id: 'inb-1',
     title: 'New Plantation Spot Reported',
-    body: 'Kartik Vichare submitted an unshaded space at Shivaji Park, Dadar West awaiting review.',
-    time: '2 hours ago',
+    body: 'Kartik Vichare submitted Dadar Flower Market Walkway Greening awaiting review.',
+    time: 'Today, 10:30 AM',
     icon: 'plant',
     unread: true,
     route: '/pages/admin-review-request',
-    params: { id: 'REQ-2024-0042' },
+    params: { id: 'REQ-2024-0105' },
   },
   {
     id: 'inb-2',

@@ -2,16 +2,15 @@
  * Admin Plantation Requests Screen — Aanandvan
  *
  * Dedicated pipeline for admin triage:
- * - Filter tabs: Pending Review, Verified & Unassigned (Critical for Takeover), Needs Clarification, Ongoing & Completed
+ * - Direct listing of all plantation requests prioritized by status (Pending Review first)
  * - "Admin Takeover" button on unassigned drives (>3 days unaccepted by volunteers)
  * - Citizen details, area photos strip, and direct review navigation
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   FlatList,
   Image,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -24,8 +23,6 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest } from '@/types';
 
-type FilterTab = 'all' | 'pending' | 'unassigned' | 'needs_info' | 'active';
-
 const FALLBACK_PHOTOS = [
   'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=300&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?w=300&auto=format&fit=crop',
@@ -35,31 +32,24 @@ const FALLBACK_PHOTOS = [
 
 export default function AdminRequestsScreen() {
   const { requests, adminTakeoverRequest } = useApp();
-  const [filter, setFilter] = useState<FilterTab>('pending');
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
-  const unassignedCount = requests.filter(r => r.status === 'verified').length;
-  const needsInfoCount = requests.filter(r => r.status === 'needs_info').length;
-  const activeCount = requests.filter(
-    r => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed'
-  ).length;
+  // Prioritize requests needing admin attention: Pending first, then Needs Info, Verified, etc.
+  const sortedRequests = useMemo(() => {
+    const priority: Record<string, number> = {
+      pending: 0,
+      needs_info: 1,
+      verified: 2,
+      assigned: 3,
+      scheduled: 4,
+      in_progress: 5,
+      completed: 6,
+    };
+    return [...requests].sort(
+      (a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9)
+    );
+  }, [requests]);
 
-  const filteredRequests = useMemo(() => {
-    return requests.filter((req) => {
-      if (filter === 'pending') return req.status === 'pending';
-      if (filter === 'unassigned') return req.status === 'verified';
-      if (filter === 'needs_info') return req.status === 'needs_info';
-      if (filter === 'active') {
-        return (
-          req.status === 'assigned' ||
-          req.status === 'scheduled' ||
-          req.status === 'in_progress' ||
-          req.status === 'completed'
-        );
-      }
-      return true;
-    });
-  }, [requests, filter]);
+  const pendingCount = requests.filter((r) => r.status === 'pending').length;
 
   const handleTakeover = (reqId: string, title: string) => {
     Alert.alert(
@@ -87,11 +77,12 @@ export default function AdminRequestsScreen() {
       4
     );
 
+    const isPending = item.status === 'pending';
     const isVerifiedUnassigned = item.status === 'verified';
     const isNeedsInfo = item.status === 'needs_info';
 
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, isPending && styles.cardPending]}>
         {/* Photo Strip */}
         <View style={styles.photosStrip}>
           {photos.map((uri, idx) => (
@@ -106,27 +97,33 @@ export default function AdminRequestsScreen() {
           <View
             style={[
               styles.statusBadge,
-              isNeedsInfo
+              isPending
+                ? { backgroundColor: '#FEF3C7' }
+                : isNeedsInfo
                 ? { backgroundColor: '#FEE2E2' }
                 : isVerifiedUnassigned
-                ? { backgroundColor: '#FEF3C7' }
-                : { backgroundColor: '#E0F2FE' },
+                ? { backgroundColor: '#E0F2FE' }
+                : { backgroundColor: '#DCFCE7' },
             ]}
           >
             <Text
               style={[
                 styles.statusBadgeText,
-                isNeedsInfo
+                isPending
+                  ? { color: '#92400E' }
+                  : isNeedsInfo
                   ? { color: '#B91C1C' }
                   : isVerifiedUnassigned
-                  ? { color: '#92400E' }
-                  : { color: '#0369A1' },
+                  ? { color: '#0369A1' }
+                  : { color: '#166534' },
               ]}
             >
-              {isNeedsInfo
+              {isPending
+                ? 'Pending Review'
+                : isNeedsInfo
                 ? 'Clarification Needed'
                 : isVerifiedUnassigned
-                ? 'Verified • Unaccepted'
+                ? 'Verified • Open for Volunteers'
                 : item.status.replace(/_/g, ' ')}
             </Text>
           </View>
@@ -139,7 +136,7 @@ export default function AdminRequestsScreen() {
           📍 {item.manualAddress || item.location}
         </Text>
         <Text style={styles.cardDesc} numberOfLines={2}>
-          {`"${item.description}"`}
+          &ldquo;{item.description}&rdquo;
         </Text>
 
         <View style={styles.submitterRow}>
@@ -171,7 +168,9 @@ export default function AdminRequestsScreen() {
             }
             activeOpacity={0.85}
           >
-            <Text style={styles.reviewBtnText}>Review & Verify</Text>
+            <Text style={styles.reviewBtnText}>
+              {isPending ? 'Review & Verify Spot' : 'View Full Details'}
+            </Text>
           </TouchableOpacity>
 
           {/* Admin Takeover Button (if unaccepted by volunteers) */}
@@ -192,10 +191,13 @@ export default function AdminRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Top Header Bar */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>Plantation Requests</Text>
-          <Text style={styles.headerSubtitle}>Dadar Ward Triage &amp; Approvals</Text>
+          <Text style={styles.headerSubtitle}>
+            {requests.length} Total Requests{pendingCount > 0 ? ` • ${pendingCount} Awaiting Review` : ''} • Dadar Ward
+          </Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -203,72 +205,15 @@ export default function AdminRequestsScreen() {
         </View>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filtersWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContent}
-        >
-          <TouchableOpacity
-            style={[styles.filterPill, filter === 'pending' && styles.filterPillActive]}
-            onPress={() => setFilter('pending')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.filterText, filter === 'pending' && styles.filterTextActive]}
-            >
-              Pending ({pendingCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, filter === 'unassigned' && styles.filterPillActive]}
-            onPress={() => setFilter('unassigned')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.filterText, filter === 'unassigned' && styles.filterTextActive]}
-            >
-              Verified & Unassigned ({unassignedCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, filter === 'needs_info' && styles.filterPillActive]}
-            onPress={() => setFilter('needs_info')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.filterText, filter === 'needs_info' && styles.filterTextActive]}
-            >
-              Clarification Sent ({needsInfoCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, filter === 'active' && styles.filterPillActive]}
-            onPress={() => setFilter('active')}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.filterText, filter === 'active' && styles.filterTextActive]}
-            >
-              Ongoing & Planted ({activeCount})
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
       <FlatList
-        data={filteredRequests}
+        data={sortedRequests}
         keyExtractor={(item) => item.id}
         renderItem={renderCard}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No requests in this view.</Text>
+            <Text style={styles.emptyText}>No plantation requests submitted yet.</Text>
           </View>
         }
       />
@@ -289,6 +234,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
     backgroundColor: '#FAFBF9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   headerLeft: {
     flex: 1,
@@ -309,49 +256,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  filtersWrap: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FAFBF9',
-    paddingVertical: 8,
-  },
-  filtersContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  filterPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  filterPillActive: {
-    backgroundColor: '#163E2B',
-    borderColor: '#163E2B',
-  },
-  filterText: {
-    fontSize: 12.5,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 14,
     paddingBottom: 40,
     gap: 12,
   },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  cardPending: {
+    borderColor: '#FDE68A',
   },
   photosStrip: {
     flexDirection: 'row',
@@ -373,7 +292,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   reqIdText: {
     fontSize: 12,
@@ -383,21 +302,21 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   statusBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10.5,
+    fontWeight: '600',
     textTransform: 'capitalize',
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: '#111827',
     marginBottom: 3,
   },
   cardLocation: {
-    fontSize: 12.5,
+    fontSize: 12,
     color: '#4B5563',
     marginBottom: 6,
   },
@@ -438,13 +357,13 @@ const styles = StyleSheet.create({
   reviewBtn: {
     flex: 1,
     height: 38,
-    borderRadius: 8,
+    borderRadius: 6,
     backgroundColor: '#163E2B',
     alignItems: 'center',
     justifyContent: 'center',
   },
   reviewBtnText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -454,16 +373,16 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     height: 38,
-    borderRadius: 8,
+    borderRadius: 6,
     backgroundColor: '#166534',
   },
   takeoverBtnText: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   emptyBox: {
-    paddingVertical: 40,
+    paddingVertical: 48,
     alignItems: 'center',
   },
   emptyText: {
