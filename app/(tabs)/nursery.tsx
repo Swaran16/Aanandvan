@@ -73,7 +73,7 @@ const NURSERIES: NurseryItem[] = [
   {
     id: 'nurs-4',
     name: 'EcoBloom Forest Station',
-    area: 'Sector 15, Powai Forest Fringe, Mumbai',
+    area: 'Seaface Promenade, Prabhadevi Beach, Mumbai',
     distanceKm: 4.8,
     phone: '+91 99300 77665',
     saplingTypes: ['Fruit Trees', 'Herbal', 'Forest Canopy'],

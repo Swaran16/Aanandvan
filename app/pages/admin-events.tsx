@@ -24,11 +24,11 @@ export default function AdminEventsScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.eventTitle}>Mega Monsoon Plantation Drive</Text>
-          <Text style={styles.eventDate}>Sunday, 20 Oct 2026 • 8:00 AM</Text>
-          <Text style={styles.eventLoc}>Aravalli Biodiversity Park, Gurugram</Text>
+          <Text style={styles.eventTitle}>Shivaji Park Green Canopy Drive</Text>
+          <Text style={styles.eventDate}>Sunday, 29 Nov 2026 • 7:30 AM</Text>
+          <Text style={styles.eventLoc}>Shivaji Park Grounds & Seaface, Dadar West, Mumbai</Text>
           <Text style={styles.eventDesc}>
-            Community-scale sapling drive targeting 500 indigenous trees with 80+ volunteers participating.
+            Community-scale sapling drive planting 150 indigenous Neem, Peepal, and Karanj saplings along Dadar West roadsides with local residents and verified volunteers.
           </Text>
         </View>
 

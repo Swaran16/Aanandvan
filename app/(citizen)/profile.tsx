@@ -61,7 +61,7 @@ export default function CitizenProfileScreen() {
       icon: 'map-pin',
       label: 'Saved addresses',
       onPress: () =>
-        handleInfoAlert('Saved Addresses', `${currentUser.city || 'New Delhi'}, India`),
+        handleInfoAlert('Saved Addresses', `${currentUser.city || 'Dadar West, Mumbai'}, India`),
     },
     {
       id: 'notifications',
@@ -110,7 +110,7 @@ export default function CitizenProfileScreen() {
             style={styles.avatar}
           />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{currentUser.name || 'Rahul Sharma'}</Text>
+            <Text style={styles.userName}>{currentUser.name || 'Kartik Vichare'}</Text>
             <Text style={styles.userPhone}>{formatMaskedPhone(currentUser.phone)}</Text>
           </View>
         </View>

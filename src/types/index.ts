@@ -114,7 +114,7 @@ export interface PlantationRequest {
   createdAt: string;
   distanceKm?: number;
   duplicateRisk?: 'None detected' | 'Potential match';
-  
+
   // Citizen Details
   citizenId: string;
   citizenName: string;
@@ -122,7 +122,7 @@ export interface PlantationRequest {
   citizenEmail?: string;
   citizenPhone?: string;
   citizenAvatar?: string;
-  
+
   // Volunteer Details
   assignedVolunteerId?: string;
   assignedVolunteerName?: string;
@@ -131,7 +131,7 @@ export interface PlantationRequest {
   assignedVolunteerPhone?: string;
   assignedVolunteerLevel?: string;
   assignedVolunteerPlantations?: number;
-  
+
   // Scheduling, Plantation & Nurturing Thread
   schedule?: ScheduleDetails;
   activityReport?: ActivityReport;

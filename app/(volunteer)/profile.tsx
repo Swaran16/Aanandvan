@@ -119,7 +119,7 @@ export default function VolunteerProfileScreen() {
             style={styles.avatar}
           />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{currentUser.name || 'Amit Kumar'}</Text>
+            <Text style={styles.userName}>{currentUser.name || 'Vaibhav Shirke'}</Text>
             <Text style={styles.userPhone}>{formatMaskedPhone(currentUser.phone)}</Text>
           </View>
         </View>
