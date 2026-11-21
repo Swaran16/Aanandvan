@@ -102,7 +102,7 @@ export default function AdminVolunteersScreen() {
         {/* Bio / Motivation Preview */}
         {item.bio && (
           <Text style={styles.bioText} numberOfLines={2}>
-            "{item.bio}"
+            {`"${item.bio}"`}
           </Text>
         )}
 
@@ -296,43 +296,38 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterPill: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 18,
+    borderRadius: 6,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: '#E5E7EB',
   },
   filterPillActive: {
-    backgroundColor: '#0B3B24',
-    borderColor: '#0B3B24',
+    backgroundColor: '#163E2B',
+    borderColor: '#163E2B',
   },
   filterText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#4B5563',
   },
   filterTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '600',
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 12,
     paddingBottom: 40,
-    gap: 12,
+    gap: 10,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 10,
     padding: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   cardBlocked: {
     borderColor: '#FECACA',
@@ -358,14 +353,14 @@ const styles = StyleSheet.create({
   },
   cardName: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#111827',
   },
   volCodeBadge: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#0B3B24',
-    backgroundColor: '#E8F5E9',
+    fontWeight: '600',
+    color: '#163E2B',
+    backgroundColor: '#E8EFEA',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -377,12 +372,12 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
   },
   statusText: {
     fontSize: 10.5,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   bioText: {
     fontSize: 12,
@@ -406,7 +401,7 @@ const styles = StyleSheet.create({
   },
   metricNum: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#111827',
   },
   metricLabel: {
@@ -436,19 +431,19 @@ const styles = StyleSheet.create({
   },
   inactivePillText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#92400E',
   },
   actionBtn: {
     height: 38,
-    backgroundColor: '#0B3B24',
+    backgroundColor: '#163E2B',
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnText: {
     fontSize: 12.5,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
   },
 });

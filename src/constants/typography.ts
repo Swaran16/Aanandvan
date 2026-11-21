@@ -1,33 +1,29 @@
 /**
- * Typography System
- * Font families, sizes, weights, and line heights.
- * All text styling should reference these tokens.
+ * Design Tokens — Typography System
+ *
+ * Disciplined type scale (11 / 12 / 14 / 16 / 20 / 24 / 32)
+ * Tight letter-spacing for large titles, comfortable reading line-height for body.
  */
 
-export const FontFamily = {
-  regular: 'System',
-  medium: 'System',
-  semiBold: 'System',
-  bold: 'System',
-  // When custom fonts are loaded, replace 'System' with font names:
-  // regular: 'Inter-Regular',
-  // medium: 'Inter-Medium',
-  // semiBold: 'Inter-SemiBold',
-  // bold: 'Inter-Bold',
-} as const;
-
 export const FontSize = {
+  caption: 11,
   xs: 11,
-  sm: 13,
-  base: 15,
-  md: 16,
-  lg: 18,
+  sm: 12,
+  bodySmall: 13,
+  body: 14,
+  base: 14,
+  md: 14,
+  bodyLarge: 16,
+  lg: 16,
+  titleSmall: 16,
+  titleMedium: 18,
+  titleLarge: 20,
   xl: 20,
+  headingMedium: 24,
+  headingLarge: 32,
   '2xl': 24,
   '3xl': 28,
   '4xl': 32,
-  '5xl': 40,
-  '6xl': 48,
 } as const;
 
 export const FontWeight = {
@@ -39,18 +35,23 @@ export const FontWeight = {
 } as const;
 
 export const LineHeight = {
-  tight: 1.2,
+  tight: 1.25,
   snug: 1.35,
   normal: 1.5,
-  relaxed: 1.65,
-  loose: 2.0,
+  relaxed: 1.6,
 } as const;
 
 export const LetterSpacing = {
-  tight: -0.5,
+  tight: -0.4,
   normal: 0,
-  wide: 0.5,
-  wider: 1,
+  wide: 0.3,
+} as const;
+
+export const FontFamily = {
+  regular: 'System',
+  medium: 'System',
+  semiBold: 'System',
+  bold: 'System',
 } as const;
 
 export type FontSizeKey = keyof typeof FontSize;

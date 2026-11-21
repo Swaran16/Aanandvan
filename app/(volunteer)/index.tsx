@@ -65,9 +65,6 @@ export default function VolunteerHomeScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Decorative subtle header accents */}
-      <View style={styles.topWatermarkRight} pointerEvents="none" />
-
       <SafeAreaView edges={['top']} style={styles.safe}>
         <ScrollView
           style={styles.scroll}
@@ -99,7 +96,7 @@ export default function VolunteerHomeScreen() {
                 activeOpacity={0.75}
                 onPress={() => router.push('/pages/notifications' as any)}
               >
-                <Icon name="bell" size={20} color="#0B3B24" />
+                <Icon name="bell" size={18} color="#111827" />
               </TouchableOpacity>
             </View>
           </View>
@@ -121,49 +118,49 @@ export default function VolunteerHomeScreen() {
           <View style={styles.statsContainer}>
             <View style={styles.statsRow}>
               <TouchableOpacity
-                style={styles.statCardDark}
+                style={styles.statCard}
                 activeOpacity={0.88}
                 onPress={() => router.push('/pages/my-assigned-work' as any)}
               >
-                <Text style={styles.statNumberLight}>
+                <Text style={styles.statNumber}>
                   {String(assignedRequests.length || 2).padStart(2, '0')}
                 </Text>
-                <Text style={styles.statLabelLight}>Assigned Drives</Text>
+                <Text style={styles.statLabel}>Assigned Drives</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.statCardDark}
+                style={styles.statCard}
                 activeOpacity={0.88}
                 onPress={() => router.push('/(volunteer)/available' as any)}
               >
-                <Text style={styles.statNumberLight}>
+                <Text style={styles.statNumber}>
                   {String(availableRequests.length || 5).padStart(2, '0')}
                 </Text>
-                <Text style={styles.statLabelLight}>Available to Plant</Text>
+                <Text style={styles.statLabel}>Available to Plant</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.statsRow}>
               <TouchableOpacity
-                style={styles.statCardDark}
+                style={styles.statCard}
                 activeOpacity={0.88}
                 onPress={() => router.push('/(volunteer)/work' as any)}
               >
-                <Text style={[styles.statNumberLight, { color: '#F87171' }]}>
+                <Text style={[styles.statNumber, { color: '#DC2626' }]}>
                   {String(nurturingDueCount).padStart(2, '0')}
                 </Text>
-                <Text style={styles.statLabelLight}>Nurturing Due</Text>
+                <Text style={styles.statLabel}>Nurturing Due</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.statCardLime}
+                style={styles.statCard}
                 activeOpacity={0.88}
                 onPress={() => router.push('/pages/my-assigned-work' as any)}
               >
-                <Text style={styles.statNumberDark}>
+                <Text style={styles.statNumber}>
                   {String(completedDrivesCount).padStart(2, '0')}
                 </Text>
-                <Text style={styles.statLabelDark}>Completed Drives</Text>
+                <Text style={styles.statLabel}>Completed Drives</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -321,16 +318,7 @@ export default function VolunteerHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFBF9',
-  },
-  topWatermarkRight: {
-    position: 'absolute',
-    top: -50,
-    right: -50,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(199, 238, 216, 0.4)',
+    backgroundColor: '#F9FAFB',
   },
   safe: {
     flex: 1,
@@ -339,7 +327,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 40,
   },
@@ -347,7 +335,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   userRow: {
     flexDirection: 'row',
@@ -355,22 +343,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#C7EED8',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
   },
   greetingLabel: {
     fontSize: 12,
     color: '#6B7280',
-    fontWeight: '500',
+    fontWeight: '400',
   },
   userName: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.3,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.2,
   },
   topBarActions: {
     flexDirection: 'row',
@@ -378,9 +366,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bellBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -394,8 +382,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 16,
   },
   blockedTitle: {
@@ -410,91 +398,70 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   statsContainer: {
-    gap: 10,
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 20,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
-  statCardDark: {
+  statCard: {
     flex: 1,
-    backgroundColor: '#0B3B24',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     justifyContent: 'center',
   },
-  statNumberLight: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  statLabelLight: {
-    fontSize: 12,
-    color: '#A8D5BA',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  statCardLime: {
-    flex: 1,
-    backgroundColor: '#C7EED8',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  statNumberDark: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.5,
-  },
-  statLabelDark: {
-    fontSize: 12,
-    color: '#0B3B24',
+  statNumber: {
+    fontSize: 20,
     fontWeight: '700',
+    color: '#163E2B',
+    letterSpacing: -0.4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
     marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.3,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
     marginBottom: 12,
   },
   sectionTitleNoMargin: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.3,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
   },
   quickActionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingHorizontal: 10,
+    marginBottom: 20,
   },
   quickActionItem: {
     alignItems: 'center',
-    width: 90,
+    flex: 1,
   },
   quickCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#E8F5E9',
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
   },
   quickLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '500',
+    color: '#374151',
     textAlign: 'center',
     lineHeight: 15,
   },
@@ -502,20 +469,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   viewAllText: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
+    fontWeight: '600',
+    color: '#163E2B',
   },
   cardsStack: {
-    gap: 12,
+    gap: 8,
   },
   taskCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
@@ -526,31 +493,31 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   taskTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#111827',
     flex: 1,
   },
   taskTime: {
     fontSize: 12,
-    color: '#EF4444',
-    fontWeight: '600',
+    color: '#DC2626',
+    fontWeight: '500',
   },
   taskLocation: {
-    fontSize: 12.5,
-    color: '#4B5563',
-    marginBottom: 6,
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
   },
   taskDesc: {
     fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 17,
-    marginBottom: 12,
+    color: '#4B5563',
+    lineHeight: 16,
+    marginBottom: 10,
   },
   taskActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   logNurturingBtn: {
     flex: 1,
@@ -558,46 +525,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#0B3B24',
-    borderRadius: 10,
-    height: 40,
+    backgroundColor: '#163E2B',
+    borderRadius: 8,
+    height: 38,
   },
   logNurturingText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   viewDriveBtn: {
-    paddingHorizontal: 14,
-    height: 40,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 38,
+    borderRadius: 8,
     backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
   viewDriveText: {
-    fontSize: 12.5,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     color: '#374151',
   },
   activeDriveCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 10,
     padding: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   activeDriveThumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
+    width: 56,
+    height: 56,
+    borderRadius: 8,
     marginRight: 12,
+    backgroundColor: '#F3F4F6',
   },
   activeDriveTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#111827',
     marginBottom: 2,
   },
@@ -615,7 +585,7 @@ const styles = StyleSheet.create({
   },
   activeDriveBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#1B5E20',
+    fontWeight: '600',
+    color: '#163E2B',
   },
 });

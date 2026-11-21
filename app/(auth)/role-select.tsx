@@ -63,7 +63,7 @@ export default function RoleSelectScreen() {
         <View style={styles.topSection}>
           <Text style={styles.title}>Join the Green Movement</Text>
           <Text style={styles.subtitle}>
-            Choose how you want to contribute to Aanandvan's environmental mission.
+            {"Choose how you want to contribute to Aanandvan's environmental mission."}
           </Text>
 
           {/* Radio Options List */}
@@ -84,7 +84,7 @@ export default function RoleSelectScreen() {
               </View>
 
               <View style={styles.radioBody}>
-                <Text style={styles.radioTitle}>I'm a citizen</Text>
+                <Text style={styles.radioTitle}>{"I'm a citizen"}</Text>
                 <Text style={styles.radioDesc}>
                   Report locations for potential plantations and track ecological growth in your neighborhood.
                 </Text>
@@ -108,7 +108,7 @@ export default function RoleSelectScreen() {
 
               <View style={styles.radioBody}>
                 <View style={styles.volunteerTitleRow}>
-                  <Text style={styles.radioTitle}>I'm a volunteer</Text>
+                  <Text style={styles.radioTitle}>{"I'm a volunteer"}</Text>
                   <View style={styles.verificationBadge}>
                     <Text style={styles.verificationText}>Verification required</Text>
                   </View>
@@ -235,21 +235,21 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   radioOuterSelected: {
-    borderColor: '#0B3B24',
+    borderColor: '#163E2B',
   },
   radioInner: {
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: '#0B3B24',
+    backgroundColor: '#163E2B',
   },
   radioBody: {
     flex: 1,
   },
   radioTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#0B3B24',
+    fontWeight: '600',
+    color: '#111827',
   },
   volunteerTitleRow: {
     flexDirection: 'row',
@@ -259,9 +259,9 @@ const styles = StyleSheet.create({
   },
   verificationBadge: {
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   verificationText: {
     fontSize: 11,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   },
   radioDesc: {
     fontSize: 13,
-    color: '#7B8782',
+    color: '#6B7280',
     lineHeight: 18,
     marginTop: 4,
   },
@@ -280,15 +280,15 @@ const styles = StyleSheet.create({
   },
   continueBtn: {
     width: '100%',
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#0A4D2E',
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#163E2B',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   continueBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -305,8 +305,8 @@ const styles = StyleSheet.create({
   },
   loginLink: {
     fontSize: 14,
-    color: '#0B3B24',
-    fontWeight: '700',
+    color: '#163E2B',
+    fontWeight: '600',
   },
   footer: {
     alignItems: 'center',

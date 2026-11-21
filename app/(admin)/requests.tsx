@@ -139,7 +139,7 @@ export default function AdminRequestsScreen() {
           📍 {item.manualAddress || item.location}
         </Text>
         <Text style={styles.cardDesc} numberOfLines={2}>
-          "{item.description}"
+          {`"${item.description}"`}
         </Text>
 
         <View style={styles.submitterRow}>
@@ -309,43 +309,38 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: '#E5E7EB',
   },
   filterPillActive: {
-    backgroundColor: '#0B3B24',
-    borderColor: '#0B3B24',
+    backgroundColor: '#163E2B',
+    borderColor: '#163E2B',
   },
   filterText: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#4B5563',
   },
   filterTextActive: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '600',
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 12,
     paddingBottom: 40,
-    gap: 14,
+    gap: 12,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   photosStrip: {
     flexDirection: 'row',
@@ -431,29 +426,29 @@ const styles = StyleSheet.create({
   },
   reviewBtn: {
     flex: 1,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#0B3B24',
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: '#163E2B',
     alignItems: 'center',
     justifyContent: 'center',
   },
   reviewBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   takeoverBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 14,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#15803D',
+    paddingHorizontal: 12,
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: '#166534',
   },
   takeoverBtnText: {
     fontSize: 12.5,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   emptyBox: {

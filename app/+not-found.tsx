@@ -16,7 +16,7 @@ export default function NotFoundScreen() {
         <Text variant="h1">404</Text>
         <Text variant="h3">Page Not Found</Text>
         <Text variant="body1" color={Colors.textSecondary} align="center">
-          The screen you're looking for doesn't exist.
+          {"The screen you're looking for doesn't exist."}
         </Text>
         <Link href="/" style={styles.link}>
           <Text variant="label" color={Colors.brandPrimary}>

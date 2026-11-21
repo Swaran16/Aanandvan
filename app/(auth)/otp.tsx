@@ -216,7 +216,7 @@ export default function OtpScreen() {
 
             {/* Resend OTP Row */}
             <View style={styles.resendRow}>
-              <Text style={styles.resendLabel}>Didn't receive the email? </Text>
+              <Text style={styles.resendLabel}>{"Didn't receive the email? "}</Text>
               {timer > 0 ? (
                 <Text style={styles.timerText}>
                   Resend code in <Text style={styles.timerBold}>00:{formattedSeconds}</Text>
@@ -305,21 +305,21 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#0B3B24',
+    color: '#111827',
     letterSpacing: -0.4,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
     color: '#4B5563',
-    lineHeight: 22,
+    lineHeight: 20,
     marginBottom: 16,
   },
   emailHighlight: {
-    fontWeight: '700',
-    color: '#0B3B24',
+    fontWeight: '600',
+    color: '#163E2B',
   },
   changeEmailBtn: {
     alignSelf: 'flex-start',
@@ -328,14 +328,13 @@ const styles = StyleSheet.create({
   changeEmailText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1B5E20',
-    textDecorationLine: 'underline',
+    color: '#163E2B',
   },
   otpLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0B3B24',
-    marginBottom: 12,
+    color: '#111827',
+    marginBottom: 10,
   },
   otpRow: {
     flexDirection: 'row',
@@ -345,26 +344,26 @@ const styles = StyleSheet.create({
   },
   otpBox: {
     flex: 1,
-    height: 54,
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    fontSize: 22,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#0B3B24',
-    backgroundColor: '#FAFAFA',
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
     textAlign: 'center',
   },
   otpBoxFilled: {
-    borderColor: '#0B3B24',
-    backgroundColor: '#F0FDF4',
+    borderColor: '#163E2B',
+    backgroundColor: '#F9FAFB',
   },
   otpBoxError: {
-    borderColor: '#EF4444',
+    borderColor: '#DC2626',
   },
   errorText: {
     fontSize: 12,
-    color: '#EF4444',
+    color: '#DC2626',
     marginBottom: 12,
     marginLeft: 2,
   },
@@ -372,7 +371,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   resendLabel: {
     fontSize: 13,
@@ -383,25 +382,24 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   timerBold: {
-    fontWeight: '700',
-    color: '#0B3B24',
+    fontWeight: '600',
+    color: '#163E2B',
   },
   resendLink: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#0B3B24',
-    textDecorationLine: 'underline',
+    fontWeight: '600',
+    color: '#163E2B',
   },
   demoHintBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#F0FDF4',
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#BBF7D0',
-    marginTop: 10,
+    marginTop: 8,
   },
   demoHintText: {
     flex: 1,
@@ -412,26 +410,20 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     width: '100%',
-    paddingTop: 24,
+    paddingTop: 20,
   },
   verifyBtn: {
-    height: 52,
-    backgroundColor: '#0B3B24',
-    borderRadius: 12,
+    height: 44,
+    backgroundColor: '#163E2B',
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0B3B24',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 5,
-    elevation: 3,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   verifyText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
-    letterSpacing: 0.2,
   },
   privacyNote: {
     fontSize: 12,

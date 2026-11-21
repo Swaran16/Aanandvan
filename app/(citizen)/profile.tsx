@@ -124,7 +124,7 @@ export default function CitizenProfileScreen() {
               activeOpacity={0.75}
             >
               <View style={styles.menuLeft}>
-                <Icon name={row.icon} size={18} color="#2B3E33" />
+                <Icon name={row.icon} size={18} color="#4B5563" />
                 <Text style={styles.menuLabel}>{row.label}</Text>
               </View>
 
@@ -132,7 +132,7 @@ export default function CitizenProfileScreen() {
                 {row.rightValue ? (
                   <Text style={styles.menuRightValue}>{row.rightValue}</Text>
                 ) : null}
-                <Icon name="chevron-right" size={18} color="#5F6C64" />
+                <Icon name="chevron-right" size={18} color="#9CA3AF" />
               </View>
             </TouchableOpacity>
           ))}
@@ -142,7 +142,7 @@ export default function CitizenProfileScreen() {
             onPress={handleLogout}
             activeOpacity={0.75}
           >
-            <Icon name="logout" size={18} color="#B91C1C" />
+            <Icon name="logout" size={18} color="#DC2626" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
@@ -161,13 +161,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   pageTitle: {
-    fontSize: 19,
-    fontWeight: '600',
-    color: '#0D4325',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
     marginBottom: 20,
   },
   userRow: {
@@ -180,20 +180,20 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#E5EAE3',
+    backgroundColor: '#F3F4F6',
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 16.5,
-    fontWeight: '700',
-    color: '#163020',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
     marginBottom: 2,
   },
   userPhone: {
-    fontSize: 13.5,
-    color: '#5F6C64',
+    fontSize: 13,
+    color: '#6B7280',
   },
   menuList: {
     marginTop: 2,
@@ -202,19 +202,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 17,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF1EC',
+    borderBottomColor: '#F3F4F6',
   },
   menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   menuLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#163020',
+    color: '#111827',
   },
   menuRight: {
     flexDirection: 'row',
@@ -223,19 +223,19 @@ const styles = StyleSheet.create({
   },
   menuRightValue: {
     fontSize: 13,
-    color: '#6E7B73',
+    color: '#6B7280',
   },
   logoutRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 18,
+    gap: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEF1EC',
+    borderBottomColor: '#F3F4F6',
   },
   logoutText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#B91C1C',
+    color: '#DC2626',
   },
 });

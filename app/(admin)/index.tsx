@@ -129,11 +129,11 @@ export default function AdminDashboardScreen() {
           <View style={styles.kpiDoubleRow}>
             {/* 2. Total Volunteers */}
             <TouchableOpacity
-              style={[styles.kpiHalfCard, { backgroundColor: '#E8F5E9' }]}
+              style={[styles.kpiHalfCard, { backgroundColor: '#FFFFFF' }]}
               activeOpacity={0.88}
               onPress={() => router.push('/(admin)/volunteers' as any)}
             >
-              <Text style={[styles.kpiNumber, { color: '#0B3B24' }]}>
+              <Text style={styles.kpiNumber}>
                 {totalVolunteersCount}
               </Text>
               <Text style={styles.kpiHalfTitle}>Total Volunteers</Text>
@@ -143,8 +143,8 @@ export default function AdminDashboardScreen() {
             </TouchableOpacity>
 
             {/* 3. Trees Planted */}
-            <View style={[styles.kpiHalfCard, { backgroundColor: '#FEF3C7' }]}>
-              <Text style={[styles.kpiNumber, { color: '#92400E' }]}>
+            <View style={[styles.kpiHalfCard, { backgroundColor: '#FFFFFF' }]}>
+              <Text style={styles.kpiNumber}>
                 {totalTreesPlanted.toLocaleString()}
               </Text>
               <Text style={styles.kpiHalfTitle}>Trees Planted</Text>
@@ -301,15 +301,10 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   kpiTopRow: {
     flexDirection: 'row',
@@ -318,23 +313,23 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   kpiNumber: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0B3B24',
-    letterSpacing: -0.5,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#163E2B',
+    letterSpacing: -0.4,
   },
   kpiBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   kpiBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   kpiTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#111827',
     marginBottom: 2,
   },
@@ -344,56 +339,56 @@ const styles = StyleSheet.create({
   },
   kpiDoubleRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   kpiHalfCard: {
     flex: 1,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   kpiHalfTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#111827',
     marginTop: 4,
     marginBottom: 2,
   },
   kpiHalfSub: {
     fontSize: 11,
-    color: '#4B5563',
+    color: '#6B7280',
   },
   quickRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   quickItem: {
     flex: 1,
     alignItems: 'center',
   },
   quickCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#E8F5E9',
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
   },
   quickLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '500',
+    color: '#374151',
     textAlign: 'center',
   },
   chartCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: 20,

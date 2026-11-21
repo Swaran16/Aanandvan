@@ -1,32 +1,72 @@
 /**
- * App Color Palette — Aanandvan Brand
- * Central source of truth for all colors used across the app.
- * Update here to theme the entire application.
+ * Design Tokens — Color Palette
+ *
+ * Refined design system:
+ * - One primary brand accent (Aanandvan Deep Forest Green #163E2B)
+ * - Strict warm-neutral scale (9 steps)
+ * - Restrained semantic colors (WCAG AA compliant)
+ * - No decorative gradients or muddy shadows
  */
 
 export const Colors = {
-  // ─── Brand: Aanandvan Forest Green ───────────────────────────────────────
-  /** Deep forest green — splash bg, slide 4 bg, logo badge */
-  brandDark: '#163421',
-  /** Mid forest green — primary actions, buttons */
-  brandPrimary: '#1B4332',
-  /** Bright forest green — active states, icons, step badges */
-  brandAccent: '#2D6A4F',
-  /** Soft sage — onboarding content area tint */
-  brandLight: '#EBF5EE',
-  /** Very light mint — subtle backgrounds, step icon bg */
-  brandMint: '#D8EFE1',
-  /** Muted green — decorative leaf elements */
-  brandMuted: '#4A7C5F',
-  /** Warm cream — subtitle tints on dark bg */
-  brandCream: '#A8D5BA',
+  // Brand Primary (Deep Forest Green)
+  primary: '#163E2B',
+  primaryHover: '#102F20',
+  primaryMuted: '#EBF4EF',
+  primaryBorder: '#C9E2D4',
+  primaryContrast: '#FFFFFF',
 
-  // ─── Neutrals ─────────────────────────────────────────────────────────────
+  // Warm Neutral Scale
+  neutral50: '#F9FAFB',
+  neutral100: '#F3F4F6',
+  neutral200: '#E5E7EB',
+  neutral300: '#D1D5DB',
+  neutral400: '#9CA3AF',
+  neutral500: '#6B7280',
+  neutral600: '#4B5563',
+  neutral700: '#374151',
+  neutral800: '#1F2937',
+  neutral900: '#111827',
+
+  // Semantic Accents (Restrained)
+  success: '#15803D',
+  successSurface: '#F0FDF4',
+  successBorder: '#BBF7D0',
+
+  warning: '#B45309',
+  warningSurface: '#FFFBEB',
+  warningBorder: '#FDE68A',
+
+  danger: '#B91C1C',
+  dangerSurface: '#FEF2F2',
+  dangerBorder: '#FECACA',
+
+  info: '#1D4ED8',
+  infoSurface: '#EFF6FF',
+  infoBorder: '#BFDBFE',
+
+  // Surfaces
+  background: '#F9FAFB',
+  surface: '#FFFFFF',
+  surfaceSubtle: '#F3F4F6',
+  border: '#E5E7EB',
+  borderStrong: '#D1D5DB',
+
+  // Text
+  textHeading: '#111827',
+  textBody: '#374151',
+  textMuted: '#6B7280',
+  textInverse: '#FFFFFF',
+
+  // Compatibility aliases
+  brandDark: '#163E2B',
+  brandPrimary: '#163E2B',
+  brandAccent: '#246143',
+  brandLight: '#EBF4EF',
+  brandMint: '#D8EFE1',
   white: '#FFFFFF',
   black: '#000000',
-
-  // ─── Grays ───────────────────────────────────────────────────────────────
-  gray50:  '#F9FAFB',
+  gray50: '#F9FAFB',
   gray100: '#F3F4F6',
   gray200: '#E5E7EB',
   gray300: '#D1D5DB',
@@ -36,38 +76,13 @@ export const Colors = {
   gray700: '#374151',
   gray800: '#1F2937',
   gray900: '#111827',
-
-  // ─── Backgrounds ─────────────────────────────────────────────────────────
-  background: '#F5FAF6',
-  surface: '#FFFFFF',
-  surfaceElevated: '#FFFFFF',
-
-  // ─── Text ────────────────────────────────────────────────────────────────
-  textPrimary: '#1A2E23',
-  textSecondary: '#4B6E5A',
+  textPrimary: '#111827',
+  textSecondary: '#4B5563',
   textDisabled: '#9CA3AF',
-  textInverse: '#FFFFFF',
-
-  // ─── Semantic ────────────────────────────────────────────────────────────
-  success: '#2D6A4F',
-  successLight: '#D8EFE1',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
-  info: '#3B82F6',
-  infoLight: '#DBEAFE',
-
-  // ─── Border ──────────────────────────────────────────────────────────────
-  border: '#D1E8DA',
-  borderFocus: '#1B4332',
-
-  // ─── Overlay ─────────────────────────────────────────────────────────────
-  overlay: 'rgba(0, 0, 0, 0.5)',
-  overlayLight: 'rgba(22, 52, 33, 0.08)',
-
-  // ─── Transparent ─────────────────────────────────────────────────────────
+  textLight: '#A8D5BA',
   transparent: 'transparent',
+  brandCream: '#FAFBF9',
+  brandMuted: '#6B7280',
 } as const;
 
 export type ColorKey = keyof typeof Colors;

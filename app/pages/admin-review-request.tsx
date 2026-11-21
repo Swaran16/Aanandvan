@@ -176,7 +176,7 @@ export default function AdminReviewRequestScreen() {
         {isNeedsInfo && req.adminClarificationNotes && (
           <View style={styles.activeClarifyBox}>
             <Text style={styles.activeClarifyTitle}>Active Clarification Note to Citizen:</Text>
-            <Text style={styles.activeClarifyText}>"{req.adminClarificationNotes}"</Text>
+            <Text style={styles.activeClarifyText}>{`"${req.adminClarificationNotes}"`}</Text>
           </View>
         )}
 

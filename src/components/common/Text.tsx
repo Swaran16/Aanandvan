@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Text as RNText, TextStyle, StyleSheet, TextProps as RNTextProps, StyleProp } from 'react-native';
+import { Text as RNText, TextStyle, TextProps as RNTextProps, StyleProp } from 'react-native';
 import { Colors, FontSize, FontWeight } from '@/constants';
 import { TextVariant } from '@/types';
 

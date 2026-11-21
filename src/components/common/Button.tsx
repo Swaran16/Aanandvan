@@ -38,16 +38,16 @@ interface ButtonProps extends Omit<TouchableOpacityProps, 'style'> {
 
 const variantConfig: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
   primary:   { bg: Colors.brandPrimary, text: Colors.white },
-  secondary: { bg: Colors.brandAccent,  text: Colors.white },
+  secondary: { bg: Colors.neutral100,    text: Colors.neutral900, border: Colors.neutral200 },
   outline:   { bg: Colors.transparent,  text: Colors.brandPrimary, border: Colors.brandPrimary },
   ghost:     { bg: Colors.transparent,  text: Colors.brandPrimary },
-  danger:    { bg: Colors.error,        text: Colors.white },
+  danger:    { bg: Colors.danger,       text: Colors.white },
 };
 
 const sizeConfig: Record<ButtonSize, { height: number; px: number; fontSize: number }> = {
-  sm: { height: 36, px: Spacing[4], fontSize: FontSize.sm },
-  md: { height: 48, px: Spacing[6], fontSize: FontSize.base },
-  lg: { height: 56, px: Spacing[8], fontSize: FontSize.lg },
+  sm: { height: 36, px: Spacing[3], fontSize: FontSize.sm },
+  md: { height: 44, px: Spacing[4], fontSize: FontSize.base },
+  lg: { height: 50, px: Spacing[6], fontSize: FontSize.base },
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ export const Button: React.FC<ButtonProps> = ({
           paddingHorizontal: sc.px,
           backgroundColor: vc.bg,
           borderColor: vc.border ?? Colors.transparent,
-          borderWidth: vc.border ? 1.5 : 0,
+          borderWidth: vc.border ? 1 : 0,
           opacity: isDisabled ? 0.5 : 1,
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
