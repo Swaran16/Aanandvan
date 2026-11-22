@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { Text } from '@/components/common';
 import { Icon, IconName } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
+import { DashboardPalette } from '@/constants/colors';
 
 const formatMaskedPhone = (phone?: string) => {
   if (!phone) return '+91*******425';
@@ -125,17 +126,17 @@ export default function VolunteerProfileScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: '#DFE7EE' }]}>
+          <View style={[styles.statCard, { backgroundColor: DashboardPalette.cardBlue, borderColor: DashboardPalette.cardBlueBorder, borderWidth: 1 }]}>
             <Text style={styles.statValue}>{String(completedCount).padStart(2, '0')}</Text>
             <Text style={styles.statLabel}>Completed</Text>
           </View>
 
-          <View style={[styles.statCard, { backgroundColor: '#D6E4D8' }]}>
+          <View style={[styles.statCard, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}>
             <Text style={styles.statValue}>{String(assignedCount).padStart(2, '0')}</Text>
             <Text style={styles.statLabel}>Assigned</Text>
           </View>
 
-          <View style={[styles.statCard, { backgroundColor: '#EEF5B2' }]}>
+          <View style={[styles.statCard, { backgroundColor: DashboardPalette.cardLime, borderColor: DashboardPalette.cardLimeBorder, borderWidth: 1 }]}>
             <Text style={styles.statValue}>{String(careDueCount).padStart(2, '0')}</Text>
             <Text style={styles.statLabel}>Care due</Text>
           </View>

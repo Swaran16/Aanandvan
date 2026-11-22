@@ -99,7 +99,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ theme = 'light' }) =
         <Icon
           name="refresh"
           size={12}
-          color={isDarkNavbar ? '#FFFFFF' : '#0B3B24'}
+          color={isDarkNavbar ? '#FFFFFF' : '#163E2B'}
         />
         <Text
           style={[
@@ -112,7 +112,7 @@ export const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ theme = 'light' }) =
         <Icon
           name="chevron-down"
           size={11}
-          color={isDarkNavbar ? 'rgba(255,255,255,0.7)' : '#6B7280'}
+          color={isDarkNavbar ? 'rgba(255,255,255,0.7)' : '#163E2B'}
         />
       </TouchableOpacity>
 
@@ -217,14 +217,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   triggerBtnLight: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#D8EBE0',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#C5DCCF',
   },
   triggerBtnDark: {
     backgroundColor: 'rgba(255, 255, 255, 0.12)',
@@ -233,10 +233,10 @@ const styles = StyleSheet.create({
   },
   triggerText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   triggerTextLight: {
-    color: '#111827',
+    color: '#163E2B',
   },
   triggerTextDark: {
     color: '#FFFFFF',

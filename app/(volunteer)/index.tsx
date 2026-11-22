@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, RoleSwitcher } from '@/components/common';
 import { Icon, IconName } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
+import { DashboardPalette } from '@/constants/colors';
 
 export default function VolunteerHomeScreen() {
   const { currentUser, requests, maintenanceItems } = useApp();
@@ -129,34 +130,34 @@ export default function VolunteerHomeScreen() {
         {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
         <Text style={styles.sectionHeading}>Pending actions</Text>
         <View style={styles.pendingRow}>
-          {/* Card 1: Available Requests (Bright Sky Blue) */}
+          {/* Card 1: Available Requests (Pastel Blue) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
+            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardBlue, borderColor: DashboardPalette.cardBlueBorder, borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(volunteer)/available' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#0F172A' }]}>{availableRequests.length || 5}</Text>
-            <Text style={[styles.pendingLabel, { color: '#1E3A8A' }]}>Available to{'\n'}plant</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{availableRequests.length || 5}</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Available to{'\n'}plant</Text>
           </TouchableOpacity>
 
-          {/* Card 2: Active Assigned Requests (Bright Fresh Mint Green) */}
+          {/* Card 2: Active Assigned Requests (Pastel Sage Green) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
+            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/pages/my-assigned-work' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#064E3B' }]}>{assignedRequests.length || 2}</Text>
-            <Text style={[styles.pendingLabel, { color: '#065F46' }]}>Active assigned{'\n'}requests</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{assignedRequests.length || 2}</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Active assigned{'\n'}requests</Text>
           </TouchableOpacity>
 
-          {/* Card 3: Nurturing Due (Bright Sunny Lemon Lime) */}
+          {/* Card 3: Nurturing Due (Pastel Yellow / Lime) */}
           <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
+            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardLime, borderColor: DashboardPalette.cardLimeBorder, borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/(volunteer)/work' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#78350F' }]}>{nurturingDueCount}</Text>
-            <Text style={[styles.pendingLabel, { color: '#854D0E' }]}>Nurturing due{'\n'}today</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{nurturingDueCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Nurturing due{'\n'}today</Text>
           </TouchableOpacity>
         </View>
 
@@ -171,7 +172,7 @@ export default function VolunteerHomeScreen() {
               activeOpacity={0.8}
             >
               <View style={styles.quickCircle}>
-                <Icon name={act.icon} size={22} color="#163E2B" />
+                <Icon name={act.icon} size={22} color={DashboardPalette.quickIcon} />
               </View>
               <Text style={styles.quickLabel}>{act.label}</Text>
             </TouchableOpacity>
@@ -183,59 +184,59 @@ export default function VolunteerHomeScreen() {
         <View style={styles.overviewGrid}>
           {/* Row 1 */}
           <View style={styles.overviewRow}>
-            {/* Available Requests Card (Bright Sky Blue) */}
+            {/* Available Requests Card (Pastel Blue) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#D4E9FD', borderColor: '#B6DBFC', borderWidth: 1 }]}
+              style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewBlue, borderColor: DashboardPalette.overviewBlueBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(volunteer)/available' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#0F172A' }]}>{availableRequests.length || 5}</Text>
-                <Icon name="arrow-up-right" size={16} color="#0284C7" />
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{availableRequests.length || 5}</Text>
+                <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#0F172A' }]}>Available Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#0369A1' }]}>Open in Dadar</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Available Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Open in Dadar</Text>
             </TouchableOpacity>
 
-            {/* Active Requests Card (Bright Fresh Mint Green) */}
+            {/* Active Requests Card (Pastel Sage Green) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#CEF5DB', borderColor: '#A8EDBF', borderWidth: 1 }]}
+              style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewSage, borderColor: DashboardPalette.overviewSageBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/pages/my-assigned-work' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{assignedRequests.length || 2}</Text>
-                <Icon name="arrow-up-right" size={16} color="#16A34A" />
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{assignedRequests.length || 2}</Text>
+                <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Active Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#15803D' }]}>Assigned to me</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Active Requests</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Assigned to me</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 2 */}
           <View style={styles.overviewRow}>
-            {/* Completed Requests Card (Bright Emerald Green) */}
-            <View style={[styles.overviewCard, { backgroundColor: '#C4F2D6', borderColor: '#9CEAB8', borderWidth: 1 }]}>
+            {/* Completed Requests Card (Pastel Sage Green) */}
+            <View style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewSage, borderColor: DashboardPalette.overviewSageBorder, borderWidth: 1 }]}>
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#064E3B' }]}>{completedRequestsCount}</Text>
-                <Icon name="arrow-up-right" size={16} color="#059669" />
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{completedRequestsCount}</Text>
+                <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#064E3B' }]}>Trees Planted</Text>
-              <Text style={[styles.overviewSub, { color: '#047857' }]}>+8 this month</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Trees Planted</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>+8 this month</Text>
             </View>
 
-            {/* Nurturing Due Card (Bright Sunny Yellow) */}
+            {/* Nurturing Due Card (Pastel Yellow / Lime) */}
             <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: '#FEF08A', borderColor: '#FDE047', borderWidth: 1 }]}
+              style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewLime, borderColor: DashboardPalette.overviewLimeBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/(volunteer)/work' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#78350F' }]}>{nurturingDueCount}</Text>
-                <Icon name="arrow-up-right" size={16} color="#D97706" />
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{nurturingDueCount}</Text>
+                <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#78350F' }]}>Nurturing Due</Text>
-              <Text style={[styles.overviewSub, { color: '#B45309', fontWeight: '700' }]}>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Nurturing Due</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280', fontWeight: '700' }]}>
                 Alternate-day alert
               </Text>
             </TouchableOpacity>
@@ -493,9 +494,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#D9F99D',
+    backgroundColor: DashboardPalette.quickCircle,
     borderWidth: 1,
-    borderColor: '#BEF264',
+    borderColor: DashboardPalette.quickCircleBorder,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,

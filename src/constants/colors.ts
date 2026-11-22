@@ -85,4 +85,49 @@ export const Colors = {
   brandMuted: '#6B7280',
 } as const;
 
+/**
+ * Exact Dashboard & Home Screen Color System
+ * Extracted directly from reference design spec for full cross-app consistency.
+ */
+export const DashboardPalette = {
+  // Pending Actions / 3 Pastel Cards
+  cardBlue: '#DBE8F0',
+  cardBlueBorder: '#C5D9E5',
+  cardSage: '#CDE1D2',
+  cardSageBorder: '#B7D0BE',
+  cardLime: '#EBF29D',
+  cardLimeBorder: '#DCE588',
+
+  // Quick Action Circular Buttons
+  quickCircle: '#E8F29E',
+  quickCircleBorder: '#DCE888',
+  quickIcon: '#163E2B',
+
+  // Platform / Community / Field Overview (2x2 Grid)
+  overviewBlue: '#DBE8F0',
+  overviewBlueBorder: '#C5D9E5',
+  overviewSage: '#CDE1D2',
+  overviewSageBorder: '#B7D0BE',
+  overviewLime: '#EBF29D',
+  overviewLimeBorder: '#DCE588',
+  overviewArrow: '#4B5563',
+
+  // RoleSwitcher Pill
+  rolePillBg: '#D8EBE0',
+  rolePillBorder: '#C5DCCF',
+  rolePillText: '#163E2B',
+
+  // Headings & Brand Accents
+  heading: '#163E2B',
+  brandDark: '#163E2B',
+  badgeYear: '#163E2B',
+
+  // Growth Stats & Metrics
+  chartCompleted: '#163E2B',
+  chartInProgress: '#EAB308',
+
+  // Bottom Navigation Active Indicator
+  tabActivePill: '#C7EED8',
+} as const;
+
 export type ColorKey = keyof typeof Colors;

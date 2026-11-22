@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, RoleSwitcher } from '@/components/common';
 import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
+import { DashboardPalette } from '@/constants/colors';
 
 export default function AdminProfileScreen() {
   const { logout, requests, volunteers } = useApp();
@@ -82,17 +83,17 @@ export default function AdminProfileScreen() {
         {/* ─── Platform Totals (Clean Soft Pastel Cards) ─── */}
         <Text style={styles.sectionTitle}>Platform Totals</Text>
         <View style={styles.statsRow}>
-          <View style={[styles.statBox, { backgroundColor: '#EBF2FA' }]}>
+          <View style={[styles.statBox, { backgroundColor: DashboardPalette.cardBlue, borderColor: DashboardPalette.cardBlueBorder, borderWidth: 1 }]}>
             <Text style={styles.statNum}>{requests.length + 116}</Text>
             <Text style={styles.statLabel}>Total Requests</Text>
           </View>
 
-          <View style={[styles.statBox, { backgroundColor: '#E2EFE5' }]}>
+          <View style={[styles.statBox, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}>
             <Text style={styles.statNum}>{volunteers.length + 42}</Text>
             <Text style={styles.statLabel}>Volunteers</Text>
           </View>
 
-          <View style={[styles.statBox, { backgroundColor: '#F4F8D3' }]}>
+          <View style={[styles.statBox, { backgroundColor: DashboardPalette.cardLime, borderColor: DashboardPalette.cardLimeBorder, borderWidth: 1 }]}>
             <Text style={styles.statNum}>{totalTrees.toLocaleString()}</Text>
             <Text style={styles.statLabel}>Trees Planted</Text>
           </View>
