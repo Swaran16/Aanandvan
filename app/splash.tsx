@@ -19,6 +19,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from '@/components/common';
 
 export default function SplashScreen() {
@@ -88,13 +89,18 @@ export default function SplashScreen() {
           ]}
         >
           <View style={styles.sealCircle}>
-            <TreeIcon size={68} color="#FFFFFF" />
+            <View style={styles.innerSeal}>
+              <MaterialCommunityIcons name="sprout" size={56} color="#FFFFFF" />
+            </View>
           </View>
         </Animated.View>
 
         {/* Brand Text */}
         <Animated.View style={[styles.brandWrap, { opacity: textOpacity }]}>
           <Text style={styles.brandTitle}>Aanandvan</Text>
+          <View style={styles.estdBadge}>
+            <Text style={styles.estdText}>ESTD. 2024</Text>
+          </View>
           <Text style={styles.brandSubtitle}>MUMBAI URBAN FORESTRY INITIATIVE</Text>
         </Animated.View>
       </View>
@@ -109,62 +115,6 @@ export default function SplashScreen() {
     </View>
   );
 }
-
-// ─── Inline Tree Icon ─────────────────────────────────────────────────────────
-
-const TreeIcon: React.FC<{ size: number; color: string }> = ({ size, color }) => (
-  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-    {/* Trunk */}
-    <View
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        width: size * 0.12,
-        height: size * 0.38,
-        backgroundColor: color,
-        borderRadius: 4,
-        opacity: 0.95,
-      }}
-    />
-    {/* Foliage main central dome */}
-    <View
-      style={{
-        position: 'absolute',
-        top: 0,
-        width: size * 0.72,
-        height: size * 0.58,
-        borderRadius: size * 0.36,
-        backgroundColor: color,
-      }}
-    />
-    {/* Foliage left cloud */}
-    <View
-      style={{
-        position: 'absolute',
-        top: size * 0.16,
-        left: 0,
-        width: size * 0.46,
-        height: size * 0.46,
-        borderRadius: size * 0.23,
-        backgroundColor: color,
-        opacity: 0.9,
-      }}
-    />
-    {/* Foliage right cloud */}
-    <View
-      style={{
-        position: 'absolute',
-        top: size * 0.16,
-        right: 0,
-        width: size * 0.46,
-        height: size * 0.46,
-        borderRadius: size * 0.23,
-        backgroundColor: color,
-        opacity: 0.9,
-      }}
-    />
-  </View>
-);
 
 // ─── Inline Leaf Motif ────────────────────────────────────────────────────────
 
@@ -214,19 +164,29 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sealCircle: {
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 2.5,
-    borderColor: '#C7EED8',
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    width: 126,
+    height: 126,
+    borderRadius: 63,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
     elevation: 8,
+  },
+  innerSeal: {
+    width: 98,
+    height: 98,
+    borderRadius: 49,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   brandWrap: {
     alignItems: 'center',
@@ -239,6 +199,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textAlign: 'center',
     lineHeight: 42,
+  },
+  estdBadge: {
+    marginTop: 6,
+    marginBottom: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  estdText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#D8F37E',
+    letterSpacing: 2,
   },
   brandSubtitle: {
     fontSize: 11,

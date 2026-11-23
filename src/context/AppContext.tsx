@@ -149,7 +149,7 @@ const INITIAL_REQUESTS: PlantationRequest[] = [
     landmarkPhotos: [
       'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=600&auto=format&fit=crop&q=80',
     ],
-    status: 'assigned',
+    status: 'in_progress',
     createdAt: '24 Oct 2026',
     distanceKm: 0.6,
     duplicateRisk: 'None detected',
@@ -238,7 +238,7 @@ const INITIAL_REQUESTS: PlantationRequest[] = [
       'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=600&auto=format&fit=crop&q=80',
     ],
     landmarkPhotos: [],
-    status: 'in_progress',
+    status: 'assigned',
     createdAt: '15 Oct 2026',
     distanceKm: 1.4,
     duplicateRisk: 'None detected',

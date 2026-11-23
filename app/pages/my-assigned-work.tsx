@@ -49,8 +49,10 @@ export default function MyAssignedWorkScreen() {
 
         <View style={styles.list}>
           {assigned.map(item => {
-            const isScheduled = item.status === 'scheduled';
-            const isInProgress = item.status === 'in_progress';
+            const hasSchedule = !!item.schedule?.date;
+            const isPlanted = !!item.activityUpdate?.photos?.length || item.status === 'completed';
+            const isInProgress = item.status === 'in_progress' || isPlanted;
+            const needsScheduling = !hasSchedule && item.status === 'assigned';
 
             return (
               <View key={item.id} style={styles.card}>
@@ -69,15 +71,19 @@ export default function MyAssignedWorkScreen() {
                     <View
                       style={[
                         styles.statusPill,
-                        isInProgress ? styles.statusInProgress : styles.statusAssigned,
+                        isPlanted
+                          ? styles.statusPlanted
+                          : hasSchedule
+                          ? styles.statusScheduled
+                          : styles.statusAssigned,
                       ]}
                     >
                       <Text style={styles.statusPillText}>
-                        {isScheduled
-                          ? 'Scheduled'
-                          : isInProgress
-                          ? 'In Progress'
-                          : 'Assigned'}
+                        {isPlanted
+                          ? 'Planted & Nurturing'
+                          : hasSchedule
+                          ? `Scheduled: ${item.schedule?.date}`
+                          : 'Awaiting Schedule'}
                       </Text>
                     </View>
                   </View>
@@ -99,7 +105,8 @@ export default function MyAssignedWorkScreen() {
                       <Text style={styles.outlineActionText}>View Details</Text>
                     </TouchableOpacity>
 
-                    {item.status === 'assigned' && (
+                    {/* 1. Only show Schedule Request if it actually lacks a schedule */}
+                    {needsScheduling && (
                       <TouchableOpacity
                         style={styles.fillActionBtn}
                         onPress={() =>
@@ -113,7 +120,8 @@ export default function MyAssignedWorkScreen() {
                       </TouchableOpacity>
                     )}
 
-                    {isInProgress && (
+                    {/* 2. If scheduled but not planted, show Upload Plantation Photos */}
+                    {hasSchedule && !isPlanted && (
                       <TouchableOpacity
                         style={styles.fillActionBtn}
                         onPress={() =>
@@ -123,7 +131,22 @@ export default function MyAssignedWorkScreen() {
                           } as any)
                         }
                       >
-                        <Text style={styles.fillActionText}>Upload Update</Text>
+                        <Text style={styles.fillActionText}>Upload Photos</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* 3. If already planted, show Log Nurturing */}
+                    {isPlanted && (
+                      <TouchableOpacity
+                        style={styles.fillActionBtn}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/pages/log-nurturing',
+                            params: { id: item.id },
+                          } as any)
+                        }
+                      >
+                        <Text style={styles.fillActionText}>Log Care</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -214,6 +237,12 @@ const styles = StyleSheet.create({
   },
   statusAssigned: {
     backgroundColor: '#DBEAFE',
+  },
+  statusScheduled: {
+    backgroundColor: '#FEF3C7',
+  },
+  statusPlanted: {
+    backgroundColor: '#D1FAE5',
   },
   statusInProgress: {
     backgroundColor: '#D1FAE5',

@@ -75,8 +75,53 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
 ];
 
+const VOLUNTEER_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: 'vn-1',
+    section: 'Today',
+    title: 'Schedule Confirmed by Admin',
+    body: 'Your planting slot for Saturday morning at Shivaji Park Outer Ring has been approved.',
+    time: '2 hours ago',
+    icon: 'check',
+    unread: true,
+    requestId: 'REQ-2024-0042',
+  },
+  {
+    id: 'vn-2',
+    section: 'Today',
+    title: 'Citizen Appreciation Received 💚',
+    body: 'Kartik Vichare left a thank-you comment on your Neem sapling care update: "Thank you for looking after our neighborhood trees!"',
+    time: '4 hours ago',
+    icon: 'profile',
+    unread: true,
+    requestId: 'REQ-2024-0042',
+  },
+  {
+    id: 'vn-3',
+    section: 'Earlier',
+    title: 'New Open Request in Dadar West',
+    body: 'Dadar TT Circle Underpass median has been verified by Admin and is ready for volunteer adoption.',
+    time: 'Yesterday',
+    icon: 'plant',
+    unread: false,
+    requestId: 'REQ-8794',
+  },
+  {
+    id: 'vn-4',
+    section: 'Earlier',
+    title: 'Milestone: Level 4 Forester Unlocked 🏆',
+    body: 'You completed your 25th tree planting and earned the Master Forester badge. Keep growing Mumbai green!',
+    time: '20 Oct',
+    icon: 'bookmark',
+    unread: false,
+    requestId: 'REQ-8430',
+  },
+];
+
 export default function NotificationsScreen() {
-  const { requests, notifications, markNotificationAsRead, markAllNotificationsAsRead } = useApp();
+  const { requests, notifications, currentUser, markNotificationAsRead, markAllNotificationsAsRead } = useApp();
+
+  const activeList = currentUser.role === 'volunteer' ? VOLUNTEER_NOTIFICATIONS : notifications;
 
   const handleMarkAllRead = () => {
     markAllNotificationsAsRead();
@@ -92,7 +137,7 @@ export default function NotificationsScreen() {
   };
 
   const renderSection = (sectionName: 'Today' | 'Earlier') => {
-    const group = notifications.filter((n) => n.section === sectionName);
+    const group = activeList.filter((n) => n.section === sectionName);
     if (group.length === 0) return null;
 
     return (

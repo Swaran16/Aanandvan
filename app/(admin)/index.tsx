@@ -219,22 +219,18 @@ export default function AdminDashboardScreen() {
               <Text style={[styles.overviewSub, { color: '#6B7280' }]}>+12% in a month</Text>
             </TouchableOpacity>
 
-            {/* Pending Verifications Card (Pastel Yellow / Lime) */}
+            {/* Sapling Survival Rate Card (Pastel Yellow / Lime) */}
             <TouchableOpacity
               style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewLime, borderColor: DashboardPalette.overviewLimeBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
-              onPress={() => router.push('/(admin)/volunteers' as any)}
+              onPress={() => router.push('/(admin)/requests' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>
-                  {pendingVolunteersCount || 47}
-                </Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>96%</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Pending verifications</Text>
-              <Text style={[styles.overviewSub, { color: '#6B7280', fontWeight: '700' }]}>
-                {pendingVolunteersCount > 0 ? `${pendingVolunteersCount} Awaiting Review` : 'Alert'}
-              </Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Sapling Survival</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Healthy in Dadar</Text>
             </TouchableOpacity>
           </View>
         </View>

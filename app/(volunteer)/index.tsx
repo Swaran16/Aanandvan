@@ -57,21 +57,19 @@ export default function VolunteerHomeScreen() {
     },
     {
       id: 'assigned',
-      label: 'Active Req',
+      label: 'My Work',
       icon: 'work',
       onPress: () => router.push('/pages/my-assigned-work' as any),
     },
     {
       id: 'log',
       label: 'Log Care',
-      icon: 'camera',
-      onPress: () => router.push('/pages/select-update-request' as any),
-    },
-    {
-      id: 'schedule',
-      label: 'Schedule',
-      icon: 'calendar',
-      onPress: () => router.push('/pages/my-schedule' as any),
+      icon: 'water',
+      onPress: () =>
+        router.push({
+          pathname: '/pages/log-nurturing',
+          params: { id: 'REQ-2024-0042' },
+        } as any),
     },
   ];
 
@@ -127,37 +125,42 @@ export default function VolunteerHomeScreen() {
           </View>
         )}
 
-        {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
+        {/* ─── Section 1: Pending Actions (3 Pastel Cards - Personal Actionable Workload) ─── */}
         <Text style={styles.sectionHeading}>Pending actions</Text>
         <View style={styles.pendingRow}>
-          {/* Card 1: Available Requests (Pastel Blue) */}
+          {/* Card 1: Assigned to Me (Pastel Blue) */}
           <TouchableOpacity
             style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardBlue, borderColor: DashboardPalette.cardBlueBorder, borderWidth: 1 }]}
-            activeOpacity={0.85}
-            onPress={() => router.push('/(volunteer)/available' as any)}
-          >
-            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{availableRequests.length || 5}</Text>
-            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Available to{'\n'}plant</Text>
-          </TouchableOpacity>
-
-          {/* Card 2: Active Assigned Requests (Pastel Sage Green) */}
-          <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}
             activeOpacity={0.85}
             onPress={() => router.push('/pages/my-assigned-work' as any)}
           >
             <Text style={[styles.pendingNumber, { color: '#111827' }]}>{assignedRequests.length || 2}</Text>
-            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Active assigned{'\n'}requests</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Assigned to{'\n'}me</Text>
           </TouchableOpacity>
 
-          {/* Card 3: Nurturing Due (Pastel Yellow / Lime) */}
+          {/* Card 2: Hydration Due Today (Pastel Sage Green) */}
+          <TouchableOpacity
+            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}
+            activeOpacity={0.85}
+            onPress={() =>
+              router.push({
+                pathname: '/pages/log-nurturing',
+                params: { id: 'REQ-2024-0042' },
+              } as any)
+            }
+          >
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{nurturingDueCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Hydration{'\n'}due today</Text>
+          </TouchableOpacity>
+
+          {/* Card 3: Sapling Survival Rate (Pastel Yellow / Lime) */}
           <TouchableOpacity
             style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardLime, borderColor: DashboardPalette.cardLimeBorder, borderWidth: 1 }]}
             activeOpacity={0.85}
-            onPress={() => router.push('/(volunteer)/work' as any)}
+            onPress={() => router.push('/pages/my-assigned-work' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{nurturingDueCount}</Text>
-            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Nurturing due{'\n'}today</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>98%</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Sapling{'\n'}survival</Text>
           </TouchableOpacity>
         </View>
 
@@ -179,12 +182,12 @@ export default function VolunteerHomeScreen() {
           ))}
         </View>
 
-        {/* ─── Section 3: Field Overview (2x2 Grid) ─── */}
+        {/* ─── Section 3: Field Overview (2x2 Grid - Dadar Community Zone Impact) ─── */}
         <Text style={styles.sectionHeading}>Field overview</Text>
         <View style={styles.overviewGrid}>
           {/* Row 1 */}
           <View style={styles.overviewRow}>
-            {/* Available Requests Card (Pastel Blue) */}
+            {/* Open Requests in Dadar (Pastel Blue) */}
             <TouchableOpacity
               style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewBlue, borderColor: DashboardPalette.overviewBlueBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
@@ -194,50 +197,50 @@ export default function VolunteerHomeScreen() {
                 <Text style={[styles.overviewNumber, { color: '#111827' }]}>{availableRequests.length || 5}</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Available Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Open in Dadar</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Open in Dadar</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Awaiting squad</Text>
             </TouchableOpacity>
 
-            {/* Active Requests Card (Pastel Sage Green) */}
+            {/* Trees Grounded (Pastel Sage Green) */}
             <TouchableOpacity
               style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewSage, borderColor: DashboardPalette.overviewSageBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
               onPress={() => router.push('/pages/my-assigned-work' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{assignedRequests.length || 2}</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{completedRequestsCount}</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Active Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Assigned to me</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Trees Grounded</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>+8 this month</Text>
             </TouchableOpacity>
           </View>
 
           {/* Row 2 */}
           <View style={styles.overviewRow}>
-            {/* Completed Requests Card (Pastel Sage Green) */}
+            {/* Active Squad (Pastel Sage Green) */}
             <View style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewSage, borderColor: DashboardPalette.overviewSageBorder, borderWidth: 1 }]}>
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{completedRequestsCount}</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>47</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Trees Planted</Text>
-              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>+8 this month</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Active Squad</Text>
+              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Dadar volunteers</Text>
             </View>
 
-            {/* Nurturing Due Card (Pastel Yellow / Lime) */}
+            {/* Canopy Cover Growth (Pastel Yellow / Lime) */}
             <TouchableOpacity
               style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewLime, borderColor: DashboardPalette.overviewLimeBorder, borderWidth: 1 }]}
               activeOpacity={0.85}
-              onPress={() => router.push('/(volunteer)/work' as any)}
+              onPress={() => router.push('/(volunteer)/available' as any)}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{nurturingDueCount}</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>+24%</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Nurturing Due</Text>
+              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Canopy Cover</Text>
               <Text style={[styles.overviewSub, { color: '#6B7280', fontWeight: '700' }]}>
-                Alternate-day alert
+                Dadar West zone
               </Text>
             </TouchableOpacity>
           </View>

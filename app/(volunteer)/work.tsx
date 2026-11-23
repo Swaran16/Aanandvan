@@ -227,7 +227,7 @@ export default function VolunteerAlertsScreen() {
         >
           <Icon name="chevron-left" size={22} color="#163020" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Alerts</Text>
+        <Text style={styles.headerTitle}>Field Care Alerts</Text>
       </View>
 
       <View style={styles.filtersRow}>

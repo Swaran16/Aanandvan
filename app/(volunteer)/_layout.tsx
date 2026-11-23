@@ -18,7 +18,7 @@ import { Icon, IconName } from '@/components/common/Icon';
 const VISIBLE_TABS: Array<{ name: string; label: string; icon: IconName }> = [
   { name: 'index', label: 'Home', icon: 'home' },
   { name: 'available', label: 'Requests', icon: 'plant' },
-  { name: 'work', label: 'Alerts', icon: 'bell' },
+  { name: 'work', label: 'Field Alerts', icon: 'alert-triangle' },
   { name: 'profile', label: 'Profile', icon: 'profile' },
 ];
 
@@ -81,7 +81,7 @@ export default function VolunteerLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="available" options={{ title: 'Requests' }} />
-      <Tabs.Screen name="work" options={{ title: 'Alerts' }} />
+      <Tabs.Screen name="work" options={{ title: 'Field Alerts' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
