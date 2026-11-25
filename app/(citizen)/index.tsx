@@ -1,12 +1,12 @@
 /**
  * Citizen Home / Dashboard Screen — Aanandvan
  *
- * Implements the new visual spec matching the design system:
+ * Implements the approved visual spec:
  * - Header: Avatar, Namaste, Kartik Vichare, RoleSwitcher pill, Bell icon
- * - Pending actions: 3 soft pastel cards (My Pending, Verified, Planted & Cared)
- * - Quick actions: Circular lime buttons (Request Tree, My Requests, Community, Settings)
- * - Community overview: 2x2 grid with diagonal arrow indicator
- * - "Spotted an empty space?" callout card
+ * - Section 1: "Track My Green Movement" (3 distinct pastel cards: Blue, Sage, Lime for Pending, Verified, In Progress — Non-clickable)
+ * - Section 2: "Quick Steps" (3 circular lime buttons: New Tree Request, My Contribution, Green Event)
+ * - Section 3: "Community overview" (3 Platform KPIs: Active Volunteers, Total Trees Planted, Total Requests — Non-clickable)
+ * - Section 4: "How to use this app" Video guide card with YouTube link
  * - Floating action button (+)
  */
 
@@ -17,6 +17,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Linking,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,40 +37,48 @@ export default function CitizenHomeScreen() {
     (r) => r.citizenName?.includes('Kartik') || r.citizenId === currentUser.id
   );
   const myPendingCount = myRequests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length || 1;
-  const myVerifiedCount = myRequests.filter((r) => r.status === 'verified' || r.status === 'assigned').length || 2;
-  const myCompletedCount = myRequests.filter((r) => r.status === 'completed' || r.status === 'in_progress').length || 1;
+  const myVerifiedCount = myRequests.filter((r) => r.status === 'verified').length || 2;
+  const myInProgressCount = myRequests.filter((r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed').length || 1;
 
-  const quickActions: Array<{
+  const quickSteps: Array<{
     id: string;
     label: string;
     icon: IconName;
     onPress: () => void;
   }> = [
     {
-      id: 'create',
-      label: 'Request Tree',
+      id: 'new-request',
+      label: 'New Tree\nRequest',
       icon: 'plant',
       onPress: () => router.push('/pages/create-request' as any),
     },
     {
-      id: 'my-reqs',
-      label: 'My Requests',
-      icon: 'requests',
-      onPress: () => router.push('/(citizen)/requests' as any),
+      id: 'my-contribution',
+      label: 'My\nContribution',
+      icon: 'bookmark',
+      onPress: () => router.push('/pages/my-contribution' as any),
     },
     {
-      id: 'events',
-      label: 'Events',
+      id: 'green-event',
+      label: 'Green\nEvent',
       icon: 'calendar',
-      onPress: () => router.push('/pages/admin-events' as any),
-    },
-    {
-      id: 'profile',
-      label: 'Settings',
-      icon: 'settings',
-      onPress: () => router.push('/(citizen)/profile' as any),
+      onPress: () => router.push('/pages/green-events' as any),
     },
   ];
+
+  const handleOpenTutorial = async () => {
+    const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('How to use this app', 'Opening tutorial walkthrough video on YouTube.');
+      }
+    } catch {
+      Alert.alert('How to use this app', 'Tutorial walkthrough video available on YouTube.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -109,65 +119,89 @@ export default function CitizenHomeScreen() {
           </View>
         </View>
 
-        {/* ─── Section 1: Pending Actions (3 Pastel Cards) ─── */}
-        <Text style={styles.sectionHeading}>Pending actions</Text>
+        {/* ─── Section 1: Track My Green Movement (3 Pastel Non-Clickable Cards) ─── */}
+        <Text style={styles.sectionHeading}>Track My Green Movement</Text>
         <View style={styles.pendingRow}>
-          {/* Card 1: My Pending Requests (Pastel Blue) */}
-          <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardBlue, borderColor: DashboardPalette.cardBlueBorder, borderWidth: 1 }]}
-            activeOpacity={0.85}
-            onPress={() => router.push('/(citizen)/requests' as any)}
+          {/* Card 1: Pending review (Pastel Blue) - Non-clickable */}
+          <View
+            style={[
+              styles.pendingCard,
+              {
+                backgroundColor: DashboardPalette.cardBlue,
+                borderColor: DashboardPalette.cardBlueBorder,
+                borderWidth: 1,
+              },
+            ]}
           >
             <Text style={[styles.pendingNumber, { color: '#111827' }]}>{myPendingCount}</Text>
             <Text style={[styles.pendingLabel, { color: '#374151' }]}>Pending{'\n'}review</Text>
-          </TouchableOpacity>
+          </View>
 
-          {/* Card 2: Verified & In Progress (Pastel Sage Green) */}
-          <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}
-            activeOpacity={0.85}
-            onPress={() => router.push('/(citizen)/requests' as any)}
+          {/* Card 2: Verified requests (Pastel Sage Green) - Non-clickable */}
+          <View
+            style={[
+              styles.pendingCard,
+              {
+                backgroundColor: DashboardPalette.cardSage,
+                borderColor: DashboardPalette.cardSageBorder,
+                borderWidth: 1,
+              },
+            ]}
           >
             <Text style={[styles.pendingNumber, { color: '#111827' }]}>{myVerifiedCount}</Text>
             <Text style={[styles.pendingLabel, { color: '#374151' }]}>Verified{'\n'}requests</Text>
-          </TouchableOpacity>
+          </View>
 
-          {/* Card 3: Planted & Cared (Pastel Yellow / Lime) */}
-          <TouchableOpacity
-            style={[styles.pendingCard, { backgroundColor: DashboardPalette.cardLime, borderColor: DashboardPalette.cardLimeBorder, borderWidth: 1 }]}
-            activeOpacity={0.85}
-            onPress={() => router.push('/(citizen)/requests' as any)}
+          {/* Card 3: In progress requests (Pastel Yellow / Lime) - Non-clickable */}
+          <View
+            style={[
+              styles.pendingCard,
+              {
+                backgroundColor: DashboardPalette.cardLime,
+                borderColor: DashboardPalette.cardLimeBorder,
+                borderWidth: 1,
+              },
+            ]}
           >
-            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{myCompletedCount}</Text>
-            <Text style={[styles.pendingLabel, { color: '#374151' }]}>Planted &amp;{'\n'}nurtured</Text>
-          </TouchableOpacity>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{myInProgressCount}</Text>
+            <Text style={[styles.pendingLabel, { color: '#374151' }]}>In progress{'\n'}requests</Text>
+          </View>
         </View>
 
-        {/* ─── Section 2: Quick Actions (Circular Buttons) ─── */}
-        <Text style={styles.sectionHeading}>Quick actions</Text>
+        {/* ─── Section 2: Quick Steps (3 Circular Buttons) ─── */}
+        <Text style={styles.sectionHeading}>Quick Steps</Text>
         <View style={styles.quickRow}>
-          {quickActions.map((act) => (
+          {quickSteps.map((step) => (
             <TouchableOpacity
-              key={act.id}
+              key={step.id}
               style={styles.quickItem}
-              onPress={act.onPress}
+              onPress={step.onPress}
               activeOpacity={0.8}
             >
               <View style={styles.quickCircle}>
-                <Icon name={act.icon} size={22} color={DashboardPalette.quickIcon} />
+                <Icon name={step.icon} size={22} color={DashboardPalette.quickIcon} />
               </View>
-              <Text style={styles.quickLabel}>{act.label}</Text>
+              <Text style={styles.quickLabel}>{step.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* ─── Section 3: Community Overview (2x2 Grid) ─── */}
+        {/* ─── Section 3: Community Overview (3 Non-Clickable KPIs) ─── */}
         <Text style={styles.sectionHeading}>Community overview</Text>
         <View style={styles.overviewGrid}>
-          {/* Row 1 */}
+          {/* Row 1: Active Volunteers & Total Trees Planted */}
           <View style={styles.overviewRow}>
-            {/* Active Volunteers Card (Pastel Blue) */}
-            <View style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewBlue, borderColor: DashboardPalette.overviewBlueBorder, borderWidth: 1 }]}>
+            {/* Active Volunteers Card (Pastel Blue) - Non-clickable */}
+            <View
+              style={[
+                styles.overviewCard,
+                {
+                  backgroundColor: DashboardPalette.overviewBlue,
+                  borderColor: DashboardPalette.overviewBlueBorder,
+                  borderWidth: 1,
+                },
+              ]}
+            >
               <View style={styles.overviewTopRow}>
                 <Text style={[styles.overviewNumber, { color: '#111827' }]}>140+</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
@@ -176,25 +210,17 @@ export default function CitizenHomeScreen() {
               <Text style={[styles.overviewSub, { color: '#6B7280' }]}>+12% in Dadar</Text>
             </View>
 
-            {/* Total Requests Card (Pastel Sage Green) */}
-            <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewSage, borderColor: DashboardPalette.overviewSageBorder, borderWidth: 1 }]}
-              activeOpacity={0.85}
-              onPress={() => router.push('/(citizen)/requests' as any)}
+            {/* Total Trees Planted Card (Pastel Sage Green) - Non-clickable */}
+            <View
+              style={[
+                styles.overviewCard,
+                {
+                  backgroundColor: DashboardPalette.overviewSage,
+                  borderColor: DashboardPalette.overviewSageBorder,
+                  borderWidth: 1,
+                },
+              ]}
             >
-              <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>{requests.length + 35}</Text>
-                <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
-              </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Total Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#6B7280' }]}>+18% in Mumbai</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Row 2 */}
-          <View style={styles.overviewRow}>
-            {/* Trees Planted Card (Pastel Sage Green) */}
-            <View style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewSage, borderColor: DashboardPalette.overviewSageBorder, borderWidth: 1 }]}>
               <View style={styles.overviewTopRow}>
                 <Text style={[styles.overviewNumber, { color: '#111827' }]}>1,280+</Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
@@ -202,44 +228,49 @@ export default function CitizenHomeScreen() {
               <Text style={[styles.overviewTitle, { color: '#111827' }]}>Trees Planted</Text>
               <Text style={[styles.overviewSub, { color: '#6B7280' }]}>Canopy Growing</Text>
             </View>
+          </View>
 
-            {/* Active Requests Card (Pastel Yellow / Lime) */}
-            <TouchableOpacity
-              style={[styles.overviewCard, { backgroundColor: DashboardPalette.overviewLime, borderColor: DashboardPalette.overviewLimeBorder, borderWidth: 1 }]}
-              activeOpacity={0.85}
-              onPress={() => router.push('/(citizen)/requests' as any)}
-            >
-              <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>
-                  {requests.filter((r) => r.status === 'assigned' || r.status === 'in_progress').length + 8}
-                </Text>
-                <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
-              </View>
-              <Text style={[styles.overviewTitle, { color: '#111827' }]}>Active Requests</Text>
-              <Text style={[styles.overviewSub, { color: '#6B7280', fontWeight: '700' }]}>
-                In Progress
+          {/* Row 2: Total Requests Card (Pastel Lime) - Non-clickable */}
+          <View
+            style={[
+              styles.overviewCardFull,
+              {
+                backgroundColor: DashboardPalette.overviewLime,
+                borderColor: DashboardPalette.overviewLimeBorder,
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <View style={styles.overviewTopRow}>
+              <Text style={[styles.overviewNumber, { color: '#111827' }]}>
+                {requests.length + 35}
               </Text>
-            </TouchableOpacity>
+              <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
+            </View>
+            <Text style={[styles.overviewTitle, { color: '#111827' }]}>Total Requests</Text>
+            <Text style={[styles.overviewSub, { color: '#6B7280' }]}>
+              All-time city submissions across Mumbai
+            </Text>
           </View>
         </View>
 
-        {/* ─── "Spotted an empty space?" Callout Card ─── */}
+        {/* ─── Section 4: "How to use this app" Callout Card ─── */}
         <View style={styles.spottedCard}>
           <View style={styles.spottedTextCol}>
             <View style={styles.spottedBadge}>
-              <Text style={styles.spottedBadgeText}>COMMUNITY ACTION</Text>
+              <Text style={styles.spottedBadgeText}>VIDEO GUIDE</Text>
             </View>
-            <Text style={styles.spottedTitle}>Spotted an empty space?</Text>
+            <Text style={styles.spottedTitle}>How to use this app</Text>
             <Text style={styles.spottedSubtitle}>
-              Spot an unplanted concrete patch or open road divider in Dadar? Request a native sapling drive and our verified volunteers will inspect and plant.
+              Watch a quick 2-minute walkthrough on requesting native saplings, tracking volunteer verification, and participating in green events.
             </Text>
 
             <TouchableOpacity
               style={styles.spottedCta}
               activeOpacity={0.85}
-              onPress={() => router.push('/pages/create-request' as any)}
+              onPress={handleOpenTutorial}
             >
-              <Text style={styles.spottedCtaText}>Request a Tree Spot →</Text>
+              <Text style={styles.spottedCtaText}>Watch on YouTube ▷</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -352,16 +383,16 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 16,
   },
-  /* Quick Actions Circular Buttons */
+  /* Quick Steps Circular Buttons */
   quickRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 22,
-    paddingHorizontal: 4,
+    paddingHorizontal: 12,
   },
   quickItem: {
     alignItems: 'center',
-    width: 68,
+    width: 88,
   },
   quickCircle: {
     width: 52,
@@ -379,8 +410,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     textAlign: 'center',
+    lineHeight: 16,
   },
-  /* Community Overview 2x2 Grid */
+  /* Community Overview Grid */
   overviewGrid: {
     gap: 12,
     marginBottom: 22,
@@ -394,6 +426,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 14,
     minHeight: 96,
+    justifyContent: 'space-between',
+  },
+  overviewCardFull: {
+    width: '100%',
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 88,
     justifyContent: 'space-between',
   },
   overviewTopRow: {
@@ -419,7 +458,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 1,
   },
-  /* Spotted an empty space Callout Card */
+  /* How to use this app Callout Card */
   spottedCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,

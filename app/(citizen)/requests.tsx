@@ -14,7 +14,7 @@ import { Icon } from '@/components/common/Icon';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest, PlantationStatus } from '@/types';
 
-type FilterTab = 'all' | 'pending' | 'verified' | 'active' | 'completed';
+type FilterTab = 'all' | 'pending' | 'verified' | 'active';
 
 const STATUS_STYLE: Record<PlantationStatus, { label: string; bg: string; fg: string }> = {
   pending: { label: 'Pending Review', bg: '#FEF3C7', fg: '#92400E' },
@@ -34,9 +34,12 @@ export default function CitizenRequestsScreen() {
   const pendingCount = requests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length;
   const verifiedCount = requests.filter((r) => r.status === 'verified').length;
   const activeCount = requests.filter(
-    (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+    (r) =>
+      r.status === 'assigned' ||
+      r.status === 'scheduled' ||
+      r.status === 'in_progress' ||
+      r.status === 'completed'
   ).length;
-  const completedCount = requests.filter((r) => r.status === 'completed').length;
 
   const filteredRequests = useMemo(() => {
     let list = requests;
@@ -46,10 +49,12 @@ export default function CitizenRequestsScreen() {
       list = requests.filter((r) => r.status === 'verified');
     } else if (filter === 'active') {
       list = requests.filter(
-        (r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress'
+        (r) =>
+          r.status === 'assigned' ||
+          r.status === 'scheduled' ||
+          r.status === 'in_progress' ||
+          r.status === 'completed'
       );
-    } else if (filter === 'completed') {
-      list = requests.filter((r) => r.status === 'completed');
     }
 
     const priority: Record<string, number> = {
@@ -176,16 +181,6 @@ export default function CitizenRequestsScreen() {
           >
             <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>
               Active Req ({activeCount})
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.filterPill, filter === 'completed' && styles.filterPillActive]}
-            onPress={() => setFilter('completed')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.filterText, filter === 'completed' && styles.filterTextActive]}>
-              Completed ({completedCount})
             </Text>
           </TouchableOpacity>
         </ScrollView>

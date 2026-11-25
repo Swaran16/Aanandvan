@@ -30,10 +30,10 @@ function VolunteerTabBar(props: any) {
     (pathname.includes('/available')
       ? 'available'
       : pathname.includes('/work')
-      ? 'work'
-      : pathname.includes('/profile')
-      ? 'profile'
-      : 'index');
+        ? 'work'
+        : pathname.includes('/profile')
+          ? 'profile'
+          : 'index');
 
   const renderTab = (tab: { name: string; label: string; icon: IconName }) => {
     const isFocused = activeRouteName === tab.name;
