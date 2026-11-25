@@ -190,15 +190,17 @@ const styles = StyleSheet.create({
   },
   brandWrap: {
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
+    width: '100%',
   },
   brandTitle: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '800',
     color: '#FAFBF9',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     textAlign: 'center',
-    lineHeight: 42,
+    lineHeight: 46,
+    paddingHorizontal: 12,
   },
   estdBadge: {
     marginTop: 6,

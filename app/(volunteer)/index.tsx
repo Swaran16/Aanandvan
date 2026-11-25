@@ -25,20 +25,27 @@ import { useApp } from '@/context/AppContext';
 import { DashboardPalette } from '@/constants/colors';
 
 export default function VolunteerHomeScreen() {
-  const { currentUser, requests, maintenanceItems } = useApp();
+  const { currentUser, requests, maintenanceItems, volunteers } = useApp();
 
   const volunteerName = currentUser.name || 'Vaibhav Shirke';
   const isBlocked = !!currentUser.isBlocked;
 
   const assignedRequests = requests.filter(
     (r) =>
-      (r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress') &&
+      (r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || (r.status === 'completed' && (!r.assignedVolunteerName || r.assignedVolunteerName.includes('Vaibhav')))) &&
       (!r.assignedVolunteerName ||
         r.assignedVolunteerName.includes('Vaibhav') ||
-        r.assignedVolunteerName.includes('Shirke'))
+        r.assignedVolunteerName.includes('Shirke') ||
+        r.assignedVolunteerId === currentUser.id)
   );
 
-  const nurturingDueCount = maintenanceItems.length || 2;
+  const nurturingDueCount = maintenanceItems.filter((m) => m.status === 'needs_water').length || requests.filter((r) => r.status === 'in_progress' || r.status === 'completed').length;
+  const activeVolunteersCount = volunteers.filter((v) => v.status === 'verified').length;
+  const totalTreesPlanted = requests.reduce(
+    (acc, r) => acc + (r.activityUpdate?.saplingsPlanted || (r.status === 'completed' ? 5 : 0)),
+    312
+  );
+  const totalRequestsCount = requests.length;
 
   const quickSteps: Array<{
     id: string;
@@ -143,7 +150,7 @@ export default function VolunteerHomeScreen() {
             ]}
           >
             <Text style={[styles.pendingNumber, { color: '#111827' }]}>
-              {assignedRequests.length || 2}
+              {assignedRequests.length}
             </Text>
             <Text style={[styles.pendingLabel, { color: '#374151' }]}>Assigned to{'\n'}me</Text>
           </View>
@@ -214,7 +221,9 @@ export default function VolunteerHomeScreen() {
               ]}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>140+</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>
+                  {activeVolunteersCount}
+                </Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
               <Text style={[styles.overviewTitle, { color: '#111827' }]}>Active Volunteers</Text>
@@ -233,7 +242,9 @@ export default function VolunteerHomeScreen() {
               ]}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>1,280+</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>
+                  {totalTreesPlanted.toLocaleString()}
+                </Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
               <Text style={[styles.overviewTitle, { color: '#111827' }]}>Trees Planted</Text>
@@ -254,7 +265,7 @@ export default function VolunteerHomeScreen() {
           >
             <View style={styles.overviewTopRow}>
               <Text style={[styles.overviewNumber, { color: '#111827' }]}>
-                {requests.length + 35}
+                {totalRequestsCount}
               </Text>
               <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
             </View>

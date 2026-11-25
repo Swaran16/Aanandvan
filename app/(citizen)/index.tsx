@@ -28,7 +28,7 @@ import { useApp } from '@/context/AppContext';
 import { DashboardPalette } from '@/constants/colors';
 
 export default function CitizenHomeScreen() {
-  const { currentUser, requests } = useApp();
+  const { currentUser, requests, volunteers } = useApp();
 
   const citizenName = currentUser.name || 'Kartik Vichare';
 
@@ -36,9 +36,16 @@ export default function CitizenHomeScreen() {
   const myRequests = requests.filter(
     (r) => r.citizenName?.includes('Kartik') || r.citizenId === currentUser.id
   );
-  const myPendingCount = myRequests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length || 1;
-  const myVerifiedCount = myRequests.filter((r) => r.status === 'verified').length || 2;
-  const myInProgressCount = myRequests.filter((r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed').length || 1;
+  const myPendingCount = myRequests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length;
+  const myVerifiedCount = myRequests.filter((r) => r.status === 'verified').length;
+  const myInProgressCount = myRequests.filter((r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed').length;
+
+  const activeVolunteersCount = volunteers.filter((v) => v.status === 'verified').length;
+  const totalTreesPlanted = requests.reduce(
+    (acc, r) => acc + (r.activityUpdate?.saplingsPlanted || (r.status === 'completed' ? 5 : 0)),
+    312
+  );
+  const totalRequestsCount = requests.length;
 
   const quickSteps: Array<{
     id: string;
@@ -203,7 +210,9 @@ export default function CitizenHomeScreen() {
               ]}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>140+</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>
+                  {activeVolunteersCount}
+                </Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
               <Text style={[styles.overviewTitle, { color: '#111827' }]}>Active Volunteers</Text>
@@ -222,7 +231,9 @@ export default function CitizenHomeScreen() {
               ]}
             >
               <View style={styles.overviewTopRow}>
-                <Text style={[styles.overviewNumber, { color: '#111827' }]}>1,280+</Text>
+                <Text style={[styles.overviewNumber, { color: '#111827' }]}>
+                  {totalTreesPlanted.toLocaleString()}
+                </Text>
                 <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
               </View>
               <Text style={[styles.overviewTitle, { color: '#111827' }]}>Trees Planted</Text>
@@ -243,7 +254,7 @@ export default function CitizenHomeScreen() {
           >
             <View style={styles.overviewTopRow}>
               <Text style={[styles.overviewNumber, { color: '#111827' }]}>
-                {requests.length + 35}
+                {totalRequestsCount}
               </Text>
               <Icon name="arrow-up-right" size={16} color={DashboardPalette.overviewArrow} />
             </View>

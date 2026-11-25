@@ -29,10 +29,14 @@ export default function MyContributionScreen() {
     (r) => r.citizenName?.includes('Kartik') || r.citizenId === currentUser.id
   );
 
-  const pendingCount = myRequests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length || 1;
-  const verifiedCount = myRequests.filter((r) => r.status === 'verified').length || 2;
-  const activeCount = myRequests.filter((r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed').length || 1;
-  const totalMyRequests = myRequests.length || 4;
+  const pendingCount = myRequests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length;
+  const verifiedCount = myRequests.filter((r) => r.status === 'verified').length;
+  const activeCount = myRequests.filter((r) => r.status === 'assigned' || r.status === 'scheduled' || r.status === 'in_progress' || r.status === 'completed').length;
+  const totalMyRequests = myRequests.length;
+  const adoptedTreesCount = myRequests.reduce(
+    (acc, r) => acc + (r.activityUpdate?.saplingsPlanted || (r.status === 'completed' ? 4 : 0)),
+    0
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -84,7 +88,7 @@ export default function MyContributionScreen() {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: DashboardPalette.cardSage, borderColor: DashboardPalette.cardSageBorder, borderWidth: 1 }]}>
-            <Text style={styles.statNumber}>5</Text>
+            <Text style={styles.statNumber}>{adoptedTreesCount}</Text>
             <Text style={styles.statLabel}>Trees Adopted{'\n'}&amp; Nurtured</Text>
           </View>
 

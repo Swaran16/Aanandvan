@@ -35,10 +35,10 @@ export default function AdminDashboardScreen() {
   const { currentUser, requests, volunteers } = useApp();
 
   const pendingVolunteersCount = volunteers.filter((v) => v.status === 'pending').length;
-  const pendingRequestsCount = requests.filter((r) => r.status === 'pending').length;
-  const activeRequestsCount = requests.filter((r) => r.status === 'assigned' || r.status === 'in_progress').length;
-  const totalVolunteersCount = volunteers.length || 47;
-  const totalRequestsCount = requests.length || 126;
+  const pendingRequestsCount = requests.filter((r) => r.status === 'pending' || r.status === 'needs_info').length;
+  const activeRequestsCount = requests.filter((r) => r.status === 'assigned' || r.status === 'in_progress' || r.status === 'scheduled').length;
+  const totalVolunteersCount = volunteers.length;
+  const totalRequestsCount = requests.length;
 
   // Real calculation from planted activity updates + base
   const totalTreesPlanted = requests.reduce(
@@ -126,7 +126,7 @@ export default function AdminDashboardScreen() {
             activeOpacity={0.85}
             onPress={() => router.push('/(admin)/volunteers' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{pendingVolunteersCount || 2}</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{pendingVolunteersCount}</Text>
             <Text style={[styles.pendingLabel, { color: '#374151' }]}>Volunteers{'\n'}requests</Text>
           </TouchableOpacity>
 
@@ -136,7 +136,7 @@ export default function AdminDashboardScreen() {
             activeOpacity={0.85}
             onPress={() => router.push('/(admin)/requests' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{pendingRequestsCount || 43}</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{pendingRequestsCount}</Text>
             <Text style={[styles.pendingLabel, { color: '#374151' }]}>Plantation{'\n'}requests</Text>
           </TouchableOpacity>
 
@@ -146,7 +146,7 @@ export default function AdminDashboardScreen() {
             activeOpacity={0.85}
             onPress={() => router.push('/(admin)/requests' as any)}
           >
-            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{activeRequestsCount || 13}</Text>
+            <Text style={[styles.pendingNumber, { color: '#111827' }]}>{activeRequestsCount}</Text>
             <Text style={[styles.pendingLabel, { color: '#374151' }]}>Planting{'\n'}updates</Text>
           </TouchableOpacity>
         </View>
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   headerRow: {
     flexDirection: 'row',

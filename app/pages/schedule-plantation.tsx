@@ -96,17 +96,17 @@ export default function SchedulePlantationScreen() {
     });
 
     if (Platform.OS === 'web') {
-      router.replace('/pages/my-assigned-work' as any);
+      router.replace('/pages/active-challenges' as any);
       return;
     }
 
     Alert.alert(
       'Request Scheduled & Assigned! 🌱',
-      `You have accepted and scheduled "${req.title}" for ${pickedDate} (${pickedSlot}). Tools and saplings are allocated. This is now under your Active Requests.`,
+      `You have accepted and scheduled "${req.title}" for ${pickedDate} (${pickedSlot}). Tools and saplings are allocated. This is now under your Active Challenges & Tasks.`,
       [
         {
-          text: 'View Assigned Requests',
-          onPress: () => router.replace('/pages/my-assigned-work' as any),
+          text: 'View Active Tasks',
+          onPress: () => router.replace('/pages/active-challenges' as any),
         },
       ]
     );

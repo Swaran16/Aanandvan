@@ -18,7 +18,6 @@ import { Icon, IconName } from '@/components/common/Icon';
 const VISIBLE_TABS: Array<{ name: string; label: string; icon: IconName }> = [
   { name: 'index', label: 'Home', icon: 'home' },
   { name: 'available', label: 'Requests', icon: 'plant' },
-  { name: 'work', label: 'Field Alerts', icon: 'alert-triangle' },
   { name: 'profile', label: 'Profile', icon: 'profile' },
 ];
 
@@ -29,11 +28,9 @@ function VolunteerTabBar(props: any) {
     state?.routes?.[state?.index]?.name ||
     (pathname.includes('/available')
       ? 'available'
-      : pathname.includes('/work')
-        ? 'work'
-        : pathname.includes('/profile')
-          ? 'profile'
-          : 'index');
+      : pathname.includes('/profile')
+        ? 'profile'
+        : 'index');
 
   const renderTab = (tab: { name: string; label: string; icon: IconName }) => {
     const isFocused = activeRouteName === tab.name;
@@ -81,7 +78,7 @@ export default function VolunteerLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="available" options={{ title: 'Requests' }} />
-      <Tabs.Screen name="work" options={{ title: 'Field Alerts' }} />
+      <Tabs.Screen name="work" options={{ href: null }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
