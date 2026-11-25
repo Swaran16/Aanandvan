@@ -16,7 +16,7 @@ import { AcceptRequestModal } from '@/components/volunteer/AcceptRequestModal';
 import { useApp } from '@/context/AppContext';
 import { PlantationRequest } from '@/types';
 
-type FilterType = 'nearest' | 'newest' | 'saved';
+type FilterType = 'all' | 'newest' | 'saved';
 
 const formatRequestCode = (id: string) => {
   if (id.toUpperCase().startsWith('REQ-')) return `#${id.toUpperCase()}`;
@@ -26,15 +26,16 @@ const formatRequestCode = (id: string) => {
 export default function AvailableRequestsScreen() {
   const { requests } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterType>('nearest');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
   const [selectedRequest, setSelectedRequest] = useState<PlantationRequest | null>(null);
 
+  const baseVerified = requests.filter((r) => r.status === 'verified');
+
   const availableRequests = useMemo(() => {
-    const base = requests.filter((r) => r.status === 'verified');
     const q = searchQuery.trim().toLowerCase();
 
-    let filtered = base.filter((req) => {
+    let filtered = baseVerified.filter((req) => {
       if (activeFilter === 'saved' && !savedIds[req.id]) {
         return false;
       }
@@ -47,16 +48,14 @@ export default function AvailableRequestsScreen() {
       );
     });
 
-    if (activeFilter === 'nearest') {
-      filtered = [...filtered].sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
-    } else if (activeFilter === 'newest') {
+    if (activeFilter === 'newest') {
       filtered = [...filtered].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
 
     return filtered;
-  }, [requests, searchQuery, activeFilter, savedIds]);
+  }, [baseVerified, searchQuery, activeFilter, savedIds]);
 
   const toggleSave = (id: string) => {
     setSavedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -77,77 +76,77 @@ export default function AvailableRequestsScreen() {
     const isSaved = !!savedIds[item.id];
     const imageUrl =
       item.areaPhotos?.[0] ||
-      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop';
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&auto=format&fit=crop';
     const distanceLabel =
-      item.distanceKm !== undefined ? `${item.distanceKm.toFixed(1)} km away` : '1.2 km away';
+      item.distanceKm !== undefined ? `${item.distanceKm.toFixed(1)} km` : '1.2 km';
 
     return (
-      <View style={styles.card}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => handleOpenDetails(item)}
-          style={styles.imageWrapper}
-        >
-          <Image source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.88}
+        onPress={() => handleOpenDetails(item)}
+      >
+        {/* Left Thumbnail with Distance Badge */}
+        <View style={styles.thumbWrapper}>
+          <Image source={{ uri: imageUrl }} style={styles.cardThumb} resizeMode="cover" />
           <View style={styles.distanceBadge}>
-            <Icon name="map-pin" size={12} color="#0D4E2B" />
             <Text style={styles.distanceText}>{distanceLabel}</Text>
           </View>
-        </TouchableOpacity>
-
-        <View style={styles.metaRow}>
-          <Text style={styles.reqIdText}>{formatRequestCode(item.id)}</Text>
-          <TouchableOpacity
-            onPress={() => toggleSave(item.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            activeOpacity={0.7}
-          >
-            <Icon
-              name="bookmark"
-              size={18}
-              color={isSaved ? '#0D4E2B' : '#4C5A52'}
-            />
-          </TouchableOpacity>
         </View>
 
-        <Text style={styles.cardTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
+        {/* Right Info & Actions */}
+        <View style={styles.cardContent}>
+          <View style={styles.metaRow}>
+            <Text style={styles.reqIdText}>{formatRequestCode(item.id)}</Text>
+            <TouchableOpacity
+              onPress={() => toggleSave(item.id)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
+            >
+              <Icon
+                name="bookmark"
+                size={16}
+                color={isSaved ? '#163E2B' : '#9CA3AF'}
+              />
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.locationRow}>
-          <Icon name="map-pin" size={13} color="#5D6B63" />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.location}
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {item.title}
           </Text>
+
+          <View style={styles.locationRow}>
+            <Icon name="map-pin" size={12} color="#6B7280" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.manualAddress || item.location}
+            </Text>
+          </View>
+
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={styles.viewDetailsBtn}
+              onPress={() => handleOpenDetails(item)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.viewDetailsText}>Details</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.acceptBtn}
+              onPress={() => setSelectedRequest(item)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.acceptBtnText}>Accept Request</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <Text style={styles.descriptionText} numberOfLines={3}>
-          {item.description}
-        </Text>
-
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.viewDetailsBtn}
-            onPress={() => handleOpenDetails(item)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.viewDetailsText}>View details</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.acceptBtn}
-            onPress={() => setSelectedRequest(item)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.acceptBtnText}>Accept request</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -159,6 +158,7 @@ export default function AvailableRequestsScreen() {
         <Text style={styles.headerTitle}>Available requests</Text>
       </View>
 
+      {/* Search Input */}
       <View style={styles.searchContainer}>
         <Icon name="search" size={18} color="#7A867E" />
         <TextInput
@@ -176,23 +176,21 @@ export default function AvailableRequestsScreen() {
         )}
       </View>
 
+      {/* Filters: strictly All Req and Newest (nearest removed) */}
       <View style={styles.filtersRow}>
         <TouchableOpacity
-          style={[styles.filterPill, activeFilter === 'nearest' && styles.filterPillActive]}
-          onPress={() => setActiveFilter('nearest')}
+          style={[styles.filterPill, activeFilter === 'all' && styles.filterPillActive]}
+          onPress={() => setActiveFilter('all')}
           activeOpacity={0.8}
         >
           <Text
             style={[
               styles.filterText,
-              activeFilter === 'nearest' && styles.filterTextActive,
+              activeFilter === 'all' && styles.filterTextActive,
             ]}
           >
-            Nearest
+            All Req ({baseVerified.length})
           </Text>
-          {activeFilter === 'nearest' && (
-            <Icon name="close" size={12} color="#FFFFFF" />
-          )}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -208,9 +206,6 @@ export default function AvailableRequestsScreen() {
           >
             Newest
           </Text>
-          {activeFilter === 'newest' && (
-            <Icon name="close" size={12} color="#FFFFFF" />
-          )}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -224,14 +219,12 @@ export default function AvailableRequestsScreen() {
               activeFilter === 'saved' && styles.filterTextActive,
             ]}
           >
-            Saved
+            Saved ({Object.values(savedIds).filter(Boolean).length})
           </Text>
-          {activeFilter === 'saved' && (
-            <Icon name="close" size={12} color="#FFFFFF" />
-          )}
         </TouchableOpacity>
       </View>
 
+      {/* Requests List */}
       <FlatList
         data={availableRequests}
         keyExtractor={(item) => item.id}
@@ -240,24 +233,25 @@ export default function AvailableRequestsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Icon name="plant" size={38} color="#8BA093" />
-            <Text style={styles.emptyTitle}>No matching requests</Text>
-            <Text style={styles.emptySub}>
-              {activeFilter === 'saved'
-                ? 'Bookmark requests to find them quickly under Saved.'
-                : 'Try clearing your search or checking back soon for new verified requests.'}
+            <Icon name="plant" size={40} color="#88958D" />
+            <Text style={styles.emptyTitle}>No verified requests</Text>
+            <Text style={styles.emptySubtitle}>
+              Check back soon for newly verified native sapling spots in Dadar &amp; Mumbai.
             </Text>
           </View>
         }
       />
 
-      <AcceptRequestModal
-        visible={!!selectedRequest}
-        requestTitle={selectedRequest?.title ?? ''}
-        requestLocation={selectedRequest?.location ?? ''}
-        onAcceptAndSchedule={handleAcceptAndSchedule}
-        onClose={() => setSelectedRequest(null)}
-      />
+      {/* Accept Request Modal */}
+      {selectedRequest && (
+        <AcceptRequestModal
+          visible={!!selectedRequest}
+          requestTitle={selectedRequest.title}
+          requestLocation={selectedRequest.location}
+          onAcceptAndSchedule={handleAcceptAndSchedule}
+          onClose={() => setSelectedRequest(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -265,39 +259,47 @@ export default function AvailableRequestsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F9F6',
+    backgroundColor: '#FAFAF8',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 12,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0EB',
+    gap: 12,
   },
   backBtn: {
-    padding: 4,
-    marginRight: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0D4325',
+    fontWeight: '700',
+    color: '#163E2B',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
+    marginTop: 12,
     paddingHorizontal: 14,
-    height: 44,
+    height: 42,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#D6DDD4',
+    borderColor: '#E5E7EB',
     gap: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13.5,
     color: '#163020',
     paddingVertical: 0,
   },
@@ -305,137 +307,140 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 8,
-    gap: 10,
+    gap: 8,
   },
   filterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    gap: 6,
   },
   filterPillActive: {
     backgroundColor: '#163E2B',
     borderColor: '#163E2B',
   },
   filterText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
     color: '#4B5563',
   },
   filterTextActive: {
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 110,
-    gap: 12,
+    paddingTop: 6,
+    paddingBottom: 40,
+    gap: 10,
   },
+  /* Compact Card Layout (~120-130px height) */
   card: {
+    flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 12,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+    gap: 12,
   },
-  imageWrapper: {
-    height: 140,
+  thumbWrapper: {
+    width: 88,
+    height: 88,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#F3F4F6',
-    marginBottom: 10,
+    position: 'relative',
   },
-  cardImage: {
+  cardThumb: {
     width: '100%',
     height: '100%',
   },
   distanceBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8EFEA',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    bottom: 4,
+    left: 4,
+    backgroundColor: 'rgba(22, 62, 43, 0.88)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
     borderRadius: 4,
-    gap: 4,
   },
   distanceText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#163E2B',
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: 'space-between',
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
   },
   reqIdText: {
     fontSize: 11,
-    fontWeight: '500',
-    color: '#88958D',
+    fontWeight: '600',
+    color: '#9CA3AF',
     letterSpacing: 0.3,
   },
   cardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#111827',
-    marginBottom: 4,
+    marginTop: 2,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginBottom: 8,
+    gap: 4,
+    marginTop: 2,
   },
   locationText: {
-    fontSize: 12.5,
+    fontSize: 11.5,
     color: '#6B7280',
     flex: 1,
-  },
-  descriptionText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4B5563',
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    gap: 10,
+    marginTop: 6,
+    gap: 8,
   },
   viewDetailsBtn: {
-    flex: 1,
-    paddingVertical: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   viewDetailsText: {
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: '600',
-    color: '#163E2B',
+    color: '#374151',
   },
   acceptBtn: {
-    flex: 1.5,
+    flex: 1,
     backgroundColor: '#163E2B',
-    paddingVertical: 9,
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   acceptBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 11.5,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   emptyBox: {
@@ -445,16 +450,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#163020',
-    marginTop: 12,
-    marginBottom: 6,
+    marginTop: 10,
   },
-  emptySub: {
-    fontSize: 13,
-    color: '#6C7870',
+  emptySubtitle: {
+    fontSize: 12.5,
+    color: '#6B7280',
     textAlign: 'center',
-    lineHeight: 19,
+    marginTop: 4,
+    lineHeight: 18,
   },
 });
